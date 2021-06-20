@@ -1,0 +1,42 @@
+{
+    "name": "use-remote-data",
+    "version": "0.1.0",
+    "description": "Promise handling for react. Principled, Boilerplate-free, Caching, Invalidating",
+    "author": "Øyvind Raddum Berg",
+    "homepage": "https://github.com/oyvindberg/use-remote-data/",
+    "keywords": [
+        "react",
+        "hooks",
+        "remote data",
+        "http",
+        "rest"
+    ],
+    "module": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "scripts": {
+        "dev": "tsc --watch",
+        "build": "tsc",
+        "test": "jest",
+        "prettier": "prettier --write ."
+    },
+    "peerDependencies": {
+        "react": "^17.0.2"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^19.0.0",
+        "@rollup/plugin-node-resolve": "^13.0.0",
+        "@rollup/plugin-typescript": "^8.2.1",
+        "@testing-library/react-hooks": "^7.0.0",
+        "@types/jest": "^26.0.23",
+        "@types/react": "^17.0.11",
+        "jest": "^27.0.4",
+        "prettier": "^2.3.1",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2",
+        "rollup": "^2.52.1",
+        "ts-jest": "^27.0.3",
+        "ts-node": "^10.0.0",
+        "tslib": "^2.3.0",
+        "typescript": "^4.3.4"
+    }
+}
