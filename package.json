@@ -3,7 +3,7 @@
     "version": "0.2.3",
     "description": "Promise handling for react. Principled, Boilerplate-free, Caching, Invalidating",
     "author": "Øyvind Raddum Berg",
-    "homepage": "https://github.com/oyvindberg/use-remote-data/",
+    "homepage": "https://oyvindberg.github.io/use-remote-data/",
     "keywords": [
         "react",
         "hooks",
@@ -18,7 +18,8 @@
         "build": "tsc",
         "test": "jest",
         "prettier": "prettier --write .",
-        "build-publish": "yarn test && rm -Rf lib && yarn build && yarn publish"
+        "publish-lib": "yarn test && rm -Rf lib && yarn build && yarn publish",
+        "publish-site": "cd site && USE_SSH=true GIT_USER=oyvindberg node_modules/.bin/docusaurus deploy"
     },
     "peerDependencies": {
         "react": "^17.0.2"
@@ -37,5 +38,6 @@
         "ts-node": "^10.0.0",
         "tslib": "^2.3.0",
         "typescript": "^4.3.4"
-    }
+    },
+    "dependencies": {}
 }

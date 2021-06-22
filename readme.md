@@ -1,3 +1,9 @@
+# Awesome data access for React
+
+Start with the [documentation](https://oyvindberg.github.io/use-remote-data/)
+
+### Some background
+
 Based on the pattern described in this article:
 
 -   https://medium.com/@gcanti/slaying-a-ui-antipattern-with-flow-5eed0cfb627b
