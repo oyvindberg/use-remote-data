@@ -75,7 +75,7 @@ test('invalidation should work', async () => {
     expect(tester.result.current.current).toStrictEqual(RemoteData.Yes(1));
 
     await act(async () => {
-        jest.advanceTimersByTime(ttlMillis);
+        jest.runOnlyPendingTimers();
     });
     await act(async () => {
         await tester.result.current.triggerUpdate();

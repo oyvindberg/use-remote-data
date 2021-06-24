@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RemoteData } from './RemoteData';
 import { isDefined } from './internal/isDefined';
-import { useInterval } from './internal/useInternal';
 import { RemoteDataStore } from './RemoteDataStore';
 
 export interface Options {
@@ -23,30 +22,31 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
         rawSetRemoteData(data);
     };
 
-    // only install if we have data and `ttlMillis` is set
-    const ttlMillis = enableUseInterval(options, remoteData);
+    useEffect(() => {
+        if (isDefined(options?.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
+            const remainingMs = fetchedAt.getTime() + options!.ttlMillis - new Date().getTime();
 
-    const maybeOutdatedForMs = (): number | undefined => {
-        if (isDefined(fetchedAt) && isDefined(ttlMillis) && remoteData.type === 'yes') {
-            const now = new Date();
-            const diff = now.getTime() - fetchedAt.getTime();
-            if (diff >= ttlMillis) {
-                return diff;
+            if (remainingMs <= 0) {
+                if (options?.debug) {
+                    console.warn(`${storeName}: invalidated`);
+                }
+                setRemoteData(RemoteData.InvalidatedInitial(remoteData));
+            } else {
+                if (options?.debug) {
+                    console.warn(`${storeName}: will invalidate in ${remainingMs}`);
+                }
+
+                const handle = setTimeout(() => {
+                    if (options?.debug) {
+                        console.warn(`${storeName}: invalidated`);
+                    }
+                    setRemoteData(RemoteData.InvalidatedInitial(remoteData));
+                }, options?.ttlMillis);
+                return () => clearTimeout(handle);
             }
         }
-
         return undefined;
-    };
-
-    useInterval(() => {
-        const outdatedMs = maybeOutdatedForMs();
-        if (isDefined(outdatedMs)) {
-            if (options?.debug) {
-                console.warn(`${storeName}: invalidated in \`setInterval\` after ${outdatedMs} ms.`);
-            }
-            setRemoteData(RemoteData.InvalidatedInitial(remoteData));
-        }
-    }, ttlMillis);
+    });
 
     const runAndUpdate = (pendingState: RemoteData<T>): Promise<void> => {
         setRemoteData(pendingState);
@@ -68,17 +68,6 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
         dirty = true;
 
         switch (remoteData.type) {
-            case 'yes':
-                // this branch takes care of invalidating a bit earlier than the `useInterval` above would catch
-                // stale data which hasn't been rendered for a while
-                const outdatedMs = maybeOutdatedForMs();
-                if (isDefined(outdatedMs)) {
-                    if (options?.debug) {
-                        console.warn(`${storeName}: invalidated at render after ${outdatedMs} ms.`);
-                    }
-                    return runAndUpdate(RemoteData.pendingStateFor(remoteData));
-                }
-                return undefined;
             case 'initial':
                 return runAndUpdate(RemoteData.pendingStateFor(remoteData));
             case 'invalidated-initial':
@@ -94,12 +83,4 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
         },
         triggerUpdate,
     };
-};
-
-const enableUseInterval = <T>(options: Options | undefined, data: RemoteData<T>): number | null => {
-    const providedTtlMillis = options?.ttlMillis;
-    if (isDefined(providedTtlMillis) && data.type === 'yes') {
-        return providedTtlMillis;
-    }
-    return null;
 };
