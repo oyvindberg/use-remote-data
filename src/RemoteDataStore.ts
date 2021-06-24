@@ -22,18 +22,35 @@ export namespace RemoteDataStore {
 
     // combine many stores into one which will produce a tuple with all values when we have them.
     // think of this as `sequence` from FP
-    export const all = <Stores extends RemoteDataStore<unknown>[]>(
-        ...stores: Stores
-    ): RemoteDataStore<ValuesFrom<Stores>> => {
-        return {
-            triggerUpdate: () => Promise.all(stores.map((store) => store.triggerUpdate())).then((_) => {}),
-            get current() {
-                return RemoteData.all(...stores.map((store) => store.current)) as RemoteData<ValuesFrom<Stores>>;
-            },
-            storeName: stores
-                .map((store) => store.storeName)
-                .filter(isDefined)
-                .join(', '),
+    export const all = <Stores extends RemoteDataStore<unknown>[]>(...stores: Stores): All<Stores> => new All(stores);
+
+    class All<Stores extends RemoteDataStore<unknown>[]> implements RemoteDataStore<ValuesFrom<Stores>> {
+        readonly #stores: Stores;
+
+        constructor(stores: Stores) {
+            this.#stores = stores;
+        }
+
+        triggerUpdate = () => {
+            // if the product of all stores is a failure, dont invalidate any succeeding stores where we won't use the result
+            if (this.current.type === 'no') {
+                return undefined;
+            }
+            return Promise.all(this.#stores.map((store) => store.triggerUpdate())).then((_) => {});
         };
-    };
+
+        get current() {
+            const combined = RemoteData.all(...this.#stores.map((store) => store.current));
+            // didn't bother to prove this, but we could
+            return combined as RemoteData<RemoteDataStore.ValuesFrom<Stores>>;
+        }
+
+        get storeName() {
+            return this.#stores
+              .map((store) => store.storeName)
+              .filter(isDefined)
+              .join(', ');
+        }
+    }
 }
+
