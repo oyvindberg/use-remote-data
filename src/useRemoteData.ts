@@ -22,26 +22,22 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
         rawSetRemoteData(data);
     };
 
+    // invalidation logic if requested
     useEffect(() => {
         if (isDefined(options?.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
             const remainingMs = fetchedAt.getTime() + options!.ttlMillis - new Date().getTime();
 
             if (remainingMs <= 0) {
-                if (options?.debug) {
-                    console.warn(`${storeName}: invalidated`);
-                }
                 setRemoteData(RemoteData.InvalidatedInitial(remoteData));
             } else {
                 if (options?.debug) {
                     console.warn(`${storeName}: will invalidate in ${remainingMs}`);
                 }
 
-                const handle = setTimeout(() => {
-                    if (options?.debug) {
-                        console.warn(`${storeName}: invalidated`);
-                    }
-                    setRemoteData(RemoteData.InvalidatedInitial(remoteData));
-                }, options?.ttlMillis);
+                const handle = setTimeout(
+                    () => setRemoteData(RemoteData.InvalidatedInitial(remoteData)),
+                    options?.ttlMillis
+                );
                 return () => clearTimeout(handle);
             }
         }
@@ -59,13 +55,13 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
         );
     };
 
-    // only commit first update each pass in case the store is shared
-    let dirty = false;
+    // only allow first update each pass in case the store is shared
+    let isUpdating = false;
 
     // this is what downstream components call within `useEffect`.
     const triggerUpdate = () => {
-        if (dirty) return undefined;
-        dirty = true;
+        if (isUpdating) return undefined;
+        isUpdating = true;
 
         switch (remoteData.type) {
             case 'initial':

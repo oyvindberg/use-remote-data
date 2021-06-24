@@ -10,9 +10,7 @@ interface Props<T> {
 export function WithRemoteData<T>({ store, children }: Props<T>): JSX.Element {
     // This triggers updating the data in the store when needed.
     // Apparently it needs to be within `useEffect` because it updates a state hook in a parent component
-    useEffect(() => {
-        store.triggerUpdate();
-    }, [store]);
+    useEffect(store.triggerUpdate as (() => void), [store]);
 
     return RemoteData.fold(store.current)(
         children,
