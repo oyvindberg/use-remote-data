@@ -10,34 +10,54 @@ export interface Options {
 }
 
 export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): RemoteDataStore<T> => {
-    const [remoteData, rawSetRemoteData] = useState<RemoteData<T>>(RemoteData.Initial);
-    const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
+    // current `RemoteData` state
+    const [remoteData, setRemoteData] = useState<RemoteData<T>>(RemoteData.Initial);
+    // used for invalidation. only update this when receiving new data
+    const [fetchedAt, setFetchedAt] = useState<Date | undefined>(undefined);
 
     const storeName = options?.storeName || 'unnamed store';
 
-    const setRemoteData = (data: RemoteData<T>) => {
-        if (options?.debug) {
-            console.warn(`${storeName} => `, data);
+    // don't update state after component unmounted
+    let isMounted = true;
+    useEffect(
+        () => () => {
+            if (options?.debug) {
+                console.warn(`${storeName} unmounting`);
+            }
+            isMounted = false;
+        },
+        []
+    );
+
+    const set = (data: RemoteData<T>, fetchedAt?: Date): void => {
+        if (isMounted) {
+            if (options?.debug) {
+                console.warn(`${storeName} => `, data, fetchedAt);
+            }
+            // keep before setRemoteData to not trigger unnecessary invalidations
+            if (isDefined(fetchedAt)) {
+                setFetchedAt(fetchedAt);
+            }
+
+            setRemoteData(data);
+        } else if (options?.debug) {
+            console.warn(`${storeName} dropped update because component has been unmounted`, data, fetchedAt);
         }
-        rawSetRemoteData(data);
     };
 
-    // invalidation logic if requested
+    // invalidation logic. only enabled if requested in `options.ttlMillis` and we have data to invalidate
     useEffect(() => {
         if (isDefined(options?.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
             const remainingMs = fetchedAt.getTime() + options!.ttlMillis - new Date().getTime();
 
             if (remainingMs <= 0) {
-                setRemoteData(RemoteData.InvalidatedInitial(remoteData));
+                set(RemoteData.InvalidatedInitial(remoteData));
             } else {
                 if (options?.debug) {
                     console.warn(`${storeName}: will invalidate in ${remainingMs}`);
                 }
 
-                const handle = setTimeout(
-                    () => setRemoteData(RemoteData.InvalidatedInitial(remoteData)),
-                    options?.ttlMillis
-                );
+                const handle = setTimeout(() => set(RemoteData.InvalidatedInitial(remoteData)), options?.ttlMillis);
                 return () => clearTimeout(handle);
             }
         }
@@ -45,13 +65,10 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
     });
 
     const runAndUpdate = (pendingState: RemoteData<T>): Promise<void> => {
-        setRemoteData(pendingState);
+        set(pendingState);
         return run().then(
-            (value) => {
-                setFetchedAt(new Date()); // keep before setData to not trigger unnecessary invalidations
-                setRemoteData(RemoteData.Yes(value));
-            },
-            (error) => setRemoteData(RemoteData.No(error, () => runAndUpdate(RemoteData.Pending)))
+            (value) => set(RemoteData.Yes(value), new Date()),
+            (error) => set(RemoteData.No(error, () => runAndUpdate(RemoteData.Pending)))
         );
     };
 
@@ -59,15 +76,11 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
     let isUpdating = false;
 
     // this is what downstream components call within `useEffect`.
+    // here we trigger fetching data if we are in an `initial` state
     const triggerUpdate = () => {
-        if (isUpdating) return undefined;
-        isUpdating = true;
-
-        switch (remoteData.type) {
-            case 'initial':
-                return runAndUpdate(RemoteData.pendingStateFor(remoteData));
-            case 'invalidated-initial':
-                return runAndUpdate(RemoteData.pendingStateFor(remoteData));
+        if ((!isUpdating && remoteData.type === 'initial') || remoteData.type === 'invalidated-initial') {
+            isUpdating = true;
+            return runAndUpdate(RemoteData.pendingStateFor(remoteData));
         }
         return undefined;
     };
