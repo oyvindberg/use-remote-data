@@ -1,6 +1,6 @@
 {
     "name": "use-remote-data",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Promise handling for react. Principled, Boilerplate-free, Caching, Invalidating",
     "author": "Øyvind Raddum Berg",
     "homepage": "https://github.com/oyvindberg/use-remote-data/",
@@ -17,7 +17,8 @@
         "dev": "tsc --watch",
         "build": "tsc",
         "test": "jest",
-        "prettier": "prettier --write ."
+        "prettier": "prettier --write .",
+        "publish": "yarn test && rm -Rf lib && yarn build && npm publish"
     },
     "peerDependencies": {
         "react": "^17.0.2"
