@@ -58,7 +58,7 @@ test('properly combine retries', async () => {
     );
     if (combined.type === 'no') {
         await combined.retry();
-        expect(combined.errors).toStrictEqual(["no1", "no2"]);
+        expect(combined.errors).toStrictEqual(['no1', 'no2']);
         expect(value1).toStrictEqual(1);
         expect(value2).toStrictEqual(1);
     } else {

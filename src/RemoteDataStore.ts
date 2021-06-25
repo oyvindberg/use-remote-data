@@ -47,10 +47,9 @@ export namespace RemoteDataStore {
 
         get storeName() {
             return this.#stores
-              .map((store) => store.storeName)
-              .filter(isDefined)
-              .join(', ');
+                .map((store) => store.storeName)
+                .filter(isDefined)
+                .join(', ');
         }
     }
 }
-
