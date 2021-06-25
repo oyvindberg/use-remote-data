@@ -22,7 +22,7 @@ export namespace RemoteDataStore {
 
     // combine many stores into one which will produce a tuple with all values when we have them.
     // think of this as `sequence` from FP
-    export const all = <Stores extends RemoteDataStore<unknown>[]>(...stores: Stores): All<Stores> => new All(stores);
+    export const all = <Stores extends RemoteDataStore<unknown>[]>(...stores: Stores): RemoteDataStore<ValuesFrom<Stores>> => new All(stores);
 
     class All<Stores extends RemoteDataStore<unknown>[]> implements RemoteDataStore<ValuesFrom<Stores>> {
         readonly #stores: Stores;
