@@ -1,8 +1,9 @@
 import { RemoteData } from './RemoteData';
 import { isDefined } from './internal/isDefined';
+import { MaybeCancel } from './internal/MaybeCancel';
 
 export interface RemoteDataStore<T> {
-    readonly triggerUpdate: () => Promise<void> | undefined;
+    readonly triggerUpdate: () => MaybeCancel;
     readonly current: RemoteData<T>;
     // you can supply this through `Options` parameter to `useRemoteData`
     readonly storeName: string | undefined;
@@ -22,7 +23,9 @@ export namespace RemoteDataStore {
 
     // combine many stores into one which will produce a tuple with all values when we have them.
     // think of this as `sequence` from FP
-    export const all = <Stores extends RemoteDataStore<unknown>[]>(...stores: Stores): RemoteDataStore<ValuesFrom<Stores>> => new All(stores);
+    export const all = <Stores extends RemoteDataStore<unknown>[]>(
+        ...stores: Stores
+    ): RemoteDataStore<ValuesFrom<Stores>> => new All(stores);
 
     class All<Stores extends RemoteDataStore<unknown>[]> implements RemoteDataStore<ValuesFrom<Stores>> {
         readonly #stores: Stores;
@@ -31,12 +34,12 @@ export namespace RemoteDataStore {
             this.#stores = stores;
         }
 
-        triggerUpdate = () => {
+        triggerUpdate = (): MaybeCancel => {
             // if the product of all stores is a failure, dont invalidate any successful stores where we won't see the result
             if (this.current.type === 'no') {
                 return undefined;
             }
-            return Promise.all(this.#stores.map((store) => store.triggerUpdate())).then((_) => {});
+            return MaybeCancel.all(this.#stores.map((store) => store.triggerUpdate()));
         };
 
         get current() {

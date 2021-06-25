@@ -1,5 +1,7 @@
-import { act, renderHook } from '@testing-library/react-hooks/dom';
+import { act, renderHook, RenderResult } from '@testing-library/react-hooks/dom';
 import { RemoteData, useRemoteData } from '../src';
+import { RemoteDataStore } from '../src';
+import { isDefined } from '../src/internal/isDefined';
 
 class TestPromise {
     i = 0;
@@ -9,28 +11,30 @@ class TestPromise {
     };
 }
 
+const drop = <T>(t: T): void => {};
+
+const triggerAndWait = <T>(result: RenderResult<RemoteDataStore<T>>) => (): Promise<void> => {
+        const triggered = result.current.triggerUpdate();
+        if (isDefined(triggered.promise)) {
+            return triggered.promise;
+        }
+        return new Promise((ok) => ok());
+    };
+
 test('should handle success', async () => {
     const testPromise = new TestPromise();
+    const rendered = renderHook(() => useRemoteData(testPromise.next));
+    await act(triggerAndWait(rendered.result))
 
-    const tester = renderHook(() => useRemoteData(testPromise.next));
-
-    await act(async () => {
-        await tester.result.current.triggerUpdate();
-    });
-
-    expect(tester.result.current.current).toStrictEqual(RemoteData.Yes(1));
+    expect(rendered.result.current.current).toStrictEqual(RemoteData.Yes(1));
 });
 
 test('should handle successes', async () => {
     const testPromise = new TestPromise();
+    const rendered = renderHook(() => useRemoteData(testPromise.next));
+    await act(triggerAndWait(rendered.result))
 
-    const tester = renderHook(() => useRemoteData(testPromise.next));
-
-    await act(async () => {
-        await tester.result.current.triggerUpdate();
-    });
-
-    expect(tester.result.current.current).toStrictEqual(RemoteData.Yes(1));
+    expect(rendered.result.current.current).toStrictEqual(RemoteData.Yes(1));
 });
 
 test('should handle failure and retries', async () => {
@@ -46,19 +50,17 @@ test('should handle failure and retries', async () => {
             }
         });
 
-    const tester = renderHook(() => useRemoteData(testPromise));
+    const rendered = renderHook(() => useRemoteData(testPromise));
 
-    await act(async () => {
-        await tester.result.current.triggerUpdate();
-    });
+    await act(triggerAndWait(rendered.result))
 
-    expect(tester.result.current.current.type).toStrictEqual('no');
-    const no = tester.result.current.current as RemoteData.No;
+    expect(rendered.result.current.current.type).toStrictEqual('no');
+    const no = rendered.result.current.current as RemoteData.No;
     expect(no.errors).toStrictEqual([error]);
 
     await act(no.retry);
 
-    expect(tester.result.current.current).toStrictEqual(RemoteData.Yes('a'));
+    expect(rendered.result.current.current).toStrictEqual(RemoteData.Yes('a'));
 });
 
 test('invalidation should work', async () => {
@@ -66,21 +68,15 @@ test('invalidation should work', async () => {
 
     const testPromise = new TestPromise();
 
-    const ttlMillis = 10;
-    const tester = renderHook(() => useRemoteData(testPromise.next, { ttlMillis }));
-    await act(async () => {
-        await tester.result.current.triggerUpdate();
-    });
+    const rendered = renderHook(() => useRemoteData(testPromise.next, { ttlMillis: 10 }));
+    await act(triggerAndWait(rendered.result));
 
-    expect(tester.result.current.current).toStrictEqual(RemoteData.Yes(1));
+    expect(rendered.result.current.current).toStrictEqual(RemoteData.Yes(1));
 
-    await act(async () => {
-        jest.runOnlyPendingTimers();
-    });
-    await act(async () => {
-        await tester.result.current.triggerUpdate();
-    });
-    expect(tester.result.current.current).toStrictEqual(RemoteData.Yes(2));
+    await act(triggerAndWait(rendered.result));
+    await act(() => drop(jest.runOnlyPendingTimers()));
+    await act(triggerAndWait(rendered.result));
+    expect(rendered.result.current.current).toStrictEqual(RemoteData.Yes(2));
 
     jest.useRealTimers();
 });

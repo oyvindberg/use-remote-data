@@ -17,7 +17,7 @@ export function WithRemoteData<T>({ store, children }: Props<T>): JSX.Element {
     // This triggers updating the data in the store when needed.
     // Apparently it needs to be within `useEffect` because it updates a state hook in a parent component
     // If you copy/paste this component you should keep this line as is
-    useEffect(store.triggerUpdate as () => void, [store]);
+    useEffect(store.triggerUpdate, [store]);
 
     return RemoteData.fold(store.current)(
         children,
