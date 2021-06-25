@@ -1,3 +1,5 @@
+import { isDefined } from './internal/isDefined';
+
 export type RemoteData<T> =
     | RemoteData.Initial
     | RemoteData.Pending
@@ -7,6 +9,9 @@ export type RemoteData<T> =
     | RemoteData.InvalidatedPending<T>;
 
 export namespace RemoteData {
+    // unfortunately you can fail a `Promise` with anything. It's often an `Error`, though
+    export type WeakError = Error | unknown;
+
     export const Initial: Initial = { type: 'initial' };
 
     export interface Initial {
@@ -19,11 +24,15 @@ export namespace RemoteData {
         readonly type: 'pending';
     }
 
-    export const No = (error: Error | unknown, retry: () => Promise<void>): No => ({ type: 'no', error, retry });
+    export const No = (errors: ReadonlyArray<WeakError>, retry: () => Promise<void>): No => ({
+        type: 'no',
+        errors,
+        retry,
+    });
 
     export interface No {
         readonly type: 'no';
-        readonly error: Error | unknown;
+        readonly errors: ReadonlyArray<WeakError>;
         readonly retry: () => Promise<void>;
     }
 
@@ -34,24 +43,24 @@ export namespace RemoteData {
         readonly value: T;
     }
 
-    export const InvalidatedInitial = <T>(invalidated: RemoteData<T>): InvalidatedInitial<T> => ({
+    export const InvalidatedInitial = <T>(invalidated: RemoteData.Yes<T>): InvalidatedInitial<T> => ({
         type: 'invalidated-initial',
         invalidated,
     });
 
     export interface InvalidatedInitial<T> {
         readonly type: 'invalidated-initial';
-        readonly invalidated: RemoteData<T>;
+        readonly invalidated: RemoteData.Yes<T>;
     }
 
-    export const InvalidatedPending = <T>(invalidated: RemoteData<T>): InvalidatedPending<T> => ({
+    export const InvalidatedPending = <T>(invalidated: RemoteData.Yes<T>): InvalidatedPending<T> => ({
         type: 'invalidated-pending',
         invalidated,
     });
 
     export interface InvalidatedPending<T> {
         readonly type: 'invalidated-pending';
-        readonly invalidated: RemoteData<T>;
+        readonly invalidated: RemoteData.Yes<T>;
     }
 
     export type ValuesFrom<Datas extends [...RemoteData<unknown>[]]> = {
@@ -66,27 +75,43 @@ export namespace RemoteData {
         // state of the art typescript: typed on the outside, untyped on the inside
         const ret: unknown[] = [];
         let isInvalidated = false;
+        let foundNo: RemoteData.No[] = [];
+        let foundPending: RemoteData.Pending | undefined = undefined;
+        let foundInitial: RemoteData.Initial | undefined = undefined;
 
-        const accumulateAndValidate = (remoteData: RemoteData<unknown>): boolean => {
+        for (const remoteData of remoteDatas) {
             switch (remoteData.type) {
                 case 'yes':
                     ret.push(remoteData.value);
-                    return true;
+                    break;
                 case 'invalidated-initial':
                     isInvalidated = true;
-                    return accumulateAndValidate(remoteData.invalidated);
+                    ret.push(remoteData.invalidated.value);
+                    break;
                 case 'invalidated-pending':
                     isInvalidated = true;
-                    return accumulateAndValidate(remoteData.invalidated);
-                default:
-                    return false;
+                    ret.push(remoteData.invalidated.value);
+                    break;
+                case 'initial':
+                    foundInitial = remoteData;
+                    break;
+                case 'no':
+                    foundNo.push(remoteData);
+                    break;
+                case 'pending':
+                    foundPending = remoteData;
+                    break;
             }
-        };
+        }
 
-        for (const remoteData of remoteDatas) {
-            if (!accumulateAndValidate(remoteData)) {
-                return remoteData as RemoteData<ValuesFrom<RemoteDatas>>;
-            }
+        if (foundNo.length > 0) {
+            const retry = () => Promise.all(foundNo.map((no) => no.retry())).then(() => {});
+            const allErrors = foundNo.reduce<ReadonlyArray<WeakError>>((acc, no) => [...acc, ...no.errors], []);
+            return RemoteData.No(allErrors, retry);
+        } else if (isDefined(foundPending)) {
+            return foundPending;
+        } else if (isDefined(foundInitial)) {
+            return foundInitial;
         }
 
         const combined = RemoteData.Yes(ret as ValuesFrom<RemoteDatas>);
@@ -103,31 +128,27 @@ export namespace RemoteData {
         <Out>(
             onData: (value: T, isInvalidated: boolean) => Out,
             onEmpty: () => Out,
-            onFailed: (err: Error | unknown, retry: () => Promise<void>) => Out
+            onFailed: (err: ReadonlyArray<WeakError>, retry: () => Promise<void>) => Out
         ) => {
-            const recurse = (data: RemoteData<T>, isInvalidated: boolean): Out => {
-                switch (data.type) {
-                    case 'initial':
-                        return onEmpty();
+            switch (remoteData.type) {
+                case 'initial':
+                    return onEmpty();
 
-                    case 'pending':
-                        return onEmpty();
+                case 'pending':
+                    return onEmpty();
 
-                    case 'yes':
-                        return onData(data.value, isInvalidated);
+                case 'yes':
+                    return onData(remoteData.value, false);
 
-                    case 'no':
-                        return onFailed(data.error, data.retry);
+                case 'no':
+                    return onFailed(remoteData.errors, remoteData.retry);
 
-                    case 'invalidated-initial':
-                        return recurse(data.invalidated, true);
+                case 'invalidated-initial':
+                    return onData(remoteData.invalidated.value, true);
 
-                    case 'invalidated-pending':
-                        return recurse(data.invalidated, true);
-                }
-            };
-
-            return recurse(remoteData, false);
+                case 'invalidated-pending':
+                    return onData(remoteData.invalidated.value, true);
+            }
         };
 
     export const pendingStateFor = <T>(remoteData: RemoteData<T>): RemoteData<T> => {

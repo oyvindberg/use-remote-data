@@ -68,7 +68,7 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
         set(pendingState);
         return run().then(
             (value) => set(RemoteData.Yes(value), new Date()),
-            (error) => set(RemoteData.No(error, () => runAndUpdate(RemoteData.Pending)))
+            (error) => set(RemoteData.No([error], () => runAndUpdate(RemoteData.Pending)))
         );
     };
 

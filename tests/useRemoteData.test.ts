@@ -54,7 +54,7 @@ test('should handle failure and retries', async () => {
 
     expect(tester.result.current.current.type).toStrictEqual('no');
     const no = tester.result.current.current as RemoteData.No;
-    expect(no.error).toStrictEqual(error);
+    expect(no.errors).toStrictEqual([error]);
 
     await act(no.retry);
 

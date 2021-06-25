@@ -32,7 +32,7 @@ export namespace RemoteDataStore {
         }
 
         triggerUpdate = () => {
-            // if the product of all stores is a failure, dont invalidate any succeeding stores where we won't use the result
+            // if the product of all stores is a failure, dont invalidate any successful stores where we won't see the result
             if (this.current.type === 'no') {
                 return undefined;
             }
