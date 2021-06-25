@@ -78,7 +78,7 @@ export const useRemoteData = <T>(run: () => Promise<T>, options?: Options): Remo
     // this is what downstream components call within `useEffect`.
     // here we trigger fetching data if we are in an `initial` state
     const triggerUpdate = () => {
-        if ((!isUpdating && remoteData.type === 'initial') || remoteData.type === 'invalidated-initial') {
+        if ((!isUpdating && (remoteData.type === 'initial') || remoteData.type === 'invalidated-initial')) {
             isUpdating = true;
             return runAndUpdate(RemoteData.pendingStateFor(remoteData));
         }
