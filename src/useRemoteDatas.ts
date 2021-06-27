@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { isDefined } from './internal/isDefined';
+import { JsonKey } from './internal/JsonKey';
 import { MaybeCancel } from './internal/MaybeCancel';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
-import { RemoteDataStores } from "./RemoteDataStores";
+import { RemoteDataStores } from './RemoteDataStores';
 import { Options } from './useRemoteData';
 
 export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Options): RemoteDataStores<K, V> => {
     // current `RemoteData` state
-    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<K, RemoteData<V>>>(new Map());
+    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
     // used for invalidation. only update this when receiving new data
-    const [fetchedAts, setFetchedAts] = useState<ReadonlyMap<K, Date>>(new Map());
+    const [fetchedAts, setFetchedAts] = useState<ReadonlyMap<JsonKey<K>, Date>>(new Map());
 
-    const storeName = (key: K | undefined) => {
+    const storeName = (key: JsonKey<K> | undefined) => {
         if (isDefined(options?.storeName)) {
             if (key !== void 0) {
                 return `${options!.storeName}(${key})`;
@@ -34,7 +35,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
         []
     );
 
-    const set = (key: K, data: RemoteData<V>, fetchedAt?: Date): void => {
+    const set = (key: JsonKey<K>, data: RemoteData<V>, fetchedAt?: Date): void => {
         if (isMounted) {
             if (options?.debug) {
                 console.warn(`${storeName(key)} => `, data, fetchedAt);
@@ -59,20 +60,20 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
         }
     };
 
-    const runAndUpdate = (key: K, pendingState: RemoteData<V>): Promise<void> => {
-        set(key, pendingState);
+    const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V>): Promise<void> => {
+        set(jsonKey, pendingState);
         return run(key).then(
-            (value) => set(key, RemoteData.Yes(value), new Date()),
+            (value) => set(jsonKey, RemoteData.Yes(value), new Date()),
             (error) =>
                 set(
-                    key,
-                    RemoteData.No([error], () => runAndUpdate(key, RemoteData.Pending))
+                    jsonKey,
+                    RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
                 )
         );
     };
 
     // only allow first update each pass in case the store is shared
-    const isUpdating: Map<K, boolean> = new Map<K, boolean>();
+    const isUpdating: Map<JsonKey<K>, boolean> = new Map();
 
     /**
      * This is where we trigger all progress. It is initiated by client components at render-time within a `setEffect`.
@@ -85,34 +86,34 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
      * A `MaybeCancel` data structure is returned with enough information to cancel timeouts on unmount,
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
-    const triggerUpdate = (key: K): MaybeCancel => {
-        if (isUpdating.get(key)) {
+    const triggerUpdate = (key: K, jsonKey: JsonKey<K>): MaybeCancel => {
+        if (isUpdating.get(jsonKey)) {
             return undefined;
         }
-        isUpdating.set(key, true);
-        const remoteData = remoteDatas.get(key) || RemoteData.Initial;
+        isUpdating.set(jsonKey, true);
+        const remoteData = remoteDatas.get(jsonKey) || RemoteData.Initial;
 
         if (remoteData.type === 'initial' || remoteData.type === 'invalidated-initial') {
             // note that we let the `Promise` fly here, we don't have a way of cancelling that.
-            runAndUpdate(key, RemoteData.pendingStateFor(remoteData));
+            runAndUpdate(key, jsonKey, RemoteData.pendingStateFor(remoteData));
             return undefined;
         }
 
-        const fetchedAt = fetchedAts.get(key);
+        const fetchedAt = fetchedAts.get(jsonKey);
 
         // invalidation logic. only enabled if requested in `options.ttlMillis` and we have data to invalidate
         if (isDefined(options?.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
             const remainingMs = fetchedAt.getTime() + options!.ttlMillis - new Date().getTime();
 
             if (remainingMs <= 0) {
-                set(key, RemoteData.InvalidatedInitial(remoteData));
+                set(jsonKey, RemoteData.InvalidatedInitial(remoteData));
             } else {
                 if (options?.debug) {
-                    console.warn(`${storeName(key)}: will invalidate in ${remainingMs}`);
+                    console.warn(`${storeName(jsonKey)}: will invalidate in ${remainingMs}`);
                 }
 
                 const handle = setTimeout(
-                    () => set(key, RemoteData.InvalidatedInitial(remoteData)),
+                    () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
                     options?.ttlMillis
                 );
                 return () => clearTimeout(handle);
@@ -122,13 +123,17 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
         return undefined;
     };
 
-    const get = (key: K): RemoteDataStore<V> => ({
-        storeName: storeName(key),
-        get current() {
-            return remoteDatas.get(key) || RemoteData.Initial;
-        },
-        triggerUpdate: () => triggerUpdate(key),
-    });
+    const get = (key: K): RemoteDataStore<V> => {
+        const jsonKey = JsonKey.of(key);
+
+        return {
+            storeName: storeName(jsonKey),
+            get current() {
+                return remoteDatas.get(jsonKey) || RemoteData.Initial;
+            },
+            triggerUpdate: () => triggerUpdate(key, jsonKey),
+        };
+    };
 
     return {
         get,
