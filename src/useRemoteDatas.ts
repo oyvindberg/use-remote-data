@@ -131,6 +131,9 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
             get current() {
                 return remoteDatas.get(jsonKey) || RemoteData.Initial;
             },
+            invalidate: () => {
+                set(jsonKey, RemoteData.pendingStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
+            },
             triggerUpdate: () => triggerUpdate(key, jsonKey),
         };
     };

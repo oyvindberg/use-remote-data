@@ -4,6 +4,7 @@ import { MaybeCancel } from './internal/MaybeCancel';
 
 export interface RemoteDataStore<T> {
     readonly triggerUpdate: () => MaybeCancel;
+    readonly invalidate: () => void;
     readonly current: RemoteData<T>;
     // you can supply this through `Options` parameter to `useRemoteData`
     readonly storeName: string | undefined;
@@ -15,6 +16,7 @@ export namespace RemoteDataStore {
         triggerUpdate: () => undefined,
         current,
         storeName,
+        invalidate: () => {},
     });
 
     export type ValuesFrom<Stores extends [...RemoteDataStore<unknown>[]]> = {
@@ -54,5 +56,7 @@ export namespace RemoteDataStore {
                 .filter(isDefined)
                 .join(', ');
         }
+
+        invalidate = () => this.#stores.forEach((store) => store.invalidate());
     }
 }
