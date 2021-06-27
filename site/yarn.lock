@@ -8484,10 +8484,10 @@ use-latest@^1.0.0:
   dependencies:
     use-isomorphic-layout-effect "^1.0.0"
 
-use-remote-data@^0.2.3:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/use-remote-data/-/use-remote-data-0.2.3.tgz#7b6156832419790fc2e77064544e6bf4ac4354c1"
-  integrity sha512-oRI+J1WxDSATFGbb4VV6Dlt0WcXUDun8wYdFQcpxONugCwv7mxT57DeGycO3dMWoyhmqBdwv+oY+VN2o8yMLGg==
+use-remote-data@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/use-remote-data/-/use-remote-data-0.3.0.tgz#aaf5cd75ca8f88e7495bda4dd807f3580116dcfd"
+  integrity sha512-eTuMn1PpbtlQUoblgWCz2A3UhN+cnT1EcoaBIbRFnkD4lv/mpcWVRwIg92KRI2WHtLWkuY6hOhwRv0Gpw30n6Q==
 
 use@^3.1.0:
   version "3.1.1"
