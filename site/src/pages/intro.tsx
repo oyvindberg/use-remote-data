@@ -125,12 +125,12 @@ export default () => (
                 <Snippet snippet="handling_failure" />
             </div>
             <div>
-                <h2>Many stores</h2>
-                React hooks have <Link to={"https://reactjs.org/docs/hooks-rules.html"}>quite a few rules</Link> surrounding,
-                and the most limiting is that you need to call hooks in the same number and sequence each rendering pass.
-
-                This is just to show off that at least the easiest case works, but beware that anything more dynamic will cause some problems.
-                <Snippet snippet="many" />
+                <h2>Dynamic data</h2>
+                Do you want to fetch paginated data? fetch quite a few ids out of many? You're covered here too, by the
+                <code>useRemoteDatas</code> (plural) hook.
+                In this case you provide a function to a <code>Promise</code> which takes a parameter, and you ask
+                the resulting <code>RemoteDataStores</code> structure for the corresponding pages/ids.
+                <Snippet snippet="dynamic" />
             </div>
         </main>
     </Layout>

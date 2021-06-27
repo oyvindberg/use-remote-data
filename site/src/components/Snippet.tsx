@@ -20,6 +20,10 @@ export const Snippet = ({ snippet }) => {
 
     return (
         <div>
+          <SyntaxHighlighter language="typescript" style={style}>
+            {shortenedText}
+          </SyntaxHighlighter>
+
             <div>
                 <div>
                     <Link className="button button--secondary button--sm" onClick={() => setI(i + 1)}>
@@ -28,10 +32,6 @@ export const Snippet = ({ snippet }) => {
                 </div>
                 {i > 0 && <Component key={i} />}
             </div>
-
-            <SyntaxHighlighter language="typescript" style={style}>
-                {shortenedText}
-            </SyntaxHighlighter>
         </div>
     );
 };
