@@ -120,6 +120,9 @@ export namespace RemoteData {
         else return combined;
     };
 
+    export const maybe = <T>(remoteData: RemoteData<T>): T | null =>
+      fold(remoteData)(value => value, () => null, _ => null)
+
     /**
      * Given a `RemoteData`, reduce all the possible cases to one.
      */
