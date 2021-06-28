@@ -8,7 +8,6 @@ const freshData = (): Promise<number> =>
         setTimeout(() => resolve(i), 1000);
     });
 
-//START
 export const Component: React.FC = () => {
     const store = useRemoteData(freshData, { ttlMillis: 2000 });
 

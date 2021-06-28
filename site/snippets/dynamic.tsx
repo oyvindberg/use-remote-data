@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import * as React from 'react';
 import { RemoteDataStore, RemoteDataStores, useRemoteDatas, WithRemoteData } from 'use-remote-data';
 
@@ -15,7 +14,7 @@ export const Component: React.FC = () => {
     // provide `freshData` function
     const stores: RemoteDataStores<string, string> = useRemoteDatas(freshData, { ttlMillis: 1000 });
 
-    const [wanted, setWanted] = useState('a, b,d');
+  const [wanted, setWanted] = React.useState('a, b,d');
 
     const parsedWanted: readonly string[] =
       wanted
@@ -31,7 +30,8 @@ export const Component: React.FC = () => {
             Add/remove stores by editing the text, it's split by comma.
             <input value={wanted} onChange={(e) => setWanted(e.currentTarget.value)} />
             <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-                <Column rows={currentStores} />
+              <Column rows={currentStores} />
+              <Column rows={currentStores} />
             </div>
         </div>
     );

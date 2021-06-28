@@ -1,9 +1,7 @@
-import React from 'react';
-import SyntaxHighlighter from 'react-syntax-highlighter';
 import Link from '@docusaurus/Link';
 import useTheme from '@theme/hooks/useTheme';
-
-const StartComment = '//START\n';
+import React from 'react';
+import SyntaxHighlighter from 'react-syntax-highlighter';
 
 export const Snippet = ({ snippet }) => {
     // who knows how to get this auto refreshing on theme change, heh
@@ -13,16 +11,15 @@ export const Snippet = ({ snippet }) => {
         : require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-light').default;
 
     const text: string = require(`!raw-loader!../../snippets/${snippet}.tsx`).default as any;
-    const startIndex: number = text.indexOf(StartComment);
-    const shortenedText = startIndex === -1 ? text : text.substring(startIndex + StartComment.length);
+    const shortenedText = text;
     const { Component } = require(`../../snippets/${snippet}`);
     const [i, setI] = React.useState(0);
 
     return (
         <div>
-          <SyntaxHighlighter language="typescript" style={style}>
-            {shortenedText}
-          </SyntaxHighlighter>
+            <SyntaxHighlighter language="typescript" style={style}>
+                {shortenedText}
+            </SyntaxHighlighter>
 
             <div>
                 <div>
@@ -30,7 +27,11 @@ export const Snippet = ({ snippet }) => {
                         {i === 0 ? 'Run snippet' : 'Run again'}
                     </Link>
                 </div>
-                {i > 0 && <Component key={i} />}
+                {i > 0 && (
+                    <div style={{ padding: '1em', margin: '1em', backgroundColor: '#92E0D0FF' }}>
+                        <Component key={i} />
+                    </div>
+                )}
             </div>
         </div>
     );

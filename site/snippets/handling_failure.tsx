@@ -8,7 +8,6 @@ const freshData = (): Promise<number> =>
         setTimeout(() => resolve(i), 1000);
     });
 
-//START
 var j = 0;
 const failSometimes = (): Promise<number> =>
     new Promise((resolve, reject) => {

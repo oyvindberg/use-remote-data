@@ -1,7 +1,6 @@
 import * as React from 'react';
-import { RemoteDataStore, useRemoteData, WithRemoteData } from 'use-remote-data';
+import { useRemoteData, WithRemoteData } from 'use-remote-data';
 
-//START
 var i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
