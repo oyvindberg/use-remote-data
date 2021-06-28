@@ -121,7 +121,11 @@ export namespace RemoteData {
     };
 
     export const maybe = <T>(remoteData: RemoteData<T>): T | null =>
-      fold(remoteData)(value => value, () => null, _ => null)
+        fold(remoteData)(
+            (value) => value,
+            () => null,
+            (_) => null
+        );
 
     /**
      * Given a `RemoteData`, reduce all the possible cases to one.
@@ -162,6 +166,15 @@ export namespace RemoteData {
                 return RemoteData.InvalidatedPending(remoteData);
             default:
                 return RemoteData.Pending;
+        }
+    };
+
+    export const initialStateFor = <T>(remoteData: RemoteData<T>): RemoteData<T> => {
+        switch (remoteData.type) {
+            case 'yes':
+                return RemoteData.InvalidatedInitial(remoteData);
+            default:
+                return RemoteData.Initial;
         }
     };
 }

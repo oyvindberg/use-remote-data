@@ -7,18 +7,19 @@ import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
 import { Options } from './useRemoteData';
 
-export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Options): RemoteDataStores<K, V> => {
+export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options = {}): RemoteDataStores<K, V> => {
     // current `RemoteData` state
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
     // used for invalidation. only update this when receiving new data
     const [fetchedAts, setFetchedAts] = useState<ReadonlyMap<JsonKey<K>, Date>>(new Map());
+    const [deps, setDeps] = useState(options.dependencies);
 
     const storeName = (key: JsonKey<K> | undefined) => {
-        if (isDefined(options?.storeName)) {
-            if (key !== void 0) {
-                return `${options!.storeName}(${key})`;
+        if (isDefined(options.storeName)) {
+            if (key !== undefined) {
+                return `${options.storeName}(${key})`;
             }
-            return options!.storeName;
+            return options.storeName;
         }
         return undefined;
     };
@@ -27,7 +28,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
     let isMounted = true;
     useEffect(
         () => () => {
-            if (options?.debug) {
+            if (options.debug) {
                 console.warn(`${storeName(undefined)} unmounting`);
             }
             isMounted = false;
@@ -37,7 +38,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
 
     const set = (key: JsonKey<K>, data: RemoteData<V>, fetchedAt?: Date): void => {
         if (isMounted) {
-            if (options?.debug) {
+            if (options.debug) {
                 console.warn(`${storeName(key)} => `, data, fetchedAt);
             }
 
@@ -55,21 +56,21 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
                 newRemoteDatas.set(key, data);
                 return newRemoteDatas;
             });
-        } else if (options?.debug) {
+        } else if (options.debug) {
             console.warn(`${storeName(key)} dropped update because component has been unmounted`, data, fetchedAt);
         }
     };
 
     const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V>): Promise<void> => {
         set(jsonKey, pendingState);
-        return run(key).then(
-            (value) => set(jsonKey, RemoteData.Yes(value), new Date()),
-            (error) =>
+        return run(key)
+            .then((value) => set(jsonKey, RemoteData.Yes(value), new Date()))
+            .catch((error) =>
                 set(
                     jsonKey,
                     RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
                 )
-        );
+            );
     };
 
     // only allow first update each pass in case the store is shared
@@ -87,10 +88,27 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
     const triggerUpdate = (key: K, jsonKey: JsonKey<K>): MaybeCancel => {
+        // invalidate all on dependency change
+        if (JsonKey.of(deps) !== JsonKey.of(options.dependencies)) {
+            if (options.debug) {
+                console.warn(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, options.dependencies);
+            }
+            setDeps(options.dependencies);
+
+            const invalidatedRemoteDatas = new Map<JsonKey<K>, RemoteData<V>>();
+            remoteDatas.forEach((remoteData, key) =>
+                invalidatedRemoteDatas.set(key, RemoteData.initialStateFor(remoteData))
+            );
+            setRemoteDatas(invalidatedRemoteDatas);
+
+            return undefined;
+        }
+
         if (isUpdating.get(jsonKey)) {
             return undefined;
         }
         isUpdating.set(jsonKey, true);
+
         const remoteData = remoteDatas.get(jsonKey) || RemoteData.Initial;
 
         if (remoteData.type === 'initial' || remoteData.type === 'invalidated-initial') {
@@ -101,20 +119,20 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
 
         const fetchedAt = fetchedAts.get(jsonKey);
 
-        // invalidation logic. only enabled if requested in `options.ttlMillis` and we have data to invalidate
-        if (isDefined(options?.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
-            const remainingMs = fetchedAt.getTime() + options!.ttlMillis - new Date().getTime();
+        // non-dependency invalidation logic. only enabled if requested in `options.ttlMillis` and if we have data to invalidate
+        if (isDefined(options.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
+            const remainingMs = fetchedAt.getTime() + options.ttlMillis - new Date().getTime();
 
             if (remainingMs <= 0) {
                 set(jsonKey, RemoteData.InvalidatedInitial(remoteData));
             } else {
-                if (options?.debug) {
+                if (options.debug) {
                     console.warn(`${storeName(jsonKey)}: will invalidate in ${remainingMs}`);
                 }
 
                 const handle = setTimeout(
                     () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
-                    options?.ttlMillis
+                    options.ttlMillis
                 );
                 return () => clearTimeout(handle);
             }
@@ -132,7 +150,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options?: Opti
                 return remoteDatas.get(jsonKey) || RemoteData.Initial;
             },
             invalidate: () => {
-                set(jsonKey, RemoteData.pendingStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
+                set(jsonKey, RemoteData.initialStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
             },
             triggerUpdate: () => triggerUpdate(key, jsonKey),
         };
