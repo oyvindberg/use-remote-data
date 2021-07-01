@@ -11,13 +11,25 @@ export interface RemoteDataStore<T> {
 }
 
 export namespace RemoteDataStore {
-    // create a completely static store. Perfect for storybook and so on
-    const always = <T>(current: RemoteData<T>, storeName?: string): RemoteDataStore<T> => ({
+    // get a completely static store. Perfect for storybook and so on
+    export const always = <T>(current: RemoteData<T>, storeName?: string): RemoteDataStore<T> => ({
         triggerUpdate: () => undefined,
         current,
         storeName,
         invalidate: () => {},
     });
+
+    // get a version of the store which can be rendered immediately
+    export const orNull = <T>(store: RemoteDataStore<T>): RemoteDataStore<T | null> => {
+        return {
+            get current() {
+                return RemoteData.Yes(RemoteData.orNull(store.current));
+            },
+            invalidate: store.invalidate,
+            triggerUpdate: store.triggerUpdate,
+            storeName: store.storeName,
+        };
+    };
 
     export type ValuesFrom<Stores extends [...RemoteDataStore<unknown>[]]> = {
         [K in keyof Stores]: Stores[K] extends RemoteDataStore<infer O> ? O : never;
