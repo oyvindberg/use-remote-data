@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 
 interface Props<T> {
     store: RemoteDataStore<T>;
-    children: (value: T, isInvalidated: boolean) => JSX.Element;
+    children: (value: T, isInvalidated: boolean) => ReactNode;
 }
 
 /**
@@ -13,7 +13,7 @@ interface Props<T> {
  * It's expected that you copy/paste the component into your own code base and customize
  * rendering of spinners, errors messages and so on.
  */
-export function WithRemoteData<T>({ store, children }: Props<T>): JSX.Element {
+export function WithRemoteData<T>({ store, children }: Props<T>): ReactNode {
     // This triggers updating the data in the store when needed.
     // Apparently it needs to be within `useEffect` because it updates a state hook in a parent component
     // If you copy/paste this component you should keep this line as is
