@@ -5,7 +5,7 @@ import { MaybeCancel } from './internal/MaybeCancel';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
-import { Options } from './useRemoteData';
+import { Options } from './Options';
 
 const reactMajor = Number(version.split('.')[0]);
 
