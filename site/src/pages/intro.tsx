@@ -39,8 +39,9 @@ export default () => (
                         which specifies how to render once we have all the data we asked for by passing stores
                     </li>
                 </ul>
-                Out of the box this component renders dots when waiting for data. Expected usage is that you copy/paste
-                it into your codebase and adjust the rendering to suit your needs
+                Out of the box this component is useful but not pretty.
+                You're expected to either copy/paste `WithRemoteData` into your own app and customize it,
+                or wrap it in your own component which customizes pending and failure states.
                 <Snippet snippet="basic_usage" />
             </div>
             <br />
