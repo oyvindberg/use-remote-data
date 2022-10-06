@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, version } from 'react';
 import { isDefined } from './internal/isDefined';
 import { JsonKey } from './internal/JsonKey';
 import { MaybeCancel } from './internal/MaybeCancel';
@@ -6,6 +6,8 @@ import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
 import { Options } from './useRemoteData';
+
+const reactMajor = Number(version.split('.')[0])
 
 export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options = {}): RemoteDataStores<K, V> => {
     // current `RemoteData` state
@@ -24,20 +26,20 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         return undefined;
     };
 
-    // don't update state after component unmounted
-    let isMounted = true;
-    useEffect(
-        () => () => {
+    // for react 17: we're not allowed to update state after unmount
+    // for react 18: the unmounting happens immediately, but we're allowed to update whenever
+    let canUpdate = true;
+    if (reactMajor < 18) {
+        useEffect(() => () => {
             if (options.debug) {
                 console.warn(`${storeName(undefined)} unmounting`);
             }
-            isMounted = false;
-        },
-        []
-    );
+            canUpdate = false;
+        }, []);
+    }
 
     const set = (key: JsonKey<K>, data: RemoteData<V>, fetchedAt?: Date): void => {
-        if (isMounted) {
+        if (canUpdate) {
             if (options.debug) {
                 console.warn(`${storeName(key)} => `, data, fetchedAt);
             }
