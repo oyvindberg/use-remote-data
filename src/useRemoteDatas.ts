@@ -137,7 +137,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
 
                 const handle = setTimeout(
                     () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
-                    options.ttlMillis
+                    remainingMs + 1
                 );
                 return () => clearTimeout(handle);
             }
