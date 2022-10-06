@@ -7,7 +7,7 @@ import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
 import { Options } from './useRemoteData';
 
-const reactMajor = Number(version.split('.')[0])
+const reactMajor = Number(version.split('.')[0]);
 
 export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options = {}): RemoteDataStores<K, V> => {
     // current `RemoteData` state
@@ -30,12 +30,15 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
     // for react 18: the unmounting happens immediately, but we're allowed to update whenever
     let canUpdate = true;
     if (reactMajor < 18) {
-        useEffect(() => () => {
-            if (options.debug) {
-                console.warn(`${storeName(undefined)} unmounting`);
-            }
-            canUpdate = false;
-        }, []);
+        useEffect(
+            () => () => {
+                if (options.debug) {
+                    console.warn(`${storeName(undefined)} unmounting`);
+                }
+                canUpdate = false;
+            },
+            []
+        );
     }
 
     const set = (key: JsonKey<K>, data: RemoteData<V>, fetchedAt?: Date): void => {
