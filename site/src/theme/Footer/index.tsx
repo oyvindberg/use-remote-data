@@ -50,7 +50,7 @@ const FooterLogo = ({
 function Footer(): JSX.Element | null {
   const {footer} = useThemeConfig();
 
-  const {copyright, links = [], logo = {}} = footer || {};
+  const {copyright, links = [] as any, logo = {} as any} = footer || {};
   const sources = {
     light: useBaseUrl(logo.src),
     dark: useBaseUrl(logo.srcDark || logo.src),
@@ -68,7 +68,7 @@ function Footer(): JSX.Element | null {
       <div className="container">
         {links && links.length > 0 && (
           <div className="row footer__links">
-            {links.map((linkItem, i) => (
+            {links.map((linkItem: any, i: any) => (
               <div key={i} className="col footer__col">
                 {linkItem.title != null ? (
                   <div className="footer__title">{linkItem.title}</div>
@@ -77,7 +77,7 @@ function Footer(): JSX.Element | null {
                 Array.isArray(linkItem.items) &&
                 linkItem.items.length > 0 ? (
                   <ul className="footer__items">
-                    {linkItem.items.map((item, key) =>
+                    {linkItem.items.map((item: any, key: any) =>
                       item.html ? (
                         <li
                           key={key}

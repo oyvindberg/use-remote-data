@@ -1,24 +1,28 @@
 import Link from '@docusaurus/Link';
-import useTheme from '@theme/hooks/useTheme';
-import React from 'react';
+import { useThemeConfig } from '@docusaurus/theme-common';
+import React, { FC } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 
-export const Snippet = ({ snippet }) => {
+type Props = {
+    snippet: string;
+};
+
+export const Snippet: FC<Props> = ({ snippet }) => {
     // who knows how to get this auto refreshing on theme change, heh
-    const { isDarkTheme } = useTheme();
-    const style = isDarkTheme
-        ? require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-dark').default
-        : require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-light').default;
+    const { colorMode } = useThemeConfig();
+    const style =
+        colorMode.defaultMode == 'dark'
+            ? require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-dark').default
+            : require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-light').default;
 
     const text: string = require(`!raw-loader!../../snippets/${snippet}.tsx`).default as any;
-    const shortenedText = text;
     const { Component } = require(`../../snippets/${snippet}`);
     const [i, setI] = React.useState(0);
 
     return (
         <div>
             <SyntaxHighlighter language="typescript" style={style}>
-                {shortenedText}
+                {text}
             </SyntaxHighlighter>
 
             <div>
