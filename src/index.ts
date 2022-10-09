@@ -1,9 +1,11 @@
-export { DefaultErrorComponent, ErrorProps } from './DefaultErrorComponent';
+export { DefaultErrorComponent, type ErrorProps } from './DefaultErrorComponent';
 export { DefaultPendingComponent } from './DefaultPendingComponent';
-export { Options } from './Options';
+export { InvalidationStrategy } from './InvalidationStrategy';
+export { IsInvalidated } from './IsInvalidated';
+export { type Options } from './Options';
 export { RemoteData } from './RemoteData';
 export { RemoteDataStore } from './RemoteDataStore';
-export { RemoteDataStores } from './RemoteDataStores';
+export { type RemoteDataStores } from './RemoteDataStores';
 export { WithRemoteData } from './WithRemoteData';
 export { useRemoteData, useRemoteData as default } from './useRemoteData';
 export { useRemoteDatas } from './useRemoteDatas';
