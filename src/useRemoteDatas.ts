@@ -9,7 +9,7 @@ import { Options } from './Options';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options = {}): RemoteDataStores<K, V> => {
+export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> => {
     // current `RemoteData` state
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
     // used for invalidation. only update this when receiving new data
@@ -125,25 +125,28 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         const fetchedAt = fetchedAts.get(jsonKey);
 
         // non-dependency invalidation logic. only enabled if requested in `options.ttlMillis` and if we have data to invalidate
-        if (isDefined(options.ttlMillis) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
-            const remainingMs = fetchedAt.getTime() + options.ttlMillis - new Date().getTime();
+        if (isDefined(options.invalidation) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
+            const isInvalidated = options.invalidation.decide(remoteData.value, fetchedAt, new Date());
+            switch (isInvalidated.type) {
+                case 'invalidated':
+                    set(jsonKey, RemoteData.InvalidatedInitial(remoteData));
+                    return undefined;
+                case 'valid':
+                    return undefined;
+                case 'invalidate-in':
+                    if (options.debug) {
+                        console.warn(`${storeName(jsonKey)}: will invalidate in ${isInvalidated.millis}`);
+                    }
 
-            if (remainingMs <= 0) {
-                set(jsonKey, RemoteData.InvalidatedInitial(remoteData));
-            } else {
-                if (options.debug) {
-                    console.warn(`${storeName(jsonKey)}: will invalidate in ${remainingMs}`);
-                }
-
-                const handle = setTimeout(
-                    () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
-                    remainingMs + 1
-                );
-                return () => clearTimeout(handle);
+                    const handle = setTimeout(
+                        () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
+                        isInvalidated.millis
+                    );
+                    return () => clearTimeout(handle);
             }
+        } else {
+            return undefined;
         }
-
-        return undefined;
     };
 
     const get = (key: K): RemoteDataStore<V> => {

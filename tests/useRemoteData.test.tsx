@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/extend-expect';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { RemoteDataStore, useRemoteData, WithRemoteData } from '../src';
+import { RemoteDataStore, useRemoteData, WithRemoteData, InvalidationStrategy } from '../src';
 
 class TestPromise {
     i = 0;
@@ -72,7 +72,31 @@ test('should handle failure and retries', async () => {
 test('invalidation should work', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
-        const store = useRemoteData(testPromise.next, { ttlMillis: 10 });
+        const store = useRemoteData(testPromise.next, { invalidation: InvalidationStrategy.refetchAfterMillis(10) });
+        return (
+            <WithRemoteData store={store}>
+                {(num, isInvalidated) => (
+                    <span>
+                        num: {num}, isInvalidated: {isInvalidated.toString()}
+                    </span>
+                )}
+            </WithRemoteData>
+        );
+    };
+    render(<Test />);
+
+    await waitFor(() => screen.getByText('...'));
+    await waitFor(() => screen.getByText('num: 1, isInvalidated: false'));
+    await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
+    await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
+});
+
+test('polling should work', async () => {
+    const testPromise = new TestPromise();
+    const Test: React.FC = () => {
+        const store = useRemoteData(testPromise.next, {
+            invalidation: InvalidationStrategy.pollUntil((x) => x >= 2, 10),
+        });
         return (
             <WithRemoteData store={store}>
                 {(num, isInvalidated) => (
