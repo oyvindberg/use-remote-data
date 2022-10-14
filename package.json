@@ -18,6 +18,7 @@
         "build": "tsc",
         "test": "jest",
         "prettier": "prettier --write .",
+        "prettier-check": "prettier --check .",
         "publish-lib": "yarn test && rm -Rf lib && yarn build && yarn publish",
         "publish-site": "cd site && USE_SSH=true GIT_USER=oyvindberg node_modules/.bin/docusaurus deploy"
     },
