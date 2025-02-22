@@ -8825,10 +8825,10 @@ url-loader@^4.1.1:
     mime-types "^2.1.27"
     schema-utils "^3.0.0"
 
-use-remote-data@^0.5.1:
-  version "0.5.1"
-  resolved "https://registry.yarnpkg.com/use-remote-data/-/use-remote-data-0.5.1.tgz#dbcbbf671f4e1e5faa9c128050019cdfcf0f1d83"
-  integrity sha512-Z0UEtET7RoXCj7PoYb9rXf1EnZYVfyW2LuRcbbNvNhfeE5YFlOiv3MpgegC3H3SSA7L2ib+eUOSz0/6FvN6qqw==
+use-remote-data@0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/use-remote-data/-/use-remote-data-0.6.0.tgz#2c1d8a78c6c3a18597f63e724e4adb3075848d18"
+  integrity sha512-QvXopeCX87JYLs1ia0Asp3B/RZFAx3Y/Pq6FcQG4yba+FYLz7xigDEFaD8tLwzU+cBH6V5ZNdDmLLTDBtQhmfA==
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"
