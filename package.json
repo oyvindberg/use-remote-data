@@ -26,6 +26,7 @@
         "react": ">=17.0.2 <20.0.0"
     },
     "devDependencies": {
+        "@testing-library/dom": "^10.4.0",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
         "@types/jest": "^29.5.14",
