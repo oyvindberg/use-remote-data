@@ -23,24 +23,24 @@
         "publish-site": "cd site && USE_SSH=true GIT_USER=oyvindberg node_modules/.bin/docusaurus deploy"
     },
     "peerDependencies": {
-        "react": "^17.0.2"
+        "react": ">=17.0.2 <20.0.0"
     },
     "devDependencies": {
-        "@testing-library/jest-dom": "^5.14.1",
-        "@testing-library/react": "^12.0.0",
-        "@types/jest": "^29.1.1",
-        "@types/react": "^18.0.21",
-        "@types/react-dom": "^18.0.6",
-        "jest": "^29.1.2",
-        "jest-environment-jsdom": "^29.1.2",
-        "prettier": "^2.3.1",
-        "react": "^17.0.2",
-        "react-dom": "^17.0.2",
-        "rollup": "^2.52.1",
-        "ts-jest": "^29.0.3",
-        "ts-node": "^10.0.0",
-        "tslib": "^2.3.0",
-        "typescript": "^4.3.4"
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.2.0",
+        "@types/jest": "^29.5.14",
+        "@types/react": "^19.0.10",
+        "@types/react-dom": "^19.0.4",
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0",
+        "prettier": "^3.5.2",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "rollup": "^4.34.8",
+        "ts-jest": "^29.2.5",
+        "ts-node": "^10.9.2",
+        "tslib": "^2.8.1",
+        "typescript": "^5.7.3"
     },
     "dependencies": {}
 }
