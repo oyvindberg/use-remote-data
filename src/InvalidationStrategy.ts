@@ -25,7 +25,7 @@ export namespace InvalidationStrategy {
             }
 
             const retryIn = Math.max(fetchedAt.getTime() + waitMillis - now.getTime(), 1);
-            return IsInvalidated.InvalidateIn(retryIn);
+            return IsInvalidated.RefetchAfter(IsInvalidated.Invalid, retryIn);
         });
 
     /* always fetch value again after some time */
@@ -33,8 +33,8 @@ export namespace InvalidationStrategy {
         of<unknown>((_, fetchedAt, now) => {
             const remainingMs = fetchedAt.getTime() + validMillis - now.getTime();
             if (remainingMs <= 0) {
-                return IsInvalidated.Invalidated;
+                return IsInvalidated.Invalid;
             }
-            return IsInvalidated.InvalidateIn(remainingMs + 1);
+            return IsInvalidated.RefetchAfter(IsInvalidated.Valid, remainingMs + 1);
         });
 }

@@ -33,7 +33,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         useEffect(
             () => () => {
                 if (options.debug) {
-                    console.warn(`${storeName(undefined)} unmounting`);
+                    options.debug(`${storeName(undefined)} unmounting`);
                 }
                 canUpdate = false;
             },
@@ -44,7 +44,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
     const set = (key: JsonKey<K>, data: RemoteData<V>, fetchedAt?: Date): void => {
         if (canUpdate) {
             if (options.debug) {
-                console.warn(`${storeName(key)} => `, data, fetchedAt);
+                options.debug(`${storeName(key)} => `, data, fetchedAt);
             }
 
             // keep before setRemoteData to not trigger unnecessary invalidations
@@ -62,7 +62,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
                 return newRemoteDatas;
             });
         } else if (options.debug) {
-            console.warn(`${storeName(key)} dropped update because component has been unmounted`, data, fetchedAt);
+            options.debug(`${storeName(key)} dropped update because component has been unmounted`, data, fetchedAt);
         }
     };
 
@@ -96,7 +96,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         // invalidate all on dependency change
         if (JsonKey.of(deps) !== JsonKey.of(options.dependencies)) {
             if (options.debug) {
-                console.warn(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, options.dependencies);
+                options.debug(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, options.dependencies);
             }
             setDeps(options.dependencies);
 
@@ -124,25 +124,31 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
 
         const fetchedAt = fetchedAts.get(jsonKey);
 
-        // non-dependency invalidation logic. only enabled if requested in `options.ttlMillis` and if we have data to invalidate
+        // non-dependency invalidation logic. only enabled if requested in `options.invalidation` and if we have data to invalidate
         if (isDefined(options.invalidation) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
             const isInvalidated = options.invalidation.decide(remoteData.value, fetchedAt, new Date());
+
             switch (isInvalidated.type) {
-                case 'invalidated':
+                case 'invalid':
                     set(jsonKey, RemoteData.InvalidatedInitial(remoteData));
                     return undefined;
                 case 'valid':
                     return undefined;
-                case 'invalidate-in':
+                case 'retry-in':
                     if (options.debug) {
-                        console.warn(`${storeName(jsonKey)}: will invalidate in ${isInvalidated.millis}`);
+                        options.debug(`${storeName(jsonKey)}: will invalidate in ${isInvalidated.millis}`);
                     }
 
                     const handle = setTimeout(
                         () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
                         isInvalidated.millis
                     );
-                    return () => clearTimeout(handle);
+                    return () => {
+                        if (options.debug) {
+                            options.debug(`${storeName(jsonKey)}: cancelled invalidation on unmount`);
+                        }
+                        clearTimeout(handle);
+                    };
             }
         } else {
             return undefined;

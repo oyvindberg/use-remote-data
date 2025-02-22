@@ -2,7 +2,7 @@ import { DependencyList } from 'react';
 import { InvalidationStrategy } from './InvalidationStrategy';
 
 export interface Options<T> {
-    debug?: boolean;
+    debug?: Console['warn'];
     storeName?: string;
     invalidation?: InvalidationStrategy<T>;
     dependencies?: DependencyList;

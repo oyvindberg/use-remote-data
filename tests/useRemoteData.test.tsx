@@ -113,3 +113,40 @@ test('polling should work', async () => {
     await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
     await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
 });
+
+test('polling should stop on unmount', async () => {
+    class FailAtTwo {
+        i = 0;
+        next = (): Promise<number> => {
+            this.i += 1;
+            if (this.i == 2) {
+                Promise.reject(new Error('should not reach 2'));
+            }
+            return Promise.resolve(this.i);
+        };
+    }
+    const messages: string[] = [];
+    const testPromise = new FailAtTwo();
+    const Test: React.FC = () => {
+        const store = useRemoteData(testPromise.next, {
+            invalidation: InvalidationStrategy.pollUntil(() => false, 10),
+            debug: (str) => messages.push(str),
+        });
+        return (
+            <WithRemoteData store={store}>
+                {(num, isInvalidated) => (
+                    <span>
+                        num: {num}, isInvalidated: {isInvalidated.toString()}
+                    </span>
+                )}
+            </WithRemoteData>
+        );
+    };
+    const rendered = render(<Test />);
+
+    await waitFor(() => screen.getByText('...'));
+    await waitFor(() => screen.getByText('num: 1, isInvalidated: false'));
+    rendered.unmount();
+    if (testPromise.i == 2) throw 'polling did not stop';
+    expect(messages).toContain(`undefined: cancelled invalidation on unmount`);
+});
