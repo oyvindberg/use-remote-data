@@ -1,6 +1,6 @@
 {
     "name": "use-remote-data",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "description": "Promise handling for react. Principled, Boilerplate-free, Caching, Invalidating",
     "author": "Øyvind Raddum Berg",
     "homepage": "https://oyvindberg.github.io/use-remote-data/",
@@ -12,10 +12,10 @@
         "rest"
     ],
     "files": [
-        "lib"
+        "lib/src"
     ],
-    "module": "./lib/index.js",
-    "types": "./lib/index.d.ts",
+    "module": "./lib/src/index.js",
+    "types": "./lib/src/index.d.ts",
     "scripts": {
         "dev": "tsc --watch",
         "build": "tsc",
