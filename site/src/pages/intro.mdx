@@ -1,7 +1,56 @@
 import { Snippet } from '../components/Snippet';
 import typesafeCombine from '../../static/typesafe-combine.webm';
 
-# Getting started
+# Getting Started
+
+`use-remote-data` is a small library that provides a principled, type-safe way to manage asynchronous state in your React applications. It revolves around a **core state machine** represented by the `RemoteData` type and a corresponding `RemoteDataStore` that orchestrates fetching, caching, invalidation, and retries—all while staying strongly typed.
+
+---
+
+## The Core State Machine
+
+At the heart of this library is the **`RemoteData`** type.
+It captures all possible states of an async request in a single union:
+
+```ts
+export type RemoteData<T> =
+  | { type: 'initial' }
+  | { type: 'pending' }
+  | { type: 'no'; errors: ReadonlyArray<Error | unknown>; retry: () => Promise<void> }
+  | { type: 'yes'; value: T }
+  | { type: 'invalidated-initial'; invalidated: { type: 'yes'; value: T } }
+  | { type: 'invalidated-pending'; invalidated: { type: 'yes'; value: T } };
+```
+
+This state machine allows the library to cleanly handle the life cycle of any request:
+
+- **`initial`**: We haven’t started fetching yet (lazy load).
+- **`pending`**: A request is ongoing (fetch in progress).
+- **`no`**: The request failed (includes errors and a retry callback).
+- **`yes`**: The request succeeded (includes the fetched value).
+- **`invalidated-initial` & `invalidated-pending`**: Special states indicating we have stale data but want to refresh.
+
+By modeling states explicitly, React components can branch on them in a straightforward and type-safe manner.
+
+### The `RemoteDataStore<T>` Interface
+
+Each active request is wrapped in a **`RemoteDataStore<T>`**, which holds:
+
+```ts
+interface RemoteDataStore<T> {
+  readonly triggerUpdate: () => MaybeCancel;
+  readonly invalidate: () => void;
+  readonly current: RemoteData<T>;
+  readonly storeName?: string;
+}
+```
+
+- **`triggerUpdate()`**: Kick off or re-run the fetch if needed.
+- **`invalidate()`**: Mark the data as out-of-date.
+- **`current`**: The actual `RemoteData<T>` representing the current state.
+- **`storeName`**: Optional debug name for logging or dev tooling.
+
+---
 
 ## Installation
 
@@ -13,98 +62,199 @@ npm install use-remote-data
 yarn add use-remote-data
 ```
 
-## Basic usage
+---
 
-The entry point to the library is a React hook called `useRemoteData`, which takes one parameter: a function that produces a `Promise`. It needs to be a function (not a straight `Promise`) in case it fails and needs to be restarted.
+## Basic Usage
 
-According to the rules for React hooks, they can only be used within a component, as shown below.
+The primary entry point is the **`useRemoteData`** hook.
+It takes one parameter—a function that produces a `Promise`—and returns a `RemoteDataStore<T>`.
+Because we need the ability to retry, you must pass a function rather than a direct `Promise`.
 
-The value returned from `useRemoteData` is a `RemoteDataStore<T>`, which tracks the current state of the request.
-
-The last step in this example is the usage of a provided React component called `WithRemoteData`. This component needs two props:
-
-1. The store returned by `useRemoteData`.
-2. A [render prop](https://reactjs.org/docs/render-props.html) that specifies how to render once the data is available.
-
-Out of the box, `WithRemoteData` is useful but not very pretty. You’re encouraged to either copy/paste `WithRemoteData` into your own codebase and customize it, or wrap it in a component that provides custom UI for pending and failure states.
+- According to [React Hooks rules](https://reactjs.org/docs/hooks-rules.html), the hook must be used inside a component.
+- The object returned by `useRemoteData` is our `RemoteDataStore<T>`.
 
 <Snippet snippet="basic_usage" />
 
-## Combining stores
+### The `<WithRemoteData>` Component
 
-One of the strengths of `RemoteDataStore` is its composability.
-You can take multiple `RemoteDataStore` instances—each representing a separate request—and combine them into a single store. The combined store moves through the familiar lifecycle (`Pending`, `Yes`, `No`) based on the states of the individual stores:
+The library provides a small helper component called `WithRemoteData` for convenience. It expects two props:
 
-- If *any* of the underlying stores is `RemoteData.Pending`, the combined store is `Pending`.
-- If *all* of the stores are `RemoteData.Yes`, the combined store provides a tuple of their results.
-- If *any* store fails, the combined store fails. When the user clicks “retry,” only the store(s) that failed will be retried; the others remain intact.
+1. **`store`**: The `RemoteDataStore` returned by `useRemoteData`.
+2. **`render`**: A [render prop](https://reactjs.org/docs/render-props.html) that receives your successfully loaded data (along with an `isInvalidated` boolean).
 
-This approach keeps your data loading logic organized and type-safe. In the render prop for `WithRemoteData`, you can use [tuple destructuring](https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c) to seamlessly access each store’s result, and TypeScript tooling (including IntelliJ) will correctly infer and highlight the types for every element in the tuple.
+Out of the box, `WithRemoteData` handles loading and error states but is visually minimal.
+You can copy it directly into your codebase
+or wrap it to provide custom styling and behavior for pending and failure states.
+
+---
+
+## Combining Stores
+
+One of the library’s most powerful patterns is combining multiple requests.
+If you have two or more `RemoteDataStore`s,
+you can merge them into a single store that represents all requests in flight.
+This is done via `RemoteDataStore.all(...)`:
+
+```ts
+const combinedStore = RemoteDataStore.all(store1, store2, store3);
+```
+
+Under the hood, the combined store uses the `RemoteData.all(...)` function, which:
+
+- Returns `Pending` if *any* constituent store is `Pending`.
+- Returns `No` if *any* store fails. A single “retry” will only re-fetch the failing requests.
+- Returns `Yes` with a tuple `[value1, value2, value3]` if *all* succeed.
+- Manages invalidation states if any store becomes invalidated.
+
+In a render prop, you can destructure the results:
+
+```jsx
+<WithRemoteData
+  store={combinedStore}
+  render={([res1, res2, res3], isInvalidated) => {
+    // all data is loaded; res1, res2, res3 are typed and ready to use
+    return <MyCombinedView data1={res1} data2={res2} data3={res3} />;
+  }}
+/>
+```
+
+Out of the box, TypeScript will infer correct tuple types for you,
+ensuring each `resN` matches the request it corresponds to.
 
 <Snippet snippet="combine" />
 
-### A note about TypeScript tooling
+#### A Note on TypeScript Tooling
 
-The TypeScript compiler (and IDEs like IntelliJ) understands the combined store’s shape perfectly. You can hold the <kbd>Ctrl</kbd> (or <kbd>Command</kbd> on macOS) key and hover over the tuple items to see their exact types.
+The TypeScript compiler (and IDEs like IntelliJ) fully understands this combined store.
+You can hover over the tuple items (often with <kbd>Ctrl</kbd> or <kbd>Command</kbd>) to see precise type information.
 
 <video autoPlay controls muted src={typesafeCombine}></video>
 
-## Refreshing data
+#### Parallel vs. Sequential Fetching
 
-`use-remote-data` supports seamless invalidation and refreshing of data by specifying the optional `invalidation` parameter to `useRemoteData`. You can define an invalidation strategy, for example how many milliseconds the data is considered valid after receiving it.
+When your app renders data from multiple `RemoteDataStore` instances, they will initiate their requests in parallel if the data is missing or old.
 
-Once the data is deemed invalidated, you’re notified via the second parameter, `isInvalidated`, in the render prop of `WithRemoteData`. You could, for example, render the old data in gray or disabled style while fresh data is fetched.
+This parallel behavior ensures quicker overall loading times when you need multiple pieces of data at once.
 
-Note that `RemoteDataStore` is *lazy*: values are invalidated and refreshed only while the data is in use by a component. However, on the first render when the component re-mounts, the invalidation check occurs and you’ll be informed via `isInvalidated` as usual.
+If you need to fetch data in a specific order, you can achieve this by nesting `WithData` inside `WithData`,
+so you construct a "fake" dependency.
+
+---
+
+## Refreshing Data (Invalidation)
+
+Sometimes data becomes out-of-date.
+supports “invalidation” through an optional `invalidation` parameter on the hook.
+An **`InvalidationStrategy<T>`** is a small object that decides whether to keep data or mark it stale.
+For example:
+
+```ts
+{
+  invalidation: InvalidationStrategy.refetchAfterMillis(10_000);
+}
+```
+
+If the data is older than 10 seconds, the store automatically transitions into one of the `invalidated-*` states.
+In the `<WithRemoteData>` render prop,
+you can check the second argument (`isInvalidated`)
+to decide whether to let the user see old data or a loading indicator.
 
 <Snippet snippet="invalidation" />
 
-### Only sometimes?
+### Only Sometimes?
 
-If you want to toggle auto-refreshing on or off, just set the `invalidation` parameter accordingly.
+You can enable or disable invalidation dynamically by swapping the `invalidation` strategy in or out. For instance:
 
 <Snippet snippet="invalidation_sometimes" />
 
-## Sharing data with child components
+---
 
-A very common use case involves an application with multiple routes, each needing different subsets of data while retaining as much data as possible in cache when users navigate back and forth.
+## Sharing Data with Child Components
 
-`use-remote-data` supports this by design because `RemoteDataStore` is *lazy* and *caching*. You can define all relevant data stores high up in the component hierarchy, and data lifetimes will naturally follow component lifecycles. You can pass the same store object to any number of child components without causing additional fetches.
+A common pattern is to fetch data high in your component tree and share it among multiple routes or components,
+leveraging built-in caching so that each route doesn’t refetch unnecessarily.
+
+Since `RemoteDataStore` is both *lazy* and *caching*, you can pass the same store to multiple children.
+Data is fetched only once, and the results remain in memory as long as a store is in use.
 
 <Snippet snippet="use_twice" />
 
-### Should I pass `RemoteDataStore<T>` or just `T`?
+### Should I Pass `RemoteDataStore<T>` or Just `T`?
 
-There is a semantic difference:
+There’s a subtle difference:
 
-> *Can this component render without the data?*
+> *Does the child component need to render anything while data is still loading?*
 
-For components that need to render something before data is loaded (e.g., an outline or skeleton UI), you might accept the full `RemoteDataStore` in props.
+- If yes, consider passing a `RemoteDataStore<T>` so the child can handle loading/failure states.
+- Otherwise, if the parent already handles loading and passes down final data, just pass `T`.
 
-In many other cases, it’s simpler to pass the value (`T`) once it has been fetched.
+---
 
-## Handling failure
+## Handling Failure and Retries
 
-Another key feature of `use-remote-data` is principled error handling with built-in retry functionality. Often, developers do some ad-hoc error handling, but fewer implement retries in a systematic way.
+Good error handling is a first-class concern.
+If a `Promise` fails, the store moves into the `No` state and carries an `errors` array plus a `retry()` function.
+Calling `retry()` restarts only the failing requests, preserving any successful ones.
 
-This example creates a `Promise` that fails every tenth time it’s called. That store is combined with another that never fails. Hit *retry* a few times to see how they interact.
+For example, you could simulate an endpoint that fails randomly:
 
 <Snippet snippet="handling_failure" />
 
-## Dynamic data
+Within `<WithRemoteData>`, you can conditionally display a retry button when in the `No` state.
 
-If you need to fetch paginated data or multiple IDs from a large set, `useRemoteDatas` (plural) has you covered. In this hook, you provide a function that returns a `Promise` which accepts a parameter, and you request data for specific pages or IDs from the resulting `RemoteDataStores`.
+---
+
+## Dynamic Data
+
+If you need parameterized requests—like paginated lists
+or fetching multiple resource IDs—use the **`useRemoteDatas`** hook.
+It returns an object with a `.get(key)` method for each distinct data slice.
+
+```tsx
+const itemsStore = useRemoteDatas(
+  (page: number) => fetch(`/api/items?page=${page}`).then((res) => res.json())
+);
+
+const firstPageStore = itemsStore.get(1);
+const secondPageStore = itemsStore.get(2);
+```
+
+This creates independent `RemoteDataStore` objects for each page, all managed under one “dynamic” hook.
 
 <Snippet snippet="dynamic" />
 
-## Invalidate on dependency change
+---
 
-`use-remote-data` follows the spirit of React’s `useEffect` by supporting an array of dependencies. When a change is detected in that dependency array, the data is automatically invalidated. (Currently, the comparison is based on the `JSON.stringify` output of the dependencies.)
+## Invalidate on Dependency Change
+
+`useRemoteData` and `useRemoteDatas` let you provide a `dependencies` array (similar to React’s `useEffect`):
+
+```tsx
+useRemoteData(() => fetchData(), {
+  dependencies: [props.userId, otherValue],
+});
+```
+
+When the dependency array changes, the store invalidates automatically, and `triggerUpdate()` will re-fetch if needed.
+(Currently, it compares dependencies by `JSON.stringify`.)
 
 <Snippet snippet="invalidation_dependencies" />
 
-## Updates
+---
 
-Life isn’t just read-only. Here’s an example of sending data:
+## Updates (Write Operations)
+
+Your application might need to send data back to the server.
+While `use-remote-data` focuses on read operations,
+you can still integrate writes by calling out to the server in your components.
+After a successful write,
+call `invalidate()` or `triggerUpdate()` to refresh any store that depends on the changed data.
 
 <Snippet snippet="create" />
+
+---
+
+## Conclusion
+
+`use-remote-data` provides a comprehensive, type-safe approach to async state management in React.
+It builds on a clear state machine (`RemoteData`), robust invalidation (`InvalidationStrategy`), and fully typed store composition.
