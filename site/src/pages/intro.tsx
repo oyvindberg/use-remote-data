@@ -2,6 +2,7 @@ import * as React from 'react';
 import Layout from '@theme/Layout';
 import { Snippet } from '../components/Snippet';
 import Link from '@docusaurus/Link';
+const typesafeCombine = require('../../static/typesafe-combine.mp4').default
 
 export default () => (
     <Layout title={`Getting started`} description="Getting started">
@@ -69,7 +70,7 @@ export default () => (
                 down.
                 <br />
                 <br />
-                <video autoPlay={true} controls={true} muted={true} src="typesafe-combine.mp4" />
+                <video autoPlay={true} controls={true} muted={true} src={typesafeCombine} />
             </div>
             <br />
             <br />
