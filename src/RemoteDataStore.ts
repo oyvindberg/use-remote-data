@@ -85,7 +85,12 @@ export namespace RemoteDataStore {
         }
 
         get current(): RemoteData.Yes<T | null> {
-            return RemoteData.Yes(RemoteData.orNull(this.#store.current));
+            const orNulled: [T, Date] | null = RemoteData.orNull(this.#store.current);
+            if (orNulled === null) {
+                return RemoteData.Yes(null, RemoteData.Epoch);
+            } else {
+                return RemoteData.Yes(...orNulled);
+            }
         }
 
         get storeName() {

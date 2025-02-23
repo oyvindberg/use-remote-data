@@ -9,6 +9,8 @@ export type RemoteData<T> =
     | RemoteData.InvalidatedPending<T>;
 
 export namespace RemoteData {
+    export const Epoch = new Date(0);
+
     // unfortunately you can fail a `Promise` with anything. It's often an `Error`, though
     export type WeakError = Error | unknown;
 
@@ -36,11 +38,12 @@ export namespace RemoteData {
         readonly retry: () => Promise<void>;
     }
 
-    export const Yes = <T>(value: T): Yes<T> => ({ type: 'yes', value });
+    export const Yes = <T>(value: T, updatedAt: Date): Yes<T> => ({ type: 'yes', value, updatedAt });
 
     export interface Yes<T> {
         readonly type: 'yes';
         readonly value: T;
+        readonly updatedAt: Date;
     }
 
     export const InvalidatedInitial = <T>(invalidated: RemoteData.Yes<T>): InvalidatedInitial<T> => ({
@@ -74,6 +77,7 @@ export namespace RemoteData {
     ): RemoteData<ValuesFrom<RemoteDatas>> => {
         // state-of-the-art typescript: typed on the outside, untyped on the inside
         const ret: unknown[] = [];
+        let updatedAt: Date = Epoch;
         let isInvalidated = false;
         let foundNo: RemoteData.No[] = [];
         let foundPending: RemoteData.Pending | undefined = undefined;
@@ -82,14 +86,17 @@ export namespace RemoteData {
         for (const remoteData of remoteDatas) {
             switch (remoteData.type) {
                 case 'yes':
+                    if (remoteData.updatedAt > updatedAt) {
+                        updatedAt = remoteData.updatedAt;
+                    }
                     ret.push(remoteData.value);
                     break;
                 case 'invalidated-initial':
-                    isInvalidated = true;
-                    ret.push(remoteData.invalidated.value);
-                    break;
                 case 'invalidated-pending':
                     isInvalidated = true;
+                    if (remoteData.invalidated.updatedAt > updatedAt) {
+                        updatedAt = remoteData.invalidated.updatedAt;
+                    }
                     ret.push(remoteData.invalidated.value);
                     break;
                 case 'initial':
@@ -114,15 +121,15 @@ export namespace RemoteData {
             return foundInitial;
         }
 
-        const combined = RemoteData.Yes(ret as ValuesFrom<RemoteDatas>);
+        const combined = RemoteData.Yes(ret as ValuesFrom<RemoteDatas>, updatedAt);
 
         if (isInvalidated) return RemoteData.InvalidatedPending(combined);
         else return combined;
     };
 
-    export const orNull = <T>(remoteData: RemoteData<T>): T | null =>
+    export const orNull = <T>(remoteData: RemoteData<T>): [T, Date] | null =>
         fold(remoteData)(
-            (value) => value,
+            (value, _, updatedAt) => [value, updatedAt],
             () => null,
             (_) => null
         );
@@ -133,28 +140,24 @@ export namespace RemoteData {
     export const fold =
         <T>(remoteData: RemoteData<T>) =>
         <Out>(
-            onData: (value: T, isInvalidated: boolean) => Out,
+            onData: (value: T, isInvalidated: boolean, updatedAt: Date) => Out,
             onEmpty: () => Out,
             onFailed: (err: ReadonlyArray<WeakError>, retry: () => Promise<void>) => Out
         ) => {
             switch (remoteData.type) {
                 case 'initial':
-                    return onEmpty();
-
                 case 'pending':
                     return onEmpty();
 
                 case 'yes':
-                    return onData(remoteData.value, false);
+                    return onData(remoteData.value, false, remoteData.updatedAt);
 
                 case 'no':
                     return onFailed(remoteData.errors, remoteData.retry);
 
                 case 'invalidated-initial':
-                    return onData(remoteData.invalidated.value, true);
-
                 case 'invalidated-pending':
-                    return onData(remoteData.invalidated.value, true);
+                    return onData(remoteData.invalidated.value, true, remoteData.invalidated.updatedAt);
             }
         };
 
@@ -187,11 +190,11 @@ export namespace RemoteData {
             case 'no':
                 return RemoteData.No(remoteData.errors, remoteData.retry);
             case 'yes':
-                return RemoteData.Yes(f(remoteData.value));
+                return RemoteData.Yes(f(remoteData.value), remoteData.updatedAt);
             case 'invalidated-initial':
-                return RemoteData.InvalidatedInitial(RemoteData.Yes(f(remoteData.invalidated.value)));
+                return RemoteData.InvalidatedInitial(RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt));
             case 'invalidated-pending':
-                return RemoteData.InvalidatedPending(RemoteData.Yes(f(remoteData.invalidated.value)));
+                return RemoteData.InvalidatedPending(RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt));
         }
     };
 }

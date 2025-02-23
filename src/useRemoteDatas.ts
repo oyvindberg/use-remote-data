@@ -12,8 +12,6 @@ const reactMajor = Number(version.split('.')[0]);
 export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> => {
     // current `RemoteData` state
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
-    // used for invalidation. only update this when receiving new data
-    const [fetchedAts, setFetchedAts] = useState<ReadonlyMap<JsonKey<K>, Date>>(new Map());
     const [deps, setDeps] = useState(options.dependencies);
 
     const storeName = (key: JsonKey<K> | undefined) => {
@@ -41,19 +39,10 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         );
     }
 
-    const set = (key: JsonKey<K>, data: RemoteData<V>, fetchedAt?: Date): void => {
+    const set = (key: JsonKey<K>, data: RemoteData<V>): void => {
         if (canUpdate) {
             if (options.debug) {
-                options.debug(`${storeName(key)} => `, data, fetchedAt);
-            }
-
-            // keep before setRemoteData to not trigger unnecessary invalidations
-            if (isDefined(fetchedAt)) {
-                setFetchedAts((oldFetchedAts) => {
-                    const newFetchedAts = new Map(oldFetchedAts);
-                    newFetchedAts.set(key, fetchedAt);
-                    return newFetchedAts;
-                });
+                options.debug(`${storeName(key)} => `, data);
             }
 
             setRemoteDatas((oldRemoteDatas) => {
@@ -62,14 +51,14 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
                 return newRemoteDatas;
             });
         } else if (options.debug) {
-            options.debug(`${storeName(key)} dropped update because component has been unmounted`, data, fetchedAt);
+            options.debug(`${storeName(key)} dropped update because component has been unmounted`, data);
         }
     };
 
     const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V>): Promise<void> => {
         set(jsonKey, pendingState);
         return run(key)
-            .then((value) => set(jsonKey, RemoteData.Yes(value), new Date()))
+            .then((value) => set(jsonKey, RemoteData.Yes(value, new Date())))
             .catch((error) =>
                 set(
                     jsonKey,
@@ -122,11 +111,9 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
             return undefined;
         }
 
-        const fetchedAt = fetchedAts.get(jsonKey);
-
         // non-dependency invalidation logic. only enabled if requested in `options.invalidation` and if we have data to invalidate
-        if (isDefined(options.invalidation) && remoteData.type === 'yes' && isDefined(fetchedAt)) {
-            const isInvalidated = options.invalidation.decide(remoteData.value, fetchedAt, new Date());
+        if (isDefined(options.invalidation) && remoteData.type === 'yes') {
+            const isInvalidated = options.invalidation.decide(remoteData.value, remoteData.updatedAt, new Date());
 
             switch (isInvalidated.type) {
                 case 'invalid':
