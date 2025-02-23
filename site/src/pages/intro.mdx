@@ -3,7 +3,23 @@ import typesafeCombine from '../../static/typesafe-combine.webm';
 
 # Getting Started
 
-`use-remote-data` is a small library that provides a principled, type-safe way to manage asynchronous state in your React applications. It revolves around a **core state machine** represented by the `RemoteData` type and a corresponding `RemoteDataStore` that orchestrates fetching, caching, invalidation, and retries—all while staying strongly typed.
+`use-remote-data` is a small library that provides a principled, type-safe way to manage asynchronous state in your React applications.
+It revolves around a **core state machine** represented by the `RemoteData` type and a corresponding
+`RemoteDataStore` that orchestrates fetching,
+caching, invalidation,
+and retries—all while staying strongly typed.
+
+---
+
+## Installation
+
+```bash
+npm install use-remote-data
+```
+
+```bash
+yarn add use-remote-data
+```
 
 ---
 
@@ -18,8 +34,8 @@ export type RemoteData<T> =
   | { type: 'pending' }
   | { type: 'no'; errors: ReadonlyArray<Error | unknown>; retry: () => Promise<void> }
   | { type: 'yes'; value: T }
-  | { type: 'invalidated-initial'; invalidated: { type: 'yes'; value: T } }
-  | { type: 'invalidated-pending'; invalidated: { type: 'yes'; value: T } };
+  | { type: 'invalidated-initial'; invalidated: T }
+  | { type: 'invalidated-pending'; invalidated: T };
 ```
 
 This state machine allows the library to cleanly handle the life cycle of any request:
@@ -28,39 +44,10 @@ This state machine allows the library to cleanly handle the life cycle of any re
 - **`pending`**: A request is ongoing (fetch in progress).
 - **`no`**: The request failed (includes errors and a retry callback).
 - **`yes`**: The request succeeded (includes the fetched value).
-- **`invalidated-initial` & `invalidated-pending`**: Special states indicating we have stale data but want to refresh.
+- **`invalidated-initial`**: We have stale data but haven’t started fetching.
+- **`invalidated-pending`**: We have stale data and are fetching an update.
 
 By modeling states explicitly, React components can branch on them in a straightforward and type-safe manner.
-
-### The `RemoteDataStore<T>` Interface
-
-Each active request is wrapped in a **`RemoteDataStore<T>`**, which holds:
-
-```ts
-interface RemoteDataStore<T> {
-  readonly triggerUpdate: () => MaybeCancel;
-  readonly invalidate: () => void;
-  readonly current: RemoteData<T>;
-  readonly storeName?: string;
-}
-```
-
-- **`triggerUpdate()`**: Kick off or re-run the fetch if needed.
-- **`invalidate()`**: Mark the data as out-of-date.
-- **`current`**: The actual `RemoteData<T>` representing the current state.
-- **`storeName`**: Optional debug name for logging or dev tooling.
-
----
-
-## Installation
-
-```bash
-npm install use-remote-data
-```
-
-```bash
-yarn add use-remote-data
-```
 
 ---
 
@@ -183,22 +170,23 @@ There’s a subtle difference:
 
 ## Handling Failure and Retries
 
-Good error handling is a first-class concern.
-If a `Promise` fails, the store moves into the `No` state and carries an `errors` array plus a `retry()` function.
-Calling `retry()` restarts only the failing requests, preserving any successful ones.
+Another defining feature of `use-remote-data` is the principled error handling and the retry
+functionality.
+Developers typically make an ad-hoc attempt at the former, while not many have the
+discipline to also do the latter.
 
-For example, you could simulate an endpoint that fails randomly:
+This example creates a `Promise` which fails every tenth time it is called.
+The sometimes-failing store is combined with another store which never fails,
+and you should hit *retry* a few times to see the interaction.
 
 <Snippet snippet="handling_failure" />
-
-Within `<WithRemoteData>`, you can conditionally display a retry button when in the `No` state.
 
 ---
 
 ## Dynamic Data
 
 If you need parameterized requests—like paginated lists
-or fetching multiple resource IDs—use the **`useRemoteDatas`** hook.
+or fetching multiple resource IDs—use the **`useRemoteDatas`** (plural) hook.
 It returns an object with a `.get(key)` method for each distinct data slice.
 
 ```tsx
@@ -210,7 +198,7 @@ const firstPageStore = itemsStore.get(1);
 const secondPageStore = itemsStore.get(2);
 ```
 
-This creates independent `RemoteDataStore` objects for each page, all managed under one “dynamic” hook.
+This creates independent `RemoteDataStore` objects for each page, all managed under one `RemoteDataStores` instance.
 
 <Snippet snippet="dynamic" />
 

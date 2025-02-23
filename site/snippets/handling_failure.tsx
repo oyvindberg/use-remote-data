@@ -17,8 +17,14 @@ const failSometimes = (): Promise<number> =>
     });
 
 export const Component: React.FC = () => {
-    const one = useRemoteData(freshData, { invalidation: InvalidationStrategy.refetchAfterMillis(1000) });
-    const two = useRemoteData(failSometimes, { invalidation: InvalidationStrategy.refetchAfterMillis(100) });
+    const one = useRemoteData(
+        freshData,
+        { invalidation: InvalidationStrategy.refetchAfterMillis(1000) }
+    );
+    const two = useRemoteData(
+        failSometimes,
+        { invalidation: InvalidationStrategy.refetchAfterMillis(100) })
+    ;
 
     return <WithRemoteData store={RemoteDataStore.all(one, two)}>
         {([num1, num2]) => <span>{num1} - {num2}</span>}
