@@ -8,9 +8,6 @@ type Props = {
 };
 
 export const Snippet: FC<Props> = ({ snippet }) => {
-    // who knows how to get this auto refreshing on theme change, heh
-    const { colorMode } = useThemeConfig();
-
     const text: string = require(`!raw-loader!../../snippets/${snippet}.tsx`).default as any;
     const { Component } = require(`../../snippets/${snippet}`);
     const [i, setI] = React.useState(0);
@@ -28,7 +25,7 @@ export const Snippet: FC<Props> = ({ snippet }) => {
                     </Link>
                 </div>
                 {i > 0 && (
-                    <div style={{ padding: '1em', margin: '1em', backgroundColor: '#92E0D0FF' }}>
+                    <div style={{ padding: '1em', margin: '1em', backgroundColor: '#b8e092', color: 'black' }}>
                         <Component key={i} />
                     </div>
                 )}
