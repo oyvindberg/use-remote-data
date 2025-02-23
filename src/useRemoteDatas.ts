@@ -13,7 +13,7 @@ const reactMajor = Number(version.split('.')[0]);
 export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> => {
     // current `RemoteData` state
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
-    const [deps, setDeps] = useState(options.dependencies);
+    const [deps, setDeps] = useState(JsonKey.of(options.dependencies));
 
     const storeName = (key: JsonKey<K> | undefined) => {
         if (isDefined(options.storeName)) {
@@ -95,11 +95,12 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
      */
     const triggerUpdate = (key: K, jsonKey: JsonKey<K>): MaybeCancel => {
         // invalidate all on dependency change
-        if (JsonKey.of(deps) !== JsonKey.of(options.dependencies)) {
+        const currentDeps = JsonKey.of(options.dependencies);
+        if (deps !== currentDeps) {
             if (options.debug) {
-                options.debug(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, options.dependencies);
+                options.debug(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, currentDeps);
             }
-            setDeps(options.dependencies);
+            setDeps(currentDeps);
 
             const invalidatedRemoteDatas = new Map<JsonKey<K>, RemoteData<V>>();
             remoteDatas.forEach((remoteData, key) =>
