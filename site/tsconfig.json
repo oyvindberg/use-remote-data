@@ -2,7 +2,8 @@
   "extends": "@tsconfig/docusaurus/tsconfig.json",
   "include": [
     "src/",
-    "site/"
+    "site/",
+    "snippets/",
   ],
   "compilerOptions": {
     "jsx": "react-jsx",

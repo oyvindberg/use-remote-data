@@ -76,8 +76,8 @@ export default () => (
             <div>
                 <h2>Refreshing data</h2>
                 <code>use-remote-data</code> supports seamless invalidation and refreshing of data, by specifying the
-                optional<code>ttlMillis</code> parameter to <code>use-remote-data</code>. You specify how many
-                milliseconds the data is valid after it is received.
+                optional <code>invalidation</code> parameter to <code>use-remote-data</code>. You specify an invalidation
+                strategy, with for instance how many milliseconds the data is valid after it is received.
                 <br />
                 <br />
                 Once the data is deemed invalidated, you are informed through the second <code>isInvalidated</code>
@@ -139,7 +139,8 @@ export default () => (
             <div>
                 <h2>Dynamic data</h2>
                 Do you want to fetch paginated data? fetch quite a few ids out of many? You're covered here too, by the
-                <code>useRemoteDatas</code> (plural) hook. In this case you provide a function to a <code>Promise</code>{' '}
+                <code>useRemoteDatas</code> (plural) hook. In this case you provide a function to
+                a <code>Promise</code>{' '}
                 which takes a parameter, and you ask the resulting <code>RemoteDataStores</code> structure for the
                 corresponding pages/ids.
                 <Snippet snippet="dynamic" />

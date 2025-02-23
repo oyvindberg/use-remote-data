@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { RemoteDataStore, RemoteDataStores, useRemoteDatas, WithRemoteData } from 'use-remote-data';
+import {
+    InvalidationStrategy,
+    RemoteDataStore,
+    RemoteDataStores,
+    useRemoteDatas,
+    WithRemoteData,
+} from 'use-remote-data';
 
 let is = new Map<string, number>();
 
@@ -12,7 +18,7 @@ const freshData = (key: string): Promise<string> =>
 
 export const Component: React.FC = () => {
     // provide `freshData` function
-    const stores: RemoteDataStores<string, string> = useRemoteDatas(freshData, { ttlMillis: 1000 });
+    const stores: RemoteDataStores<string, string> = useRemoteDatas(freshData, { invalidation: InvalidationStrategy.refetchAfterMillis(1000) });
 
   const [wanted, setWanted] = React.useState('a, b,d');
 

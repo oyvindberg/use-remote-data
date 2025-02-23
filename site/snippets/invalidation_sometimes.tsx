@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useRemoteData, WithRemoteData } from 'use-remote-data';
+import { InvalidationStrategy, useRemoteData, WithRemoteData } from 'use-remote-data';
 
 var i = 0;
 const freshData = (): Promise<number> =>
@@ -10,7 +10,7 @@ const freshData = (): Promise<number> =>
 
 export const Component: React.FC = () => {
     const [autoRefresh, setAutoRefresh] = React.useState(true);
-    const store = useRemoteData(freshData, { ttlMillis: autoRefresh ? 1000 : undefined });
+    const store = useRemoteData(freshData, { invalidation: autoRefresh ? InvalidationStrategy.refetchAfterMillis(1000) : undefined });
 
     return (
         <div>

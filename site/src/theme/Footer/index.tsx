@@ -47,7 +47,7 @@ const FooterLogo = ({
   <ThemedImage className="footer__logo" alt={alt} sources={sources} />
 );
 
-function Footer(): JSX.Element | null {
+function Footer(): React.JSX.Element | null {
   const {footer} = useThemeConfig();
 
   const {copyright, links = [] as any, logo = {} as any} = footer || {};
