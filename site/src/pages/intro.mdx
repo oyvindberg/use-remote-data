@@ -1,0 +1,110 @@
+import { Snippet } from '../components/Snippet';
+import typesafeCombine from '../../static/typesafe-combine.webm';
+
+# Getting started
+
+## Installation
+
+```bash
+npm install use-remote-data
+```
+
+```bash
+yarn add use-remote-data
+```
+
+## Basic usage
+
+The entry point to the library is a React hook called `useRemoteData`, which takes one parameter: a function that produces a `Promise`. It needs to be a function (not a straight `Promise`) in case it fails and needs to be restarted.
+
+According to the rules for React hooks, they can only be used within a component, as shown below.
+
+The value returned from `useRemoteData` is a `RemoteDataStore<T>`, which tracks the current state of the request.
+
+The last step in this example is the usage of a provided React component called `WithRemoteData`. This component needs two props:
+
+1. The store returned by `useRemoteData`.
+2. A [render prop](https://reactjs.org/docs/render-props.html) that specifies how to render once the data is available.
+
+Out of the box, `WithRemoteData` is useful but not very pretty. You’re encouraged to either copy/paste `WithRemoteData` into your own codebase and customize it, or wrap it in a component that provides custom UI for pending and failure states.
+
+<Snippet snippet="basic_usage" />
+
+## Combining stores
+
+One of the strengths of `RemoteDataStore` is its composability.
+You can take multiple `RemoteDataStore` instances—each representing a separate request—and combine them into a single store. The combined store moves through the familiar lifecycle (`Pending`, `Yes`, `No`) based on the states of the individual stores:
+
+- If *any* of the underlying stores is `RemoteData.Pending`, the combined store is `Pending`.
+- If *all* of the stores are `RemoteData.Yes`, the combined store provides a tuple of their results.
+- If *any* store fails, the combined store fails. When the user clicks “retry,” only the store(s) that failed will be retried; the others remain intact.
+
+This approach keeps your data loading logic organized and type-safe. In the render prop for `WithRemoteData`, you can use [tuple destructuring](https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c) to seamlessly access each store’s result, and TypeScript tooling (including IntelliJ) will correctly infer and highlight the types for every element in the tuple.
+
+<Snippet snippet="combine" />
+
+### A note about TypeScript tooling
+
+The TypeScript compiler (and IDEs like IntelliJ) understands the combined store’s shape perfectly. You can hold the <kbd>Ctrl</kbd> (or <kbd>Command</kbd> on macOS) key and hover over the tuple items to see their exact types.
+
+<video autoPlay controls muted src={typesafeCombine}></video>
+
+## Refreshing data
+
+`use-remote-data` supports seamless invalidation and refreshing of data by specifying the optional `invalidation` parameter to `useRemoteData`. You can define an invalidation strategy, for example how many milliseconds the data is considered valid after receiving it.
+
+Once the data is deemed invalidated, you’re notified via the second parameter, `isInvalidated`, in the render prop of `WithRemoteData`. You could, for example, render the old data in gray or disabled style while fresh data is fetched.
+
+Note that `RemoteDataStore` is *lazy*: values are invalidated and refreshed only while the data is in use by a component. However, on the first render when the component re-mounts, the invalidation check occurs and you’ll be informed via `isInvalidated` as usual.
+
+<Snippet snippet="invalidation" />
+
+### Only sometimes?
+
+If you want to toggle auto-refreshing on or off, just set the `invalidation` parameter accordingly.
+
+<Snippet snippet="invalidation_sometimes" />
+
+## Sharing data with child components
+
+A very common use case involves an application with multiple routes, each needing different subsets of data while retaining as much data as possible in cache when users navigate back and forth.
+
+`use-remote-data` supports this by design because `RemoteDataStore` is *lazy* and *caching*. You can define all relevant data stores high up in the component hierarchy, and data lifetimes will naturally follow component lifecycles. You can pass the same store object to any number of child components without causing additional fetches.
+
+<Snippet snippet="use_twice" />
+
+### Should I pass `RemoteDataStore<T>` or just `T`?
+
+There is a semantic difference:
+
+> *Can this component render without the data?*
+
+For components that need to render something before data is loaded (e.g., an outline or skeleton UI), you might accept the full `RemoteDataStore` in props.
+
+In many other cases, it’s simpler to pass the value (`T`) once it has been fetched.
+
+## Handling failure
+
+Another key feature of `use-remote-data` is principled error handling with built-in retry functionality. Often, developers do some ad-hoc error handling, but fewer implement retries in a systematic way.
+
+This example creates a `Promise` that fails every tenth time it’s called. That store is combined with another that never fails. Hit *retry* a few times to see how they interact.
+
+<Snippet snippet="handling_failure" />
+
+## Dynamic data
+
+If you need to fetch paginated data or multiple IDs from a large set, `useRemoteDatas` (plural) has you covered. In this hook, you provide a function that returns a `Promise` which accepts a parameter, and you request data for specific pages or IDs from the resulting `RemoteDataStores`.
+
+<Snippet snippet="dynamic" />
+
+## Invalidate on dependency change
+
+`use-remote-data` follows the spirit of React’s `useEffect` by supporting an array of dependencies. When a change is detected in that dependency array, the data is automatically invalidated. (Currently, the comparison is based on the `JSON.stringify` output of the dependencies.)
+
+<Snippet snippet="invalidation_dependencies" />
+
+## Updates
+
+Life isn’t just read-only. Here’s an example of sending data:
+
+<Snippet snippet="create" />

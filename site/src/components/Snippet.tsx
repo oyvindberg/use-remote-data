@@ -1,5 +1,4 @@
 import Link from '@docusaurus/Link';
-import { useThemeConfig } from '@docusaurus/theme-common';
 import React, { FC } from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
@@ -30,6 +29,7 @@ export const Snippet: FC<Props> = ({ snippet }) => {
                     </div>
                 )}
             </div>
+            <br/>
         </div>
     );
 };

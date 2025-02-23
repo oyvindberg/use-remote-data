@@ -50,32 +50,79 @@ export default () => (
                 or wrap it in your own component which customizes pending and failure states.
                 <Snippet snippet="basic_usage" />
             </div>
-            <div>
-                <br />
-                <h2>Combining stores</h2>
-                The <code>RemoteDataStore</code> structure is composable in the sense that you can combine multiple
-                stores into one which will return the product of all once all the data is available. The semantics are
-                what you would expect. For instance if you combine one request which is currently{' '}
-                <code>RemoteData.Pending</code>
-                with one which is <code>RemoteData.Yes</code>, the result will be <code>RemoteData.Pending</code>.
-                <br />
-                <br />
-                All types are tracked, and in the render prop given to <code>WithRemoteData</code> we use{' '}
-                <Link to="https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c">
-                    tuple destructuring{' '}
-                </Link>
-                to pick apart the values again.
-                <br />
-                <br />
-                <Snippet snippet="combine" />
-                <br />
-                <h3>A note about Typescript tooling</h3>
-                The Typescript compiler knows everything about the types here, as does Intellij.
-                This video demonstrates how you can press <code>ctrl</code> while hovering with the mouse to see types.
-                <br />
-                <br />
-                <video autoPlay={true} controls={true} muted={true} src={typesafeCombine} />
-            </div>
+            <br/>
+            <h2>Combining stores</h2>
+            <p>
+                One of the strengths of <code>RemoteDataStore</code> is its composability.
+                You can take multiple <code>RemoteDataStore</code>s — each representing
+                a separate request—and combine them into a single store. The combined store
+                moves through the familiar lifecycle (<code>Pending</code>, <code>Yes</code>,
+                <code>No</code>) based on the states of the individual stores:
+            </p>
+            <ul>
+                <li>If <em>any</em> of the underlying stores is <code>RemoteData.Pending</code>,
+                    the combined store is <code>Pending</code>.
+                </li>
+                <li>If <em>all</em> underlying stores are <code>RemoteData.Yes</code>,
+                    the combined store provides a tuple of their results.
+                </li>
+                <li>If <em>any</em> store fails, the combined store fails. When the user clicks “retry,”
+                    only the store(s) that failed will be retried; the others remain intact.
+                </li>
+            </ul>
+            <p>
+                This approach keeps your data loading logic organized and type-safe.
+                In the render prop for <code>WithRemoteData</code>, you can use
+                <a href="https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c"
+                > tuple destructuring </a>
+                to seamlessly access each store’s result, and TypeScript tooling
+                (including IntelliJ) will correctly infer and highlight the types for
+                every element in the tuple.
+            </p>
+            <Snippet snippet="combine" />
+            <br/>
+            <h3>A note about TypeScript tooling</h3>
+            <p>
+                The TypeScript compiler (and IDEs like IntelliJ) understands the combined
+                store’s shape perfectly. In fact, you can hold the
+                <kbd>Ctrl</kbd> (or <kbd>Command</kbd> on macOS) key and hover over the tuple items
+                to see their precise types.
+            </p>
+            <video autoPlay controls muted src={typesafeCombine}></video>
+
+            {/*<div>*/}
+            {/*    <br />*/}
+            {/*    <h2>Combining stores</h2>*/}
+            {/*    The <code>RemoteDataStore</code> structure is composable in the sense that you can combine multiple*/}
+            {/*    stores into one which will return the product of all once all the data is available.*/}
+            {/*    <br />*/}
+            {/*    The semantics are what you would expect. For instance if you combine one request which is currently{' '}*/}
+            {/*    <code>RemoteData.Pending</code>*/}
+            {/*    with one which is <code>RemoteData.Yes</code>, the result will be <code>RemoteData.Pending</code>.*/}
+            {/*    <br />*/}
+
+            {/*    Error handling also just works. If one of the things you combine fails and the user hits "retry",*/}
+            {/*    just that one request will be retried, and in applications code you'll get all the values oncee they're*/}
+            {/*    available.*/}
+
+            {/*    <br />*/}
+            {/*    <br />*/}
+            {/*    All types are tracked, and in the render prop given to <code>WithRemoteData</code> we use{' '}*/}
+            {/*    <Link to="https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c">*/}
+            {/*        tuple destructuring{' '}*/}
+            {/*    </Link>*/}
+            {/*    to pick apart the values again.*/}
+            {/*    <br />*/}
+            {/*    <br />*/}
+            {/*    <Snippet snippet="combine" />*/}
+            {/*    <br />*/}
+            {/*    <h3>A note about Typescript tooling</h3>*/}
+            {/*    The Typescript compiler knows everything about the types here, as does Intellij.*/}
+            {/*    This video demonstrates how you can press <code>ctrl</code> while hovering with the mouse to see types.*/}
+            {/*    <br />*/}
+            {/*    <br />*/}
+            {/*    <video autoPlay={true} controls={true} muted={true} src={typesafeCombine} />*/}
+            {/*</div>*/}
             <div>
                 <br />
                 <h2>Refreshing data</h2>
