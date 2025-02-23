@@ -13,6 +13,8 @@ export default () => (
                 <h2>Installation</h2>
                 <pre>
                     <code>npm install use-remote-data</code>
+                </pre>
+                <pre>
                     <code>yarn add use-remote-data</code>
                 </pre>
             </div>
