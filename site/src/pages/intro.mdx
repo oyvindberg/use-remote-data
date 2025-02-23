@@ -73,6 +73,12 @@ Out of the box, `WithRemoteData` handles loading and error states but is visuall
 You can copy it directly into your codebase
 or wrap it to provide custom styling and behavior for pending and failure states.
 
+### Lazy Loading
+An interesting aspect of `useRemoteData` is no data is fetched when you call `useRemoteData`.
+
+Only when the data is rendered with `WithRemoteData` is the request initiated.
+This is handy, because then you can initialize many `RemoteDataStore`s in a component high up in the hierarchy, and pass them down to children.
+
 ### Parallel vs. Sequential Fetching
 
 When your app renders data from multiple `RemoteDataStore` instances, they will initiate their requests in parallel if the data is missing or old.
