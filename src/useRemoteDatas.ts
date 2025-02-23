@@ -161,6 +161,12 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
                 set(jsonKey, RemoteData.initialStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
             },
             triggerUpdate: () => triggerUpdate(key, jsonKey),
+            get orNull(): RemoteDataStore<V | null> {
+                return RemoteDataStore.orNull(this);
+            },
+            map<U>(fn: (value: V) => U): RemoteDataStore<U> {
+                return RemoteDataStore.map(this, fn);
+            }
         };
     };
 

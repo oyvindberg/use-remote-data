@@ -106,7 +106,7 @@ export namespace RemoteData {
 
         if (foundNo.length > 0) {
             const retry = () => Promise.all(foundNo.map((no) => no.retry())).then(() => {});
-            const allErrors = foundNo.reduce<ReadonlyArray<WeakError>>((acc, no) => [...acc, ...no.errors], []);
+            const allErrors = foundNo.reduce<readonly WeakError[]>((acc, no) => [...acc, ...no.errors], []);
             return RemoteData.No(allErrors, retry);
         } else if (isDefined(foundPending)) {
             return foundPending;
@@ -177,4 +177,21 @@ export namespace RemoteData {
                 return RemoteData.Initial;
         }
     };
+
+    export const map = <T, U>(remoteData: RemoteData<T>, f: (t: T) => U): RemoteData<U> => {
+        switch (remoteData.type) {
+            case 'initial':
+                return RemoteData.Initial;
+            case 'pending':
+                return RemoteData.Pending;
+            case 'no':
+                return RemoteData.No(remoteData.errors, remoteData.retry);
+            case 'yes':
+                return RemoteData.Yes(f(remoteData.value));
+            case 'invalidated-initial':
+                return RemoteData.InvalidatedInitial(RemoteData.Yes(f(remoteData.invalidated.value)));
+            case 'invalidated-pending':
+                return RemoteData.InvalidatedPending(RemoteData.Yes(f(remoteData.invalidated.value)));
+        }
+    }
 }
