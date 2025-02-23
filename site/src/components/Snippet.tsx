@@ -1,7 +1,7 @@
 import Link from '@docusaurus/Link';
 import { useThemeConfig } from '@docusaurus/theme-common';
 import React, { FC } from 'react';
-import SyntaxHighlighter from 'react-syntax-highlighter';
+import CodeBlock from '@theme/CodeBlock';
 
 type Props = {
     snippet: string;
@@ -10,10 +10,6 @@ type Props = {
 export const Snippet: FC<Props> = ({ snippet }) => {
     // who knows how to get this auto refreshing on theme change, heh
     const { colorMode } = useThemeConfig();
-    const style =
-        colorMode.defaultMode == 'dark'
-            ? require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-dark').default
-            : require('react-syntax-highlighter/dist/cjs/styles/hljs/stackoverflow-light').default;
 
     const text: string = require(`!raw-loader!../../snippets/${snippet}.tsx`).default as any;
     const { Component } = require(`../../snippets/${snippet}`);
@@ -21,9 +17,9 @@ export const Snippet: FC<Props> = ({ snippet }) => {
 
     return (
         <div>
-            <SyntaxHighlighter language="typescript" style={style}>
+            <CodeBlock language="tsx">
                 {text}
-            </SyntaxHighlighter>
+            </CodeBlock>
 
             <div>
                 <div>
