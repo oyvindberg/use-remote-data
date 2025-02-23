@@ -166,7 +166,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
             },
             map<U>(fn: (value: V) => U): RemoteDataStore<U> {
                 return RemoteDataStore.map(this, fn);
-            }
+            },
         };
     };
 

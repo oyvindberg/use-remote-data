@@ -193,5 +193,5 @@ export namespace RemoteData {
             case 'invalidated-pending':
                 return RemoteData.InvalidatedPending(RemoteData.Yes(f(remoteData.invalidated.value)));
         }
-    }
+    };
 }
