@@ -57,25 +57,30 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
 
     const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V>): Promise<void> => {
         set(jsonKey, pendingState);
-        return run(key)
-            .then((value) => {
-                const now = new Date();
-                let res: RemoteData<V> = RemoteData.Yes(value, now);
-                if (
-                    options.invalidation &&
-                    !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
-                ) {
-                    res = RemoteData.InvalidatedImmediate(res);
-                }
+        try {
+            return run(key)
+                .then((value) => {
+                    const now = new Date();
+                    let res: RemoteData<V> = RemoteData.Yes(value, now);
+                    if (
+                        options.invalidation &&
+                        !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
+                    ) {
+                        res = RemoteData.InvalidatedImmediate(res);
+                    }
 
-                set(jsonKey, res);
-            })
-            .catch((error) =>
-                set(
-                    jsonKey,
-                    RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
-                )
-            );
+                    set(jsonKey, res);
+                })
+                .catch((error) =>
+                    set(
+                        jsonKey,
+                        RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+                    )
+                );
+        } catch (error) {
+            set(jsonKey, RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending)));
+            return Promise.resolve();
+        }
     };
 
     // only allow first update each pass in case the store is shared

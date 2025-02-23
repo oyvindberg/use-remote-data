@@ -21,6 +21,19 @@ test('should handle success', async () => {
     await waitFor(() => screen.getByText('num: 1'));
 });
 
+test('should handle failure to create promise', async () => {
+    const Test: React.FC = () => {
+        const store = useRemoteData<number>(() => {
+            throw new Error('foo');
+        });
+        return <WithRemoteData store={store}>{(num) => <span>num: {num}</span>}</WithRemoteData>;
+    };
+
+    render(<Test />);
+
+    await waitFor(() => screen.getByText('Error: foo'));
+});
+
 test('should handle successes', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
@@ -124,6 +137,7 @@ test('polling should stop on unmount', async () => {
             return Promise.resolve(this.i);
         };
     }
+
     const messages: string[] = [];
     const testPromise = new FailAtTwo();
     const Test: React.FC = () => {
