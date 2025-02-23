@@ -30,7 +30,7 @@ export namespace InvalidationStrategy {
 
     /* always fetch value again after some time */
     export const refetchAfterMillis = <T>(validMillis: number): InvalidationStrategy<T> =>
-        of<unknown>((_, fetchedAt, now) => {
+        of<T>((_, fetchedAt, now) => {
             const remainingMs = fetchedAt.getTime() + validMillis - now.getTime();
             if (remainingMs <= 0) {
                 return IsInvalidated.Invalid;

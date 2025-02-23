@@ -11,18 +11,17 @@ import { IsInvalidated } from './IsInvalidated';
 const reactMajor = Number(version.split('.')[0]);
 
 export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> => {
-    // current `RemoteData` state
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
     const [deps, setDeps] = useState(JsonKey.of(options.dependencies));
 
     const storeName = (key: JsonKey<K> | undefined) => {
         if (isDefined(options.storeName)) {
-            if (key !== undefined) {
+            if (isDefined(key)) {
                 return `${options.storeName}(${key})`;
             }
             return options.storeName;
         }
-        return undefined;
+        return;
     };
 
     // for react 17: we're not allowed to update state after unmount
@@ -94,7 +93,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
     const triggerUpdate = (key: K, jsonKey: JsonKey<K>): MaybeCancel => {
-        // invalidate all on dependency change
+        /** step one: if dependencies have changed, invalidate all data */
         const currentDeps = JsonKey.of(options.dependencies);
         if (deps !== currentDeps) {
             if (options.debug) {
@@ -108,23 +107,25 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
             );
             setRemoteDatas(invalidatedRemoteDatas);
 
-            return undefined;
+            return;
         }
 
+        /** step two: if we're already updating, do nothing */
         if (isUpdating.get(jsonKey)) {
-            return undefined;
+            return;
         }
         isUpdating.set(jsonKey, true);
 
+        /** step three: if we're in an initial state, start data fetching in the background */
         const remoteData = remoteDatas.get(jsonKey) || RemoteData.Initial;
 
         if (remoteData.type === 'initial' || remoteData.type === 'invalidated-initial') {
             // note that we let the `Promise` fly here, we don't have a way of cancelling that.
             runAndUpdate(key, jsonKey, RemoteData.pendingStateFor(remoteData));
-            return undefined;
+            return;
         }
 
-        // non-dependency invalidation logic. only enabled if requested in `options.invalidation` and if we have data to invalidate
+        /** step four: invalidation logic (if enabled in `options.invalidation`) */
         if (
             isDefined(options.invalidation) &&
             (remoteData.type === 'yes' || remoteData.type === 'invalidated-immediate')
@@ -135,9 +136,9 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
             switch (isInvalidated.type) {
                 case 'invalid':
                     set(jsonKey, RemoteData.InvalidatedInitial(yes));
-                    return undefined;
+                    return;
                 case 'valid':
-                    return undefined;
+                    return;
                 case 'retry-in':
                     if (options.debug) {
                         options.debug(`${storeName(jsonKey)}: will invalidate in ${isInvalidated.millis}`);
@@ -154,8 +155,6 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
                         clearTimeout(handle);
                     };
             }
-        } else {
-            return undefined;
         }
     };
 
