@@ -14,8 +14,7 @@ const freshData = (): Promise<number> =>
 
 export const Component: React.FC = () => {
     const store = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.pollUntil((x) => x > 2, 10000),
-        debug: true,
+        invalidation: InvalidationStrategy.pollUntil((x) => x > 2, 1000),
         storeName: 'polling-store',
     });
 
