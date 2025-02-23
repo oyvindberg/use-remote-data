@@ -1,6 +1,7 @@
 import { isDefined } from './isDefined';
 
-// a function which may cancel an ongoing effect
+// a function which may cancel an ongoing effect.
+// it's consumed by `useEffect` which will call it on unmount.
 export type MaybeCancel = (() => void) | undefined;
 
 export namespace MaybeCancel {

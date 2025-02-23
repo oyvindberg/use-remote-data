@@ -193,6 +193,15 @@ export default () => (
             </div>
             <div>
                 <br />
+                <h2>Polling</h2>
+                Something which comes up sometimes are APIs which require you to poll.
+                <code>use-remote-data</code> supports this through an <code>InvalidationStrategy</code> like seen above
+                <br />
+                <br />
+                <Snippet snippet="polling" />
+            </div>
+            <div>
+                <br />
                 <h2>Dynamic data</h2>
                 Do you want to fetch paginated data? fetch quite a few ids out of many? You're covered here too, by the
                 <code>useRemoteDatas</code> (plural) hook. In this case you provide a function to a <code>Promise</code>{' '}

@@ -72,7 +72,7 @@ export namespace RemoteData {
     export const all = <RemoteDatas extends RemoteData<unknown>[]>(
         ...remoteDatas: RemoteDatas
     ): RemoteData<ValuesFrom<RemoteDatas>> => {
-        // state of the art typescript: typed on the outside, untyped on the inside
+        // state-of-the-art typescript: typed on the outside, untyped on the inside
         const ret: unknown[] = [];
         let isInvalidated = false;
         let foundNo: RemoteData.No[] = [];

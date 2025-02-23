@@ -1,19 +1,26 @@
-export type IsInvalidated = IsInvalidated.Valid | IsInvalidated.InvalidateIn | IsInvalidated.Invalidated;
+export type IsInvalidated = IsInvalidated.IsValid | IsInvalidated.RetryIn;
 
 export namespace IsInvalidated {
+    export type IsValid = Valid | Invalid;
+
     export interface Valid {
         type: 'valid';
     }
     export const Valid: Valid = { type: 'valid' };
 
-    export interface InvalidateIn {
-        type: 'invalidate-in';
+    export interface Invalid {
+        type: 'invalid';
+    }
+    export const Invalid: Invalid = { type: 'invalid' };
+
+    export interface RetryIn {
+        type: 'retry-in';
+        current: IsValid;
         millis: number;
     }
-    export const InvalidateIn = (millis: number): InvalidateIn => ({ type: 'invalidate-in', millis });
-
-    export interface Invalidated {
-        type: 'invalidated';
-    }
-    export const Invalidated: Invalidated = { type: 'invalidated' };
+    export const RefetchAfter = (current: IsValid, millis: number): RetryIn => ({
+        type: 'retry-in',
+        current,
+        millis,
+    });
 }

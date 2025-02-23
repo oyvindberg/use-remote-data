@@ -14,16 +14,16 @@ const freshData = (): Promise<number> =>
 
 export const Component: React.FC = () => {
     const store = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(2000),
+        invalidation: InvalidationStrategy.pollUntil((x) => x > 2, 10000),
+        debug: true,
+        storeName: 'polling-store',
     });
 
     return (
         <WithRemoteData store={store}>
-            {(num, isInvalidated) => (
-                <span style={{ color: isInvalidated ? 'darkgray' : 'black' }}>
-                    {num}
-                </span>
-            )}
+            {(num, notValid) =>
+                notValid ? <span>invalid data {num}</span> : <span>{num}</span>
+            }
         </WithRemoteData>
     );
 };
