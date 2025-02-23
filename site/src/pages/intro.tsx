@@ -10,6 +10,7 @@ export default () => (
         <main className="container">
             <h1>Getting started</h1>
             <div>
+                <br />
                 <h2>Installation</h2>
                 <pre>
                     <code>npm install use-remote-data</code>
@@ -18,8 +19,8 @@ export default () => (
                     <code>yarn add use-remote-data</code>
                 </pre>
             </div>
-            <br />
             <div>
+                <br />
                 <h2>Basic usage</h2>
                 The entry point to the library is a React hook called <code>useRemoteData</code>, which takes one
                 parameter: A function which produces a <code>Promise</code>. It needs to be a function and not a
@@ -49,8 +50,8 @@ export default () => (
                 or wrap it in your own component which customizes pending and failure states.
                 <Snippet snippet="basic_usage" />
             </div>
-            <br />
             <div>
+                <br />
                 <h2>Combining stores</h2>
                 The <code>RemoteDataStore</code> structure is composable in the sense that you can combine multiple
                 stores into one which will return the product of all once all the data is available. The semantics are
@@ -67,6 +68,7 @@ export default () => (
                 <br />
                 <br />
                 <Snippet snippet="combine" />
+                <br />
                 <h3>A note about Typescript tooling</h3>
                 The Typescript compiler knows everything about the types here, as does Intellij.
                 This video demonstrates how you can press <code>ctrl</code> while hovering with the mouse to see types.
@@ -74,9 +76,8 @@ export default () => (
                 <br />
                 <video autoPlay={true} controls={true} muted={true} src={typesafeCombine} />
             </div>
-            <br />
-            <br />
             <div>
+                <br />
                 <h2>Refreshing data</h2>
                 <code>use-remote-data</code> supports seamless invalidation and refreshing of data, by specifying the
                 optional <code>invalidation</code> parameter to <code>use-remote-data</code>. You specify an
@@ -93,7 +94,6 @@ export default () => (
                 invalidation is noticed and you'll be informed through <code>isInvalidated</code> as normal.
                 <Snippet snippet="invalidation" />
                 <br />
-                <br />
                 <h3>Only sometimes?</h3>
                 If you want to turn auto-refreshing on and off, that easy to do as well, just set the{' '}
                 <code>invalidation</code>
@@ -101,6 +101,7 @@ export default () => (
                 <Snippet snippet="invalidation_sometimes" />
             </div>
             <div>
+                <br />
                 <h2>Sharing data with child components</h2>
                 A very common use-case is that you have an app with for instance many routes. Each route will need some
                 different subsets of data, and you want to keep as much data as possible cached when the user navigates
@@ -127,6 +128,7 @@ export default () => (
                 <br />
             </div>
             <div>
+                <br />
                 <h2>Handling failure</h2>
                 Another defining feature of <code>use-remote-data</code> is the principled error handling and the retry
                 functionality. Developers typically make an ad-hoc attempt at the former, while not many have the
@@ -140,6 +142,7 @@ export default () => (
                 <Snippet snippet="handling_failure" />
             </div>
             <div>
+                <br />
                 <h2>Dynamic data</h2>
                 Do you want to fetch paginated data? fetch quite a few ids out of many? You're covered here too, by the
                 <code>useRemoteDatas</code> (plural) hook. In this case you provide a function to
@@ -149,11 +152,19 @@ export default () => (
                 <Snippet snippet="dynamic" />
             </div>
             <div>
+                <br />
                 <h2>Invalidate on dependency change</h2>
                 <code>use-remote-data</code> follows the spirit of <code>useEffect</code> and friends by supporting an
                 array of dependencies. When a change is detected in that list, the data is automatically invalidated.
                 Note that currently the <code>JSON.stringify</code>ed version of the dependencies is compared.
                 <Snippet snippet="invalidation_dependencies" />
+            </div>
+            <div>
+                <br />
+                <h2>Updates</h2>
+                Life is not only read-only though. Here is an example of sending data.
+                <Snippet snippet="create" />
+                <br />
             </div>
         </main>
     </Layout>
