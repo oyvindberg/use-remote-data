@@ -5,6 +5,7 @@ export type RemoteData<T> =
     | RemoteData.Pending
     | RemoteData.No
     | RemoteData.Yes<T>
+    | RemoteData.InvalidatedImmediate<T>
     | RemoteData.InvalidatedInitial<T>
     | RemoteData.InvalidatedPending<T>;
 
@@ -44,6 +45,16 @@ export namespace RemoteData {
         readonly type: 'yes';
         readonly value: T;
         readonly updatedAt: Date;
+    }
+
+    export const InvalidatedImmediate = <T>(invalidated: RemoteData.Yes<T>): InvalidatedImmediate<T> => ({
+        type: 'invalidated-immediate',
+        invalidated,
+    });
+
+    export interface InvalidatedImmediate<T> {
+        readonly type: 'invalidated-immediate';
+        readonly invalidated: RemoteData.Yes<T>;
     }
 
     export const InvalidatedInitial = <T>(invalidated: RemoteData.Yes<T>): InvalidatedInitial<T> => ({
@@ -143,7 +154,7 @@ export namespace RemoteData {
             onData: (value: T, isInvalidated: boolean, updatedAt: Date) => Out,
             onEmpty: () => Out,
             onFailed: (err: ReadonlyArray<WeakError>, retry: () => Promise<void>) => Out
-        ) => {
+        ): Out => {
             switch (remoteData.type) {
                 case 'initial':
                 case 'pending':
@@ -155,6 +166,7 @@ export namespace RemoteData {
                 case 'no':
                     return onFailed(remoteData.errors, remoteData.retry);
 
+                case 'invalidated-immediate':
                 case 'invalidated-initial':
                 case 'invalidated-pending':
                     return onData(remoteData.invalidated.value, true, remoteData.invalidated.updatedAt);
@@ -191,10 +203,18 @@ export namespace RemoteData {
                 return RemoteData.No(remoteData.errors, remoteData.retry);
             case 'yes':
                 return RemoteData.Yes(f(remoteData.value), remoteData.updatedAt);
-            case 'invalidated-initial':
-                return RemoteData.InvalidatedInitial(RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt));
-            case 'invalidated-pending':
-                return RemoteData.InvalidatedPending(RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt));
+            case 'invalidated-immediate': {
+                const yes = RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
+                return RemoteData.InvalidatedImmediate(yes);
+            }
+            case 'invalidated-initial': {
+                const yes = RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
+                return RemoteData.InvalidatedInitial(yes);
+            }
+            case 'invalidated-pending': {
+                const yes = RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
+                return RemoteData.InvalidatedPending(yes);
+            }
         }
     };
 }

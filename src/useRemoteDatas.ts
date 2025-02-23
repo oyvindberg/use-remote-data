@@ -6,6 +6,7 @@ import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
 import { Options } from './Options';
+import { IsInvalidated } from './IsInvalidated';
 
 const reactMajor = Number(version.split('.')[0]);
 
@@ -58,7 +59,18 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
     const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V>): Promise<void> => {
         set(jsonKey, pendingState);
         return run(key)
-            .then((value) => set(jsonKey, RemoteData.Yes(value, new Date())))
+            .then((value) => {
+                const now = new Date();
+                let res: RemoteData<V> = RemoteData.Yes(value, now);
+                if (
+                    options.invalidation &&
+                    !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
+                ) {
+                    res = RemoteData.InvalidatedImmediate(res);
+                }
+
+                set(jsonKey, res);
+            })
             .catch((error) =>
                 set(
                     jsonKey,
@@ -112,12 +124,16 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         }
 
         // non-dependency invalidation logic. only enabled if requested in `options.invalidation` and if we have data to invalidate
-        if (isDefined(options.invalidation) && remoteData.type === 'yes') {
-            const isInvalidated = options.invalidation.decide(remoteData.value, remoteData.updatedAt, new Date());
+        if (
+            isDefined(options.invalidation) &&
+            (remoteData.type === 'yes' || remoteData.type === 'invalidated-immediate')
+        ) {
+            const yes = remoteData.type === 'yes' ? remoteData : remoteData.invalidated;
+            const isInvalidated = options.invalidation.decide(yes.value, yes.updatedAt, new Date());
 
             switch (isInvalidated.type) {
                 case 'invalid':
-                    set(jsonKey, RemoteData.InvalidatedInitial(remoteData));
+                    set(jsonKey, RemoteData.InvalidatedInitial(yes));
                     return undefined;
                 case 'valid':
                     return undefined;
@@ -127,7 +143,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
                     }
 
                     const handle = setTimeout(
-                        () => set(jsonKey, RemoteData.InvalidatedInitial(remoteData)),
+                        () => set(jsonKey, RemoteData.InvalidatedInitial(yes)),
                         isInvalidated.millis
                     );
                     return () => {

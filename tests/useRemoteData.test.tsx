@@ -109,7 +109,6 @@ test('polling should work', async () => {
     render(<Test />);
 
     await waitFor(() => screen.getByText('...'));
-    await waitFor(() => screen.getByText('num: 1, isInvalidated: false'));
     await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
     await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
 });
@@ -145,7 +144,7 @@ test('polling should stop on unmount', async () => {
     const rendered = render(<Test />);
 
     await waitFor(() => screen.getByText('...'));
-    await waitFor(() => screen.getByText('num: 1, isInvalidated: false'));
+    await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
     rendered.unmount();
     if (testPromise.i == 2) throw 'polling did not stop';
     expect(messages).toContain(`undefined: cancelled invalidation on unmount`);
