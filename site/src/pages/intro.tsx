@@ -93,7 +93,7 @@ export default () => (
                 <br />
                 <h3>Only sometimes?</h3>
                 If you want to turn auto-refreshing on and off, that easy to do as well, just set the{' '}
-                <code>ttlMillis</code>
+                <code>invalidation</code>
                 parameter accordingly
                 <Snippet snippet="invalidation_sometimes" />
             </div>
