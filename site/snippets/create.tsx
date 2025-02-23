@@ -3,7 +3,10 @@ import { useRemoteData, WithRemoteData } from 'use-remote-data';
 
 const createUser = (name: string): Promise<string> =>
     new Promise((resolve) => {
-        setTimeout(() => resolve(`created user with name ${name} and id #1`), 1000);
+        setTimeout(
+            () => resolve(`created user with name ${name} and id #1`),
+            1000
+        );
     });
 
 export const Component: React.FC = () => {
@@ -16,10 +19,17 @@ export const Component: React.FC = () => {
             <h4>Create user</h4>
             <label>
                 name:
-                <input onChange={(e) => setName(e.currentTarget.value)} value={name} />
+                <input
+                    onChange={(e) => setName(e.currentTarget.value)}
+                    value={name}
+                />
             </label>
             <button onClick={() => setSubmit(true)}>Create user</button>
-            {submit && <WithRemoteData store={createUserStore}>{(msg) => <p>{msg}</p>}</WithRemoteData>}
+            {submit && (
+                <WithRemoteData store={createUserStore}>
+                    {(msg) => <p>{msg}</p>}
+                </WithRemoteData>
+            )}
         </div>
     );
 };

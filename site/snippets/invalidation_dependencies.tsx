@@ -17,7 +17,13 @@ export const Component: React.FC = () => {
             <button onClick={() => setDep(dep + 1)}>Bump dep</button>
             <br />
             <WithRemoteData store={store}>
-                {(num, isInvalidated) => <span style={{ color: isInvalidated ? 'darkgray' : 'black' }}>{num}</span>}
+                {(num, isInvalidated) => (
+                    <span
+                        style={{ color: isInvalidated ? 'darkgray' : 'black' }}
+                    >
+                        {num}
+                    </span>
+                )}
             </WithRemoteData>
         </div>
     );

@@ -1,53 +1,53 @@
 {
-  "name": "site",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
-    "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy",
-    "clear": "docusaurus clear",
-    "serve": "docusaurus serve",
-    "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids"
-  },
-  "dependencies": {
-    "@docusaurus/core": "3.7.0",
-    "@docusaurus/module-type-aliases": "^3.7.0",
-    "@docusaurus/preset-classic": "3.7.0",
-    "@mdx-js/react": "^3.1.0",
-    "@svgr/webpack": "^8.1.0",
-    "@types/node": "^22.13.5",
-    "clsx": "^2.1.1",
-    "file-loader": "^6.2.0",
-    "prism-react-renderer": "^2.4.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-syntax-highlighter": "^15.6.1",
-    "url-loader": "^4.1.1",
-    "use-remote-data": "0.6.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "devDependencies": {
-    "@tsconfig/docusaurus": "^2.0.3",
-    "@types/react": "^19.0.10",
-    "@types/react-helmet": "^6.1.11",
-    "@types/react-router-dom": "^5.3.3",
-    "@types/react-syntax-highlighter": "^15.5.13",
-    "raw-loader": "^4.0.2",
-    "typescript": "^5.7.3"
-  }
+    "name": "site",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "docusaurus": "docusaurus",
+        "start": "docusaurus start",
+        "build": "docusaurus build",
+        "swizzle": "docusaurus swizzle",
+        "deploy": "docusaurus deploy",
+        "clear": "docusaurus clear",
+        "serve": "docusaurus serve",
+        "write-translations": "docusaurus write-translations",
+        "write-heading-ids": "docusaurus write-heading-ids"
+    },
+    "dependencies": {
+        "@docusaurus/core": "3.7.0",
+        "@docusaurus/module-type-aliases": "^3.7.0",
+        "@docusaurus/preset-classic": "3.7.0",
+        "@mdx-js/react": "^3.1.0",
+        "@svgr/webpack": "^8.1.0",
+        "@types/node": "^22.13.5",
+        "clsx": "^2.1.1",
+        "file-loader": "^6.2.0",
+        "prism-react-renderer": "^2.4.1",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-syntax-highlighter": "^15.6.1",
+        "url-loader": "^4.1.1",
+        "use-remote-data": "0.6.0"
+    },
+    "browserslist": {
+        "production": [
+            ">0.5%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "devDependencies": {
+        "@tsconfig/docusaurus": "^2.0.3",
+        "@types/react": "^19.0.10",
+        "@types/react-helmet": "^6.1.11",
+        "@types/react-router-dom": "^5.3.3",
+        "@types/react-syntax-highlighter": "^15.5.13",
+        "raw-loader": "^4.0.2",
+        "typescript": "^5.7.3"
+    }
 }

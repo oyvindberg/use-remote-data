@@ -13,9 +13,7 @@ export const Snippet: FC<Props> = ({ snippet }) => {
 
     return (
         <div>
-            <CodeBlock language="tsx">
-                {text}
-            </CodeBlock>
+            <CodeBlock language="tsx">{text}</CodeBlock>
 
             <div>
                 <div>
@@ -29,7 +27,7 @@ export const Snippet: FC<Props> = ({ snippet }) => {
                     </div>
                 )}
             </div>
-            <br/>
+            <br />
         </div>
     );
 };

@@ -30,12 +30,12 @@ It captures all possible states of an async request in a single union:
 
 ```ts
 export type RemoteData<T> =
-  | { type: 'initial' }
-  | { type: 'pending' }
-  | { type: 'no'; errors: ReadonlyArray<Error | unknown>; retry: () => Promise<void> }
-  | { type: 'yes'; value: T }
-  | { type: 'invalidated-initial'; invalidated: T }
-  | { type: 'invalidated-pending'; invalidated: T };
+    | { type: 'initial' }
+    | { type: 'pending' }
+    | { type: 'no'; errors: ReadonlyArray<Error | unknown>; retry: () => Promise<void> }
+    | { type: 'yes'; value: T }
+    | { type: 'invalidated-initial'; invalidated: T }
+    | { type: 'invalidated-pending'; invalidated: T };
 ```
 
 This state machine allows the library to cleanly handle the life cycle of any request:
@@ -74,6 +74,7 @@ You can copy it directly into your codebase
 or wrap it to provide custom styling and behavior for pending and failure states.
 
 ### Lazy Loading
+
 An interesting aspect of `useRemoteData` is no data is fetched when you call `useRemoteData`.
 
 Only when the data is rendered with `WithRemoteData` is the request initiated.
@@ -105,9 +106,9 @@ This is done via `RemoteDataStore.all(...)`:
 
 Under the hood, the combined store uses the `RemoteData.all(...)` function, which:
 
-- Returns `No` if *any* store fails. A single “retry” will only re-fetch the failing requests.
-- Returns `Pending` if *any* constituent store is `Pending`.
-- Returns `Yes` with a tuple of all combined values if *all* succeed.
+- Returns `No` if _any_ store fails. A single “retry” will only re-fetch the failing requests.
+- Returns `Pending` if _any_ constituent store is `Pending`.
+- Returns `Yes` with a tuple of all combined values if _all_ succeed.
 - Manages invalidation states if any store becomes invalidated.
 
 In a render prop, you can
@@ -121,7 +122,7 @@ the results.
 The TypeScript compiler (and IDEs) fully understands these combined stores.
 You can hover over the tuple items (often with <kbd>Ctrl</kbd> or <kbd>Command</kbd>) to see precise type information.
 
-<video autoPlay controls muted style={{maxWidth: '100%'}} src={typesafeCombine}></video>
+<video autoPlay controls muted style={{ maxWidth: '100%' }} src={typesafeCombine}></video>
 
 ---
 
@@ -134,7 +135,7 @@ For example:
 
 ```ts
 {
-  invalidation: InvalidationStrategy.refetchAfterMillis(10_000);
+    invalidation: InvalidationStrategy.refetchAfterMillis(10_000);
 }
 ```
 
@@ -158,7 +159,7 @@ You can enable or disable invalidation dynamically by swapping the `invalidation
 A common pattern is to fetch data high in your component tree and share it among multiple routes or components,
 leveraging built-in caching so that each route doesn’t refetch unnecessarily.
 
-Since `RemoteDataStore` is both *lazy* and *caching*, you can pass the same store to multiple children.
+Since `RemoteDataStore` is both _lazy_ and _caching_, you can pass the same store to multiple children.
 Data is fetched only once, and the results remain in memory as long as a store is in use.
 
 <Snippet snippet="use_twice" />
@@ -167,7 +168,7 @@ Data is fetched only once, and the results remain in memory as long as a store i
 
 There’s a subtle difference:
 
-> *Does the child component need to render anything while data is still loading?*
+> _Does the child component need to render anything while data is still loading?_
 
 - If yes, consider passing a `RemoteDataStore<T>` so the child can handle loading/failure states.
 - Otherwise, if the parent already handles loading and passes down final data, just pass `T`.
@@ -183,7 +184,7 @@ discipline to also do the latter.
 
 This example creates a `Promise` which fails every tenth time it is called.
 The sometimes-failing store is combined with another store which never fails,
-and you should hit *retry* a few times to see the interaction.
+and you should hit _retry_ a few times to see the interaction.
 
 <Snippet snippet="handling_failure" />
 
@@ -196,9 +197,7 @@ or fetching multiple resource IDs—use the **`useRemoteDatas`** (plural) hook.
 It returns an object with a `.get(key)` method for each distinct data slice.
 
 ```tsx
-const itemsStore = useRemoteDatas(
-  (page: number) => fetch(`/api/items?page=${page}`).then((res) => res.json())
-);
+const itemsStore = useRemoteDatas((page: number) => fetch(`/api/items?page=${page}`).then((res) => res.json()));
 
 const firstPageStore = itemsStore.get(1);
 const secondPageStore = itemsStore.get(2);
@@ -216,7 +215,7 @@ This creates independent `RemoteDataStore` objects for each page, all managed un
 
 ```tsx
 useRemoteData(() => fetchData(), {
-  dependencies: [props.userId, otherValue],
+    dependencies: [props.userId, otherValue],
 });
 ```
 

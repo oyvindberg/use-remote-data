@@ -45,48 +45,51 @@ export default () => (
                         which specifies how to render once we have all the data we asked for by passing stores
                     </li>
                 </ul>
-                Out of the box this component is useful but not pretty.
-                You're expected to either copy/paste `WithRemoteData` into your own app and customize it,
-                or wrap it in your own component which customizes pending and failure states.
+                Out of the box this component is useful but not pretty. You're expected to either copy/paste
+                `WithRemoteData` into your own app and customize it, or wrap it in your own component which customizes
+                pending and failure states.
                 <Snippet snippet="basic_usage" />
             </div>
-            <br/>
+            <br />
             <h2>Combining stores</h2>
             <p>
-                One of the strengths of <code>RemoteDataStore</code> is its composability.
-                You can take multiple <code>RemoteDataStore</code>s — each representing
-                a separate request—and combine them into a single store. The combined store
-                moves through the familiar lifecycle (<code>Pending</code>, <code>Yes</code>,
+                One of the strengths of <code>RemoteDataStore</code> is its composability. You can take multiple{' '}
+                <code>RemoteDataStore</code>s — each representing a separate request—and combine them into a single
+                store. The combined store moves through the familiar lifecycle (<code>Pending</code>, <code>Yes</code>,
                 <code>No</code>) based on the states of the individual stores:
             </p>
             <ul>
-                <li>If <em>any</em> of the underlying stores is <code>RemoteData.Pending</code>,
-                    the combined store is <code>Pending</code>.
+                <li>
+                    If <em>any</em> of the underlying stores is <code>RemoteData.Pending</code>, the combined store is{' '}
+                    <code>Pending</code>.
                 </li>
-                <li>If <em>all</em> underlying stores are <code>RemoteData.Yes</code>,
-                    the combined store provides a tuple of their results.
+                <li>
+                    If <em>all</em> underlying stores are <code>RemoteData.Yes</code>, the combined store provides a
+                    tuple of their results.
                 </li>
-                <li>If <em>any</em> store fails, the combined store fails. When the user clicks “retry,”
-                    only the store(s) that failed will be retried; the others remain intact.
+                <li>
+                    If <em>any</em> store fails, the combined store fails. When the user clicks “retry,” only the
+                    store(s) that failed will be retried; the others remain intact.
                 </li>
             </ul>
             <p>
-                This approach keeps your data loading logic organized and type-safe.
-                In the render prop for <code>WithRemoteData</code>, you can use
-                <a href="https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c"
-                > tuple destructuring </a>
-                to seamlessly access each store’s result, and TypeScript tooling
-                (including IntelliJ) will correctly infer and highlight the types for
-                every element in the tuple.
+                This approach keeps your data loading logic organized and type-safe. In the render prop for{' '}
+                <code>WithRemoteData</code>, you can use
+                <a href="https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c">
+                    {' '}
+                    tuple destructuring{' '}
+                </a>
+                to seamlessly access each store’s result, and TypeScript tooling (including IntelliJ) will correctly
+                infer and highlight the types for every element in the tuple.
             </p>
             <Snippet snippet="combine" />
-            <br/>
+            <br />
             <h3>A note about TypeScript tooling</h3>
             <p>
-                The TypeScript compiler (and IDEs like IntelliJ) understands the combined
-                store’s shape perfectly. In fact, you can hold the
-                <kbd>Ctrl</kbd> (or <kbd>Command</kbd> on macOS) key and hover over the tuple items
-                to see their precise types.
+                The TypeScript compiler (and IDEs like IntelliJ) understands the combined store’s shape perfectly. In
+                fact, you can hold the
+                <kbd>Ctrl</kbd> (or <kbd>Command</kbd> on macOS) key and hover over the tuple items to see their precise
+                types.
             </p>
             <video autoPlay controls muted src={typesafeCombine}></video>
 
@@ -192,8 +195,7 @@ export default () => (
                 <br />
                 <h2>Dynamic data</h2>
                 Do you want to fetch paginated data? fetch quite a few ids out of many? You're covered here too, by the
-                <code>useRemoteDatas</code> (plural) hook. In this case you provide a function to
-                a <code>Promise</code>{' '}
+                <code>useRemoteDatas</code> (plural) hook. In this case you provide a function to a <code>Promise</code>{' '}
                 which takes a parameter, and you ask the resulting <code>RemoteDataStores</code> structure for the
                 corresponding pages/ids.
                 <Snippet snippet="dynamic" />
