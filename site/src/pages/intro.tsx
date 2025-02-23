@@ -2,7 +2,8 @@ import * as React from 'react';
 import Layout from '@theme/Layout';
 import { Snippet } from '../components/Snippet';
 import Link from '@docusaurus/Link';
-const typesafeCombine = require('../../static/typesafe-combine.mp4').default
+
+const typesafeCombine = require('../../static/typesafe-combine.webm').default;
 
 export default () => (
     <Layout title={`Getting started`} description="Getting started">
@@ -64,10 +65,8 @@ export default () => (
                 <br />
                 <Snippet snippet="combine" />
                 <h3>A note about Typescript tooling</h3>
-                The Typescript compiler knows everything about the types here. As does Intellij, but it's currently not
-                flawless. This video demonstrates how you can press <code>ctrl</code> while hovering with the mouse to
-                see types. It also demonstrates how you sometimes need to write types yourself if you want them written
-                down.
+                The Typescript compiler knows everything about the types here, as does Intellij.
+                This video demonstrates how you can press <code>ctrl</code> while hovering with the mouse to see types.
                 <br />
                 <br />
                 <video autoPlay={true} controls={true} muted={true} src={typesafeCombine} />
@@ -77,8 +76,8 @@ export default () => (
             <div>
                 <h2>Refreshing data</h2>
                 <code>use-remote-data</code> supports seamless invalidation and refreshing of data, by specifying the
-                optional <code>invalidation</code> parameter to <code>use-remote-data</code>. You specify an invalidation
-                strategy, with for instance how many milliseconds the data is valid after it is received.
+                optional <code>invalidation</code> parameter to <code>use-remote-data</code>. You specify an
+                invalidation strategy, with for instance how many milliseconds the data is valid after it is received.
                 <br />
                 <br />
                 Once the data is deemed invalidated, you are informed through the second <code>isInvalidated</code>
