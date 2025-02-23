@@ -81,7 +81,7 @@ test('should handle failure and retries', async () => {
     await waitFor(() => screen.getByText('char: a'));
 });
 
-test('invalidation should work', async () => {
+test('invalidation: refetchAfterMillis should work', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise.next, { invalidation: InvalidationStrategy.refetchAfterMillis(10) });
@@ -103,7 +103,7 @@ test('invalidation should work', async () => {
     await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
 });
 
-test('polling should work', async () => {
+test('invalidation: polling should work', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise.next, {
@@ -126,7 +126,7 @@ test('polling should work', async () => {
     await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
 });
 
-test('polling should stop on unmount', async () => {
+test('invalidation: polling should stop on unmount', async () => {
     class FailAtTwo {
         i = 0;
         next = (): Promise<number> => {
