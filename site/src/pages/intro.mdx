@@ -86,6 +86,21 @@ Out of the box, `WithRemoteData` handles loading and error states but is visuall
 You can copy it directly into your codebase
 or wrap it to provide custom styling and behavior for pending and failure states.
 
+### Parallel vs. Sequential Fetching
+
+When your app renders data from multiple `RemoteDataStore` instances, they will initiate their requests in parallel if the data is missing or old.
+
+This parallel behavior ensures quicker overall loading times when you need multiple pieces of data at once.
+
+If you need to fetch data in a specific order, you can achieve this by nesting `WithData` inside `WithData` in your JSX,
+meaning that the inner won't be rendered/requested until the outer has finished.
+
+### Data Lifetime Aligned with React Components
+
+Because each store is created by the hook in a mounted component, data only exists as long as that component is active.
+There’s no global state or context—once the component unmounts, the store is effectively garbage-collected.
+This design ensures data is retained only while it’s relevant.
+
 ---
 
 ## Combining Stores
@@ -95,10 +110,6 @@ If you have two or more `RemoteDataStore`s,
 you can merge them into a single store that represents all requests in flight.
 This is done via `RemoteDataStore.all(...)`:
 
-```ts
-const combinedStore = RemoteDataStore.all(store1, store2, store3);
-```
-
 Under the hood, the combined store uses the `RemoteData.all(...)` function, which:
 
 - Returns `Pending` if *any* constituent store is `Pending`.
@@ -106,38 +117,18 @@ Under the hood, the combined store uses the `RemoteData.all(...)` function, whic
 - Returns `Yes` with a tuple `[value1, value2, value3]` if *all* succeed.
 - Manages invalidation states if any store becomes invalidated.
 
-In a render prop, you can destructure the results:
-
-```jsx
-<WithRemoteData
-  store={combinedStore}
-  render={([res1, res2, res3], isInvalidated) => {
-    // all data is loaded; res1, res2, res3 are typed and ready to use
-    return <MyCombinedView data1={res1} data2={res2} data3={res3} />;
-  }}
-/>
-```
-
-Out of the box, TypeScript will infer correct tuple types for you,
-ensuring each `resN` matches the request it corresponds to.
+In a render prop, you can
+[destructure](https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c)
+the results.
 
 <Snippet snippet="combine" />
 
 #### A Note on TypeScript Tooling
 
-The TypeScript compiler (and IDEs like IntelliJ) fully understands this combined store.
+The TypeScript compiler (and IDEs) fully understands these combined stores.
 You can hover over the tuple items (often with <kbd>Ctrl</kbd> or <kbd>Command</kbd>) to see precise type information.
 
 <video autoPlay controls muted src={typesafeCombine}></video>
-
-#### Parallel vs. Sequential Fetching
-
-When your app renders data from multiple `RemoteDataStore` instances, they will initiate their requests in parallel if the data is missing or old.
-
-This parallel behavior ensures quicker overall loading times when you need multiple pieces of data at once.
-
-If you need to fetch data in a specific order, you can achieve this by nesting `WithData` inside `WithData`,
-so you construct a "fake" dependency.
 
 ---
 
