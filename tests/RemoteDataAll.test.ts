@@ -1,39 +1,43 @@
 import { RemoteData } from '../src';
+import { Either } from '../src';
 
 test('Pending takes precedence over Initial, Yes', async () => {
-    expect(RemoteData.all(RemoteData.Yes(1, RemoteData.Epoch), RemoteData.Initial, RemoteData.Pending)).toStrictEqual(RemoteData.Pending);
+    expect(RemoteData.all(RemoteData.Yes(1, RemoteData.Epoch), RemoteData.Initial, RemoteData.Pending)).toStrictEqual(
+        RemoteData.Pending
+    );
 });
 test('Initial takes precedence over Yes', async () => {
     expect(RemoteData.all(RemoteData.Initial, RemoteData.Yes(1, RemoteData.Epoch))).toStrictEqual(RemoteData.Initial);
 });
 
 test('No takes precedence over everything', async () => {
-    expect(
-        RemoteData.all(
-            RemoteData.Initial,
-            RemoteData.Pending,
-            RemoteData.Yes(1, RemoteData.Epoch),
-            RemoteData.InvalidatedPending(RemoteData.Yes(1, RemoteData.Epoch)),
-            RemoteData.InvalidatedInitial(RemoteData.Yes(1, RemoteData.Epoch)),
-            RemoteData.No(['error'], () => Promise.reject())
-        ).type
-    ).toStrictEqual('no');
-});
+    const all: RemoteData<[unknown, unknown, number, number, number, unknown], 'error'> = RemoteData.all(
+        RemoteData.Initial,
+        RemoteData.Pending,
+        RemoteData.Yes(1, RemoteData.Epoch),
+        RemoteData.InvalidatedPending(RemoteData.Yes(1, RemoteData.Epoch)),
+        RemoteData.InvalidatedInitial(RemoteData.Yes(1, RemoteData.Epoch)),
+        RemoteData.No([Either.right('error' as const)], () => Promise.reject())
+    );
+    expect(all.type).toStrictEqual('no');
+})
 
 test('Can combine multiple Yes', async () => {
-    expect(RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.Yes(2, new Date(2)))).toStrictEqual(RemoteData.Yes([1, 2], new Date(2)));
+    expect(RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.Yes(2, new Date(2)))).toStrictEqual(
+        RemoteData.Yes([1, 2], new Date(2))
+    );
 });
 
 test('Can combine invalidated data', async () => {
-    expect(RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Yes(2, new Date(2))))).toStrictEqual(
-        RemoteData.InvalidatedPending(RemoteData.Yes([1, 2], new Date(2)))
-    );
+    expect(
+        RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Yes(2, new Date(2))))
+    ).toStrictEqual(RemoteData.InvalidatedPending(RemoteData.Yes([1, 2], new Date(2))));
 });
 
 test('can combine invalidated data (2)', async () => {
-    expect(RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Yes(2, new Date(1))))).toStrictEqual(
-        RemoteData.InvalidatedPending(RemoteData.Yes([1, 2], new Date(2)))
-    );
+    expect(
+        RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Yes(2, new Date(1))))
+    ).toStrictEqual(RemoteData.InvalidatedPending(RemoteData.Yes([1, 2], new Date(2))));
 });
 
 test('properly combine retries', async () => {
@@ -53,8 +57,8 @@ test('properly combine retries', async () => {
     const combined = RemoteData.all(
         RemoteData.Pending,
         RemoteData.Yes(1, RemoteData.Epoch),
-        RemoteData.No(['no1'], retry1),
-        RemoteData.No(['no2'], retry2)
+        RemoteData.No([Either.right('no1')], retry1),
+        RemoteData.No([Either.right('no2')], retry2)
     );
     if (combined.type === 'no') {
         await combined.retry();

@@ -1,9 +1,11 @@
 import { isDefined } from './internal/isDefined';
+import { WeakError } from './WeakError';
+import { Either } from './Either';
 
-export type RemoteData<T> =
+export type RemoteData<T, E = never> =
     | RemoteData.Initial
     | RemoteData.Pending
-    | RemoteData.No
+    | RemoteData.No<E>
     | RemoteData.Yes<T>
     | RemoteData.InvalidatedImmediate<T>
     | RemoteData.InvalidatedInitial<T>
@@ -11,9 +13,6 @@ export type RemoteData<T> =
 
 export namespace RemoteData {
     export const Epoch = new Date(0);
-
-    // unfortunately you can fail a `Promise` with anything. It's often an `Error`, though
-    export type WeakError = Error | unknown;
 
     export const Initial: Initial = { type: 'initial' };
 
@@ -27,15 +26,15 @@ export namespace RemoteData {
         readonly type: 'pending';
     }
 
-    export const No = (errors: ReadonlyArray<WeakError>, retry: () => Promise<void>): No => ({
+    export const No = <E>(errors: readonly Either<WeakError, E>[], retry: () => Promise<void>): No<E> => ({
         type: 'no',
         errors,
         retry,
     });
 
-    export interface No {
+    export interface No<E> {
         readonly type: 'no';
-        readonly errors: ReadonlyArray<WeakError>;
+        readonly errors: readonly Either<WeakError, E>[];
         readonly retry: () => Promise<void>;
     }
 
@@ -77,20 +76,26 @@ export namespace RemoteData {
         readonly invalidated: RemoteData.Yes<T>;
     }
 
-    export type ValuesFrom<Datas extends [...RemoteData<unknown>[]]> = {
-        [I in keyof Datas]: Datas[I] extends RemoteData<infer O> ? O : never;
+    export type ValuesFrom<Datas extends RemoteData<unknown, unknown>[]> = {
+        [I in keyof Datas]: Datas[I] extends RemoteData<infer O, unknown> ? O : never;
     };
+
+    export type ErrorsFromArray<Datas extends RemoteData<unknown, unknown>[]> = {
+        [I in keyof Datas]: Datas[I] extends RemoteData.No<infer E> ? E : never;
+    };
+
+    export type ErrorsFrom<Datas extends RemoteData<unknown, unknown>[]> = ErrorsFromArray<Datas>[number];
 
     // combine many RemoteData values into one with a tuple with all values if we have them.
     // think of this as `sequence` from FP
-    export const all = <RemoteDatas extends RemoteData<unknown>[]>(
+    export const all = <RemoteDatas extends RemoteData<unknown, unknown>[]>(
         ...remoteDatas: RemoteDatas
-    ): RemoteData<ValuesFrom<RemoteDatas>> => {
+    ): RemoteData<ValuesFrom<RemoteDatas>, ErrorsFrom<RemoteDatas>> => {
         // state-of-the-art typescript: typed on the outside, untyped on the inside
         const ret: unknown[] = [];
         let updatedAt: Date = Epoch;
         let isInvalidated = false;
-        let foundNo: RemoteData.No[] = [];
+        let foundNo: RemoteData.No<unknown>[] = [];
         let foundPending: RemoteData.Pending | undefined = undefined;
         let foundInitial: RemoteData.Initial | undefined = undefined;
 
@@ -124,8 +129,11 @@ export namespace RemoteData {
 
         if (foundNo.length > 0) {
             const retry = () => Promise.all(foundNo.map((no) => no.retry())).then(() => {});
-            const allErrors = foundNo.reduce<readonly WeakError[]>((acc, no) => [...acc, ...no.errors], []);
-            return RemoteData.No(allErrors, retry);
+            const allErrors = foundNo.reduce<readonly Either<WeakError, unknown>[]>(
+                (acc, no) => [...acc, ...no.errors],
+                []
+            );
+            return RemoteData.No(allErrors as Either<WeakError, ErrorsFrom<RemoteDatas>>[], retry);
         } else if (isDefined(foundPending)) {
             return foundPending;
         } else if (isDefined(foundInitial)) {
@@ -138,7 +146,7 @@ export namespace RemoteData {
         else return combined;
     };
 
-    export const orNull = <T>(remoteData: RemoteData<T>): [T, Date] | null =>
+    export const orNull = <T, E>(remoteData: RemoteData<T, E>): [T, Date] | null =>
         fold(remoteData)(
             (value, _, updatedAt) => [value, updatedAt],
             () => null,
@@ -149,11 +157,11 @@ export namespace RemoteData {
      * Given a `RemoteData`, reduce all the possible cases to one.
      */
     export const fold =
-        <T>(remoteData: RemoteData<T>) =>
+        <T, E>(remoteData: RemoteData<T, E>) =>
         <Out>(
             onData: (value: T, isInvalidated: boolean, updatedAt: Date) => Out,
             onEmpty: () => Out,
-            onFailed: (err: ReadonlyArray<WeakError>, retry: () => Promise<void>) => Out
+            onFailed: (err: readonly Either<WeakError, E>[], retry: () => Promise<void>) => Out
         ): Out => {
             switch (remoteData.type) {
                 case 'initial':
@@ -173,7 +181,7 @@ export namespace RemoteData {
             }
         };
 
-    export const pendingStateFor = <T>(remoteData: RemoteData<T>): RemoteData<T> => {
+    export const pendingStateFor = <T, E>(remoteData: RemoteData<T, E>): RemoteData<T, E> => {
         switch (remoteData.type) {
             case 'invalidated-initial':
                 return RemoteData.InvalidatedPending(remoteData.invalidated);
@@ -184,7 +192,7 @@ export namespace RemoteData {
         }
     };
 
-    export const initialStateFor = <T>(remoteData: RemoteData<T>): RemoteData<T> => {
+    export const initialStateFor = <T, E>(remoteData: RemoteData<T, E>): RemoteData<T, E> => {
         switch (remoteData.type) {
             case 'yes':
                 return RemoteData.InvalidatedInitial(remoteData);
@@ -193,7 +201,7 @@ export namespace RemoteData {
         }
     };
 
-    export const map = <T, U>(remoteData: RemoteData<T>, f: (t: T) => U): RemoteData<U> => {
+    export const map = <T, U, E>(remoteData: RemoteData<T, E>, f: (t: T) => U): RemoteData<U, E> => {
         switch (remoteData.type) {
             case 'initial':
                 return RemoteData.Initial;

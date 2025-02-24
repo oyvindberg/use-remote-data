@@ -1,16 +1,17 @@
-import { FC } from 'react';
-import { RemoteData } from './RemoteData';
+import { WeakError } from './WeakError';
+import { Either } from './Either';
 
-export interface ErrorProps {
+export interface ErrorProps<E> {
     storeName?: string;
-    errors: ReadonlyArray<RemoteData.WeakError>;
+    errors: readonly Either<WeakError, E>[];
     retry: () => Promise<void>;
 }
 
-export const DefaultErrorComponent: FC<ErrorProps> = ({ storeName, errors, retry }) => {
+export function DefaultErrorComponent({ storeName, errors, retry }: ErrorProps<never>) {
     const title = storeName ? <strong>Failed request for store {storeName}</strong> : <strong>Failed request</strong>;
 
-    const renderedErrors = errors.map((error, idx) => {
+    const renderedErrors = errors.map((either, idx) => {
+        const error = either.value;
         if (error instanceof Error) {
             return (
                 <div key={idx}>
@@ -39,4 +40,4 @@ export const DefaultErrorComponent: FC<ErrorProps> = ({ storeName, errors, retry
             <button onClick={retry}>retry</button>
         </div>
     );
-};
+}

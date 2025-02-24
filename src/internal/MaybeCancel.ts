@@ -5,7 +5,7 @@ import { isDefined } from './isDefined';
 export type MaybeCancel = (() => void) | undefined;
 
 export namespace MaybeCancel {
-    export const all = (ts: ReadonlyArray<MaybeCancel>): MaybeCancel => {
+    export const all = (ts: readonly MaybeCancel[]): MaybeCancel => {
         const defined = ts.filter(isDefined);
         if (defined.length === 0) {
             return undefined;

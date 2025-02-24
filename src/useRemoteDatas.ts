@@ -7,11 +7,21 @@ import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
 import { Options } from './Options';
 import { IsInvalidated } from './IsInvalidated';
+import { Either } from './Either';
+import { WeakError } from './WeakError';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> => {
-    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V>>>(new Map());
+export const useRemoteDatas = <K, V>(
+    run: (key: K) => Promise<V>,
+    options: Options<V> = {}
+): RemoteDataStores<K, V> => useRemoteDatasEither<K, V, never>((key) => run(key).then(Either.right), options);
+
+export const useRemoteDatasEither = <K, V, E>(
+    run: (key: K) => Promise<Either<E, V>>,
+    options: Options<V> = {}
+): RemoteDataStores<K, V, E> => {
+    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V, E>>>(new Map());
     const [deps, setDeps] = useState(JsonKey.of(options.dependencies));
 
     const storeName = (key: JsonKey<K> | undefined) => {
@@ -39,7 +49,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         );
     }
 
-    const set = (key: JsonKey<K>, data: RemoteData<V>): void => {
+    const set = (key: JsonKey<K>, data: RemoteData<V, E>): void => {
         if (canUpdate) {
             if (options.debug) {
                 options.debug(`${storeName(key)} => `, data);
@@ -55,30 +65,45 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         }
     };
 
-    const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V>): Promise<void> => {
+    const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V, E>): Promise<void> => {
         set(jsonKey, pendingState);
         try {
             return run(key)
-                .then((value) => {
-                    const now = new Date();
-                    let res: RemoteData<V> = RemoteData.Yes(value, now);
-                    if (
-                        options.invalidation &&
-                        !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
-                    ) {
-                        res = RemoteData.InvalidatedImmediate(res);
-                    }
+                .then((either) => {
+                    switch (either.tag) {
+                        case 'left': {
+                            const no = RemoteData.No([Either.right(either.value)], () =>
+                                runAndUpdate(key, jsonKey, RemoteData.Pending)
+                            );
+                            set(jsonKey, no);
+                            break;
+                        }
+                        case 'right': {
+                            const value: V = either.value;
+                            const now = new Date();
+                            let res: RemoteData<V, E> = RemoteData.Yes(value, now);
+                            if (
+                                options.invalidation &&
+                                !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
+                            ) {
+                                res = RemoteData.InvalidatedImmediate(res);
+                            }
 
-                    set(jsonKey, res);
+                            set(jsonKey, res);
+                        }
+                    }
                 })
-                .catch((error) =>
+                .catch((error: WeakError) =>
                     set(
                         jsonKey,
-                        RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+                        RemoteData.No<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
                     )
                 );
-        } catch (error) {
-            set(jsonKey, RemoteData.No([error], () => runAndUpdate(key, jsonKey, RemoteData.Pending)));
+        } catch (error: WeakError) {
+            set(
+                jsonKey,
+                RemoteData.No<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+            );
             return Promise.resolve();
         }
     };
@@ -106,7 +131,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
             }
             setDeps(currentDeps);
 
-            const invalidatedRemoteDatas = new Map<JsonKey<K>, RemoteData<V>>();
+            const invalidatedRemoteDatas = new Map<JsonKey<K>, RemoteData<V, E>>();
             remoteDatas.forEach((remoteData, key) =>
                 invalidatedRemoteDatas.set(key, RemoteData.initialStateFor(remoteData))
             );
@@ -163,7 +188,7 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
         }
     };
 
-    const get = (key: K): RemoteDataStore<V> => {
+    const get = (key: K): RemoteDataStore<V, E> => {
         const jsonKey = JsonKey.of(key);
 
         return {
@@ -175,10 +200,10 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
                 set(jsonKey, RemoteData.initialStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
             },
             triggerUpdate: () => triggerUpdate(key, jsonKey),
-            get orNull(): RemoteDataStore<V | null> {
+            get orNull(): RemoteDataStore<V | null, E> {
                 return RemoteDataStore.orNull(this);
             },
-            map<U>(fn: (value: V) => U): RemoteDataStore<U> {
+            map<U>(fn: (value: V) => U): RemoteDataStore<U, E> {
                 return RemoteDataStore.map(this, fn);
             },
         };
@@ -186,6 +211,6 @@ export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Optio
 
     return {
         get,
-        getMany: (keys: readonly K[]): readonly RemoteDataStore<V>[] => keys.map(get),
+        getMany: (keys: readonly K[]): readonly RemoteDataStore<V, E>[] => keys.map(get),
     };
 };

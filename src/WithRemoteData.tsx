@@ -4,11 +4,11 @@ import { RemoteDataStore } from './RemoteDataStore';
 import { DefaultErrorComponent, ErrorProps } from './DefaultErrorComponent';
 import { DefaultPendingComponent } from './DefaultPendingComponent';
 
-interface Props<T> {
-    store: RemoteDataStore<T>;
+interface Props<T, E> {
+    store: RemoteDataStore<T, E>;
     children: (value: T, isInvalidated: boolean) => ReactNode;
     PendingComponent?: ElementType;
-    ErrorComponent?: ComponentType<ErrorProps>;
+    ErrorComponent?: ComponentType<ErrorProps<E>>;
 }
 
 /**
@@ -24,7 +24,7 @@ export function WithRemoteData<T>({
     children,
     ErrorComponent = DefaultErrorComponent,
     PendingComponent = DefaultPendingComponent,
-}: Props<T>): ReactElement {
+}: Props<T, never>): ReactElement {
     // This triggers updating the data in the store when needed.
     // Apparently it needs to be within `useEffect` because it updates a state hook in a parent component
     // If you copy/paste this component you should keep this line as is

@@ -1,6 +1,10 @@
 import { RemoteDataStore } from './RemoteDataStore';
-import { useRemoteDatas } from './useRemoteDatas';
+import { useRemoteDatasEither } from './useRemoteDatas';
 import { Options } from './Options';
+import { Either } from './Either';
 
 export const useRemoteData = <T>(run: () => Promise<T>, options?: Options<T>): RemoteDataStore<T> =>
-    useRemoteDatas<undefined, T>(run, options).get(undefined);
+    useRemoteDatasEither<undefined, T, never>(() => run().then(Either.right), options).get(undefined);
+
+export const useRemoteDataEither = <T, E>(run: () => Promise<Either<E, T>>, options?: Options<T>): RemoteDataStore<T, E> =>
+    useRemoteDatasEither<undefined, T, E>(run, options).get(undefined);
