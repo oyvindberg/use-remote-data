@@ -19,12 +19,12 @@ interface Props<T, E> {
  *
  * If you copy/paste it, the only important thing is that you also copy the `useEffect` statement below
  */
-export function WithRemoteData<T>({
+export function WithRemoteData<T, E>({
     store,
     children,
     ErrorComponent = DefaultErrorComponent,
     PendingComponent = DefaultPendingComponent,
-}: Props<T, never>): ReactElement {
+}: Props<T, E>): ReactElement {
     // This triggers updating the data in the store when needed.
     // Apparently it needs to be within `useEffect` because it updates a state hook in a parent component
     // If you copy/paste this component you should keep this line as is

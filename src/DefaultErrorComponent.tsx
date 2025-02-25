@@ -7,7 +7,7 @@ export interface ErrorProps<E> {
     retry: () => Promise<void>;
 }
 
-export function DefaultErrorComponent({ storeName, errors, retry }: ErrorProps<never>) {
+export function DefaultErrorComponent<E>({ storeName, errors, retry }: ErrorProps<E>) {
     const title = storeName ? <strong>Failed request for store {storeName}</strong> : <strong>Failed request</strong>;
 
     const renderedErrors = errors.map((either, idx) => {

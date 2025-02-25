@@ -5,7 +5,7 @@ export { InvalidationStrategy } from './InvalidationStrategy';
 export { IsInvalidated } from './IsInvalidated';
 export { RemoteData } from './RemoteData';
 export { RemoteDataStore } from './RemoteDataStore';
-export { WeakError } from './WeakError';
+export { type WeakError } from './WeakError';
 export { WithRemoteData } from './WithRemoteData';
 export { type Options } from './Options';
 export { type RemoteDataStores } from './RemoteDataStores';
