@@ -1,0 +1,37 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Typed errors
+
+An interesting feature of `use-remote-data` is its ability to handle **typed errors**,
+letting you differentiate domain-level failures (like `PersonNotFound` or `PersonDeleted`)
+from unexpected ones (network failed).
+
+By default, all error situations are unexpected — caused by a failed promise or a thrown exception.
+
+However, if consume an API, say a GraphQL schema that returns various error objects,
+you can choose to use `useRemoteDataEither` (or `useRemoteDatasEither` for [dynamic data](dynamic-data))
+instead to capture these domain-level errors.
+
+This returns a `RemoteDataStore<T, E>`, where `E` represents your custom error type.
+
+---
+
+## Why Use Typed Errors?
+
+- **Clarity:** Preserve the exact structure of your GraphQL or REST error responses instead of flattening everything into a generic `Error`.
+- **Precise rendering:** Make decisions in your React components about each error variant, offering more relevant messages or fallback flows.
+
+---
+
+## Render typed errors
+You'll need to prove a custom error component to `WithRemoteData`.
+Typically, you can also create a specialized wrapper component around `WithRemoteData` that uses your custom error-handling component.
+
+By doing so, your UI can leverage the fully typed nature of these errors,
+presenting tailored messages or fallback flows for each distinct error variant.
+
+Meanwhile, any genuinely unexpected runtime error still appears as `WeakError`.
+
+This is a reasonably long example with a fake GraphQL schema that can return a `PersonNotFoundError` or `PersonDeletedError`.
+
+<Snippet snippet="typed-errors" />

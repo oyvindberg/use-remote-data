@@ -1,0 +1,12 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Updates (Write Operations)
+
+Your application might need to send data back to the server.
+While `use-remote-data` focuses on read operations,
+you can still integrate writes by calling out to the server in your components.
+After a successful write,
+call `invalidate()` or `triggerUpdate()` to refresh any store that depends on the changed data.
+
+<Snippet snippet="create" />
+

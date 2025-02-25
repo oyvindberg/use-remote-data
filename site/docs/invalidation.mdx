@@ -1,0 +1,47 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Invalidation / Refresh data
+
+Sometimes data becomes out-of-date.
+
+`use-remote-data` supports “invalidation” through an optional `invalidation: InvalidationStrategy` parameter to the hook.
+
+An **`InvalidationStrategy`** is a function that decides whether to keep data or mark it stale.
+
+## By time
+
+Here is an example where data is considered stale after 2 seconds.
+
+In the `<WithRemoteData>` render prop,
+you can check the second argument (`isInvalidated`)
+to decide whether to let the user see old data or a loading indicator.
+
+<Snippet snippet="invalidation" />
+
+### Only Sometimes?
+
+You can enable or disable invalidation dynamically by swapping the `invalidation` strategy in or out. For instance:
+
+<Snippet snippet="invalidation_sometimes" />
+
+## Poll until valid data
+
+Something that comes up sometimes is APIs which require you to poll.
+`use-remote-data` supports this through `InvalidationStrategy.pollUntil`
+
+<Snippet snippet="polling" />
+
+## Invalidate on Dependency Change
+
+`useRemoteData` and `useRemoteDatas` let you provide a `dependencies` array (similar to React’s `useEffect`):
+
+```tsx
+useRemoteData(() => fetchData(), {
+    dependencies: [props.userId, otherValue],
+});
+```
+
+When the dependency array changes, the store invalidates automatically, and `triggerUpdate()` will re-fetch if needed.
+(Currently, it compares dependencies by `JSON.stringify`.)
+
+<Snippet snippet="invalidation_dependencies" />

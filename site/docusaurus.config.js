@@ -21,9 +21,9 @@ module.exports = {
             },
             items: [
                 {
-                    to: 'intro',
+                    to: 'docs/getting-started',
                     position: 'left',
-                    label: 'Tutorial',
+                    label: 'Docs',
                 },
                 {
                     href: 'https://github.com/oyvindberg/use-remote-data',
@@ -39,8 +39,8 @@ module.exports = {
                     title: 'Docs',
                     items: [
                         {
-                            label: 'Tutorial',
-                            to: '/intro',
+                            label: 'Getting started',
+                            to: '/docs/getting-started',
                         },
                     ],
                 },
@@ -78,7 +78,7 @@ module.exports = {
             '@docusaurus/preset-classic',
             {
                 docs: {
-                    sidebarPath: require.resolve('./sidebars.js'),
+                    sidebarPath: require.resolve('./sidebars.ts'),
                     // Please change this to your repo.
                     editUrl: 'https://github.com/facebook/docusaurus/edit/master/website/',
                 },

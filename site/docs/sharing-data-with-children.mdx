@@ -1,0 +1,20 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Sharing Data with Child Components
+
+A common pattern is to fetch data high in your component tree and share it among multiple routes or components,
+leveraging built-in caching so that each route doesn’t refetch unnecessarily.
+
+Since `RemoteDataStore` is both _lazy_ and _caching_, you can pass the same store to multiple children.
+Data is fetched only once, and the results remain in memory as long as a store is in use.
+
+<Snippet snippet="use_twice" />
+
+### Should I Pass `RemoteDataStore<T>` or Just `T`?
+
+There’s a subtle difference:
+
+> _Does the child component need to render anything while data is still loading?_
+
+- If yes, consider passing a `RemoteDataStore<T>` so the child can handle loading/failure states.
+- Otherwise, if the parent already handles loading and passes down final data, just pass `T`.

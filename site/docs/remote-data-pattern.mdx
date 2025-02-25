@@ -1,0 +1,66 @@
+# Remote Data pattern
+
+The Remote Data pattern is a popular way to model all possible states of asynchronous data requests in a single, explicit type.
+You’ll often find articles discussing it in the context of functional programming libraries,
+where a central “union type” (or “sum type”) encapsulates:
+
+- No data yet (lazy initialization)
+- Data is being fetched (loading)
+- An error occurred (with retry information)
+- Data is available (success)
+
+This library extends the classic idea by adding [invalidation](invalidation) states for automatically re-fetching stale data.
+
+```ts
+import { WeakError } from './WeakError';
+import { Either } from './Either';
+
+export type RemoteData<T, E = never> =
+    | RemoteData.Initial
+    | RemoteData.Pending
+    | RemoteData.No<E>
+    | RemoteData.Yes<T>
+    | RemoteData.InvalidatedImmediate<T>
+    | RemoteData.InvalidatedInitial<T>
+    | RemoteData.InvalidatedPending<T>;
+
+export namespace RemoteData {
+    // We haven’t started fetching yet (lazy load)
+    export interface Initial {
+        type: 'initial';
+    }
+    // A request is ongoing (fetch in progress).
+    export interface Pending {
+        type: 'pending';
+    }
+    // The request failed (includes errors and a retry callback).
+    export interface No<E> {
+        type: 'no';
+        errors: Either<WeakError, E>[];
+        retry: () => Promise<void>;
+    }
+    // The request succeeded (includes the fetched value).
+    export interface Yes<T> {
+        type: 'yes';
+        value: T;
+        updatedAt: Date;
+    }
+    // We have stale data, and it was never considered valid (used for polling)
+    export interface InvalidatedImmediate<T> {
+        type: 'invalidated-immediate';
+        invalidated: RemoteData.Yes<T>;
+    }
+    // We have stale data but haven’t started re-fetching.
+    export interface InvalidatedInitial<T> {
+        type: 'invalidated-initial';
+        invalidated: RemoteData.Yes<T>;
+    }
+    // We have stale data and are re-fetching
+    export interface InvalidatedPending<T> {
+        type: 'invalidated-pending';
+        invalidated: RemoteData.Yes<T>;
+    }
+}
+```
+
+Note that the `E` type parameter for expected errors is optional, see [typed errors](typed-errors) for more information.

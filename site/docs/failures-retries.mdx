@@ -1,0 +1,13 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Failures and Retries
+
+Handling and retrying transient failures can be tricky to implement.
+
+`use-remote-data` offers robust error handling and retry logic out of the box, making it easy to do things right.
+
+This example creates a `Promise` which fails every tenth time it is called.
+The sometimes-failing store is combined with another store which never fails,
+and you should hit _retry_ a few times to see the interaction.
+
+<Snippet snippet="handling_failure" />

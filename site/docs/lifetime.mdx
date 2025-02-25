@@ -1,0 +1,6 @@
+# Data Lifetime Aligned with React Components
+
+Because each store is created by the hook in a mounted component, data only exists as long as that component is active.
+There’s no global state or context—once the component unmounts, the store is effectively garbage-collected.
+This design ensures data is retained only while it’s relevant.
+

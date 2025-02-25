@@ -1,0 +1,6 @@
+# Lazy Loading
+
+An interesting aspect of `useRemoteData` is no data is fetched when you call `useRemoteData`.
+
+Only when the data is rendered with `WithRemoteData` is the request initiated.
+This is handy, because then you can initialize many `RemoteDataStore`s in a component high up in the hierarchy, and pass them down to children.

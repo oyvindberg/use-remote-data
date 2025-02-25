@@ -1,0 +1,29 @@
+import { Snippet } from '../src/components/Snippet';
+import typesafeCombine from '../static/typesafe-combine.webm';
+
+# Combining Stores
+
+One of the library’s most powerful patterns is combining multiple requests.
+If you have two or more `RemoteDataStore`s,
+you can merge them into a single store that represents all requests in flight.
+This is done via `RemoteDataStore.all(...)`:
+
+Under the hood, the combined store uses the `RemoteData.all(...)` function, which:
+
+- Returns `No` if _any_ store fails. A single “retry” will only re-fetch the failing requests.
+- Returns `Pending` if _any_ constituent store is `Pending`.
+- Returns `Yes` with a tuple of all combined values if _all_ succeed.
+- Manages invalidation states if any store becomes invalidated.
+
+In a render prop, you can
+[destructure](https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c)
+the results.
+
+<Snippet snippet="combine" />
+
+#### A Note on TypeScript Tooling
+
+The TypeScript compiler (and IDEs) fully understands these combined stores.
+You can hover over the tuple items (often with <kbd>Ctrl</kbd> or <kbd>Command</kbd>) to see precise type information.
+
+<video autoPlay controls muted style={{ maxWidth: '100%' }} src={typesafeCombine}></video>

@@ -1,0 +1,47 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Getting Started
+
+`use-remote-data` is a small library that provides a principled, type-safe way to manage asynchronous state in your React applications.
+
+It revolves around a [**state machine**](state-machine) represented by the `RemoteData` type,
+and a corresponding `RemoteDataStore` that orchestrates fetching, caching, invalidation, and retries—all while staying strongly typed.
+
+---
+
+## Installation
+
+```bash
+npm install use-remote-data
+```
+
+```bash
+yarn add use-remote-data
+```
+
+---
+
+## Basic Usage
+
+The primary entry point is the **`useRemoteData`** hook.
+It takes one parameter—a function that produces a `Promise`—and returns a `RemoteDataStore<T>`.
+Because we need the ability to retry, you must pass a function rather than a direct `Promise`.
+
+- According to [React Hooks rules](https://reactjs.org/docs/hooks-rules.html), the hook must be used inside a component.
+- The object returned by `useRemoteData` is our `RemoteDataStore<T>`.
+
+<Snippet snippet="basic_usage" />
+
+## Rendering with `WithRemoteData`
+
+In the example above, you can see that the store is passed to a `WithRemoteData` component
+in order to fetch the data and render it.
+
+One curious possibly unfamiliar thing is that it uses a [render prop](https://reactjs.org/docs/render-props.html)
+that receives your successfully loaded data (along with an `isInvalidated` boolean).
+
+Out of the box, `WithRemoteData` handles loading and error states but is visually minimal,
+including `JSON.stringify`ing error messages.
+
+**Recommended usage** is therefore to copy/paste the `WithRemoteData` component into your codebase,
+and provide your own rendering for everything.
