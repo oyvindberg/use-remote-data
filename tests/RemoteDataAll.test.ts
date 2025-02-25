@@ -36,7 +36,7 @@ test('Can combine invalidated data', async () => {
 
 test('can combine invalidated data (2)', async () => {
     expect(
-        RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Yes(2, new Date(1))))
+        RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Yes(2, new Date(2))))
     ).toStrictEqual(RemoteData.InvalidatedPending(RemoteData.Yes([1, 2], new Date(2))));
 });
 
@@ -62,7 +62,7 @@ test('properly combine retries', async () => {
     );
     if (combined.type === 'no') {
         await combined.retry();
-        expect(combined.errors).toStrictEqual(['no1', 'no2']);
+        expect(combined.errors).toStrictEqual([Either.right('no1'), Either.right('no2')]);
         expect(value1).toStrictEqual(1);
         expect(value2).toStrictEqual(1);
     } else {
