@@ -12,10 +12,8 @@ import { WeakError } from './WeakError';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDatas = <K, V>(
-    run: (key: K) => Promise<V>,
-    options: Options<V> = {}
-): RemoteDataStores<K, V> => useRemoteDatasEither<K, V, never>((key) => run(key).then(Either.right), options);
+export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> =>
+    useRemoteDatasEither<K, V, never>((key) => run(key).then(Either.right), options);
 
 export const useRemoteDatasEither = <K, V, E>(
     run: (key: K) => Promise<Either<E, V>>,

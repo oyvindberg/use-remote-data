@@ -20,7 +20,7 @@ test('No takes precedence over everything', async () => {
         RemoteData.No([Either.right('error' as const)], () => Promise.reject())
     );
     expect(all.type).toStrictEqual('no');
-})
+});
 
 test('Can combine multiple Yes', async () => {
     expect(RemoteData.all(RemoteData.Yes(1, new Date(1)), RemoteData.Yes(2, new Date(2)))).toStrictEqual(
