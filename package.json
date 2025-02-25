@@ -1,6 +1,6 @@
 {
     "name": "use-remote-data",
-    "version": "0.7.2",
+    "version": "0.8.0",
     "description": "Promise handling for react. Principled, Boilerplate-free, Caching, Invalidating",
     "author": "Øyvind Raddum Berg",
     "homepage": "https://oyvindberg.github.io/use-remote-data/",
