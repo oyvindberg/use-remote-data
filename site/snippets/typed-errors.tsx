@@ -4,7 +4,7 @@ import {
     ErrorProps,
     useRemoteDataEither,
     WithRemoteData,
-} from '../../src';
+} from 'use-remote-data';
 
 // let's say we have a graphql schema like this:
 export namespace gql {

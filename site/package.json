@@ -27,7 +27,7 @@
         "react-dom": "^19.0.0",
         "react-syntax-highlighter": "^15.6.1",
         "url-loader": "^4.1.1",
-        "use-remote-data": "0.7.2"
+        "use-remote-data": "0.8.0"
     },
     "browserslist": {
         "production": [
