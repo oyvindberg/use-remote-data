@@ -16,11 +16,11 @@ const sidebars: SidebarsConfig = {
     tutorialSidebar: [
         { type: 'doc', label: 'Getting started', id: 'getting-started' },
         { type: 'doc', label: 'Remote Data pattern', id: 'remote-data-pattern' },
-        { type: 'doc', label: 'Failures and Retries', id: 'failures-retries' },
         { type: 'doc', label: 'Invalidation / Refresh data', id: 'invalidation' },
+        { type: 'doc', label: 'Combining stores', id: 'combining-stores' },
+        { type: 'doc', label: 'Failures and Retries', id: 'failures-retries' },
         { type: 'doc', label: 'Sharing Data with Child Components', id: 'sharing-data-with-children' },
         { type: 'doc', label: 'Updates (Write Operations)', id: 'updates' },
-        { type: 'doc', label: 'Combining stores', id: 'combining-stores' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
         { type: 'doc', label: 'Typed errors', id: 'typed-errors' },
         {
