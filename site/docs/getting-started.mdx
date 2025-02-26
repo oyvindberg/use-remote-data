@@ -2,10 +2,16 @@ import { Snippet } from '../src/components/Snippet';
 
 # Getting Started
 
-`use-remote-data` is a small library that provides a principled, type-safe way to manage asynchronous state in your React applications.
+## About
+`use-remote-data` is a React hook that takes a principled, **type-safe** approach to fetching and managing async data.
 
-It revolves around a [**state machine**](state-machine) represented by the `RemoteData` type,
-and a corresponding `RemoteDataStore` that orchestrates fetching, caching, invalidation, and retries—all while staying strongly typed.
+At its core is the `RemoteData` union type,
+which covers every possible state of a request (from “not yet fetched” to “success with stale data” or “failure”).
+
+On top of this, a `RemoteDataStore` automatically handles orchestration — fetching, caching, error handling, invalidation,
+and retries—so you can write clear, reliable async code with minimal boilerplate.
+
+It also offers **optional** typed errors to distinguish between domain-level failures and unexpected runtime issues.
 
 ---
 
@@ -41,7 +47,7 @@ One curious possibly unfamiliar thing is that it uses a [render prop](https://re
 that receives your successfully loaded data (along with an `isInvalidated` boolean).
 
 Out of the box, `WithRemoteData` handles loading and error states but is visually minimal,
-including `JSON.stringify`ing error messages.
+including `JSON.stringify`ing error objects.
 
 **Recommended usage** is therefore to copy/paste the `WithRemoteData` component into your codebase,
 and provide your own rendering for everything.
