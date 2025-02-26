@@ -1,14 +1,14 @@
-import { useEffect, useState, version } from 'react';
-import { isDefined } from './internal/isDefined';
-import { JsonKey } from './internal/JsonKey';
-import { MaybeCancel } from './internal/MaybeCancel';
+import { CancelTimeout } from './CancelTimeout';
+import { Either } from './Either';
+import { IsInvalidated } from './IsInvalidated';
+import { Options } from './Options';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataStores } from './RemoteDataStores';
-import { Options } from './Options';
-import { IsInvalidated } from './IsInvalidated';
-import { Either } from './Either';
 import { WeakError } from './WeakError';
+import { JsonKey } from './internal/JsonKey';
+import { isDefined } from './internal/isDefined';
+import { useEffect, useState, version } from 'react';
 
 const reactMajor = Number(version.split('.')[0]);
 
@@ -120,7 +120,7 @@ export const useRemoteDatasEither = <K, V, E>(
      * A `MaybeCancel` data structure is returned with enough information to cancel timeouts on unmount,
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
-    const triggerUpdate = (key: K, jsonKey: JsonKey<K>): MaybeCancel => {
+    const triggerUpdate = (key: K, jsonKey: JsonKey<K>): CancelTimeout => {
         /** step one: if dependencies have changed, invalidate all data */
         const currentDeps = JsonKey.of(options.dependencies);
         if (deps !== currentDeps) {

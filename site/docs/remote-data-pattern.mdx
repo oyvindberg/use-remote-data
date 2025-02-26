@@ -12,8 +12,8 @@ where a central “union type” (or “sum type”) encapsulates:
 This library extends the classic idea by adding [invalidation](invalidation) states for automatically re-fetching stale data.
 
 ```ts
-import { WeakError } from './WeakError';
 import { Either } from './Either';
+import { WeakError } from './WeakError';
 
 export type RemoteData<T, E = never> =
     | RemoteData.Initial

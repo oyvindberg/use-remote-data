@@ -1,8 +1,8 @@
-import { ComponentType, ElementType, ReactElement, ReactNode, useEffect } from 'react';
-import { RemoteData } from './RemoteData';
-import { RemoteDataStore } from './RemoteDataStore';
 import { DefaultErrorComponent, ErrorProps } from './DefaultErrorComponent';
 import { DefaultPendingComponent } from './DefaultPendingComponent';
+import { RemoteData } from './RemoteData';
+import { RemoteDataStore } from './RemoteDataStore';
+import { ComponentType, ElementType, ReactElement, ReactNode, useEffect } from 'react';
 
 interface Props<T, E> {
     store: RemoteDataStore<T, E>;

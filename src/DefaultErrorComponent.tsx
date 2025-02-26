@@ -1,5 +1,5 @@
-import { WeakError } from './WeakError';
 import { Either } from './Either';
+import { WeakError } from './WeakError';
 
 export interface ErrorProps<E> {
     storeName?: string;

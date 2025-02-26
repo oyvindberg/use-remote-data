@@ -1,5 +1,5 @@
+import { InvalidationStrategy, RemoteDataStore, WithRemoteData, useRemoteData } from '../src';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { RemoteDataStore, useRemoteData, WithRemoteData, InvalidationStrategy } from '../src';
 
 class TestPromise {
     i = 0;

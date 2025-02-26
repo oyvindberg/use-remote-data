@@ -1,7 +1,7 @@
-import * as React from 'react';
-import Layout from '@theme/Layout';
 import { Snippet } from '../components/Snippet';
 import Link from '@docusaurus/Link';
+import Layout from '@theme/Layout';
+import * as React from 'react';
 
 const typesafeCombine = require('../../static/typesafe-combine.webm').default;
 

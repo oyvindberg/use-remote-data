@@ -1,5 +1,5 @@
-import { DependencyList } from 'react';
 import { InvalidationStrategy } from './InvalidationStrategy';
+import { DependencyList } from 'react';
 
 export interface Options<T> {
     debug?: Console['warn'];

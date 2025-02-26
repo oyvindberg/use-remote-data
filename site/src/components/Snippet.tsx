@@ -1,6 +1,6 @@
 import Link from '@docusaurus/Link';
-import React, { FC } from 'react';
 import CodeBlock from '@theme/CodeBlock';
+import React, { FC } from 'react';
 
 type Props = {
     snippet: string;

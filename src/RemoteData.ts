@@ -1,6 +1,6 @@
-import { isDefined } from './internal/isDefined';
-import { WeakError } from './WeakError';
 import { Either } from './Either';
+import { WeakError } from './WeakError';
+import { isDefined } from './internal/isDefined';
 
 export type RemoteData<T, E = never> =
     | RemoteData.Initial

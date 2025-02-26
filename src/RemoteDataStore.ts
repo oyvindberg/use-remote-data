@@ -1,10 +1,10 @@
+import { CancelTimeout } from './CancelTimeout';
 import { RemoteData } from './RemoteData';
 import { isDefined } from './internal/isDefined';
-import { MaybeCancel } from './internal/MaybeCancel';
 
 export interface RemoteDataStore<T, E = never> {
     // should always call this when the data inside is meant to be rendered, typically from `WithData`
-    readonly triggerUpdate: () => MaybeCancel;
+    readonly triggerUpdate: () => CancelTimeout;
     // you can call this explicitly to force a re-fetch
     readonly invalidate: () => void;
     // fetch current state. will not trigger any side effects
@@ -43,12 +43,12 @@ export namespace RemoteDataStore {
             this.#stores = stores;
         }
 
-        triggerUpdate = (): MaybeCancel => {
+        triggerUpdate = (): CancelTimeout => {
             // if the product of all stores is a failure, dont invalidate any successful stores where we won't see the result
             if (this.current.type === 'no') {
                 return undefined;
             }
-            return MaybeCancel.all(this.#stores.map((store) => store.triggerUpdate()));
+            return CancelTimeout.all(this.#stores.map((store) => store.triggerUpdate()));
         };
 
         get current() {
@@ -82,7 +82,7 @@ export namespace RemoteDataStore {
 
     class OrNull<T, E> implements RemoteDataStore<T | null, E> {
         readonly #store: RemoteDataStore<T, E>;
-        readonly triggerUpdate: () => MaybeCancel;
+        readonly triggerUpdate: () => CancelTimeout;
         readonly invalidate: () => void;
 
         constructor(store: RemoteDataStore<T, E>) {
@@ -120,7 +120,7 @@ export namespace RemoteDataStore {
     class Mapped<T, U, E> implements RemoteDataStore<U, E> {
         readonly #store: RemoteDataStore<T, E>;
         readonly #fn: (value: T) => U;
-        readonly triggerUpdate: () => MaybeCancel;
+        readonly triggerUpdate: () => CancelTimeout;
         readonly invalidate: () => void;
 
         constructor(store: RemoteDataStore<T, E>, fn: (value: T) => U) {

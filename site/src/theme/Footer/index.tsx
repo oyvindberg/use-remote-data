@@ -4,15 +4,13 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
-import React from 'react';
-import clsx from 'clsx';
-
+import styles from './styles.module.css';
 import Link from '@docusaurus/Link';
 import { FooterLinkItem, useThemeConfig } from '@docusaurus/theme-common';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import styles from './styles.module.css';
 import ThemedImage, { Props as ThemedImageProps } from '@theme/ThemedImage';
+import clsx from 'clsx';
+import React from 'react';
 
 function FooterLink({ to, href, label, prependBaseUrlToHref, ...props }: FooterLinkItem) {
     const toUrl = useBaseUrl(to);
