@@ -1,0 +1,86 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Mutations
+
+Most applications don't just read data — they also **write** it.
+`use-remote-data` now has first-class support for mutations through **`useRemoteUpdate`**,
+giving you the same principled, type-safe experience for writes that `useRemoteData` provides for reads.
+
+## The basics
+
+The **`useRemoteUpdate`** hook takes a function that performs a write operation and returns a `RemoteUpdateStore`.
+Unlike `useRemoteData`, **nothing happens until you call `run()`** — the mutation is entirely imperative.
+
+<Snippet snippet="mutation_basic" />
+
+The store starts in an `Initial` state. When `run()` is called, it transitions to `Pending`, then to `Yes` (success)
+or `No` (failure). The entire `RemoteData` state machine you already know applies here too!
+
+## Parameters
+
+The function you pass to `useRemoteUpdate` can accept parameters.
+Pass them to `run()` at call-time — no `dependencies` array needed.
+
+<Snippet snippet="mutation_params" />
+
+This is a key difference from `useRemoteData`:
+form values are passed when the user clicks submit, not captured in a closure that re-creates on every keystroke.
+
+## Automatic invalidation
+
+After a successful mutation, you usually need to refresh some read stores.
+The `invalidates` option does this for you — just pass the stores that should refresh:
+
+<Snippet snippet="mutation_invalidation" />
+
+After success, each store in the array has its `invalidate()` called automatically.
+Any `WithRemoteData` rendering those stores will re-fetch.
+
+## Success and error callbacks
+
+For fire-and-forget patterns like dialogs, you can use `onSuccess` to perform side effects
+like closing a dialog — without putting imperative code in your render functions:
+
+```tsx
+const store = useRemoteUpdate(
+  (params) => saveItem(params),
+  {
+    invalidates: [itemsStore],
+    onSuccess: () => dialog.close(),
+    onError: (errors) => toast.error('Save failed'),
+  },
+);
+```
+
+The callback runs once, after invalidation completes.
+
+## Resetting
+
+Call `reset()` to return the store to its `Initial` state.
+This is perfect for dialogs — reset when closing so the next open starts fresh:
+
+```tsx
+const handleClose = () => {
+  store.reset();
+  dialog.close();
+};
+```
+
+You can also reset after an error (as an alternative to retrying with the same parameters),
+or after success to clear the result.
+
+## Rendering with `WithRemoteUpdate`
+
+For cases where you want to render the mutation result, use `WithRemoteUpdate`.
+It works like `WithRemoteData` but **never auto-triggers** — fetching only starts when `run()` is called.
+
+The children receive the data, the `run` function (for re-runs), and `reset`:
+
+<Snippet snippet="mutation_with_component" />
+
+The optional `idle` prop controls what renders before the mutation has ever been triggered.
+
+## Retries
+
+If a mutation fails, the `ErrorComponent` automatically shows a retry button — just like read stores.
+Retry re-runs with the **same parameters** that were originally passed.
