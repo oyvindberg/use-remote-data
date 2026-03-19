@@ -42,14 +42,11 @@ For fire-and-forget patterns like dialogs, you can use `onSuccess` to perform si
 like closing a dialog — without putting imperative code in your render functions:
 
 ```tsx
-const store = useRemoteUpdate(
-  (params) => saveItem(params),
-  {
+const store = useRemoteUpdate((params) => saveItem(params), {
     invalidates: [itemsStore],
     onSuccess: () => dialog.close(),
     onError: (errors) => toast.error('Save failed'),
-  },
-);
+});
 ```
 
 The callback runs once, after invalidation completes.
@@ -61,8 +58,8 @@ This is perfect for dialogs — reset when closing so the next open starts fresh
 
 ```tsx
 const handleClose = () => {
-  store.reset();
-  dialog.close();
+    store.reset();
+    dialog.close();
 };
 ```
 

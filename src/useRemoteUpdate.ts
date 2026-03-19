@@ -11,8 +11,7 @@ const reactMajor = Number(version.split('.')[0]);
 export const useRemoteUpdate = <T, P = void, E = never>(
     run: (params: P) => Promise<T>,
     options?: RemoteUpdateOptions<T, E>
-): RemoteUpdateStore<T, P, E> =>
-    useRemoteUpdateEither<T, P, E>((params) => run(params).then(Either.right), options);
+): RemoteUpdateStore<T, P, E> => useRemoteUpdateEither<T, P, E>((params) => run(params).then(Either.right), options);
 
 export const useRemoteUpdateEither = <T, P = void, E = never>(
     run: (params: P) => Promise<Either<E, T>>,
@@ -42,7 +41,8 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
         setState((prev) => RemoteData.pendingStateFor(prev));
 
         try {
-            return fetcherRef.current(params)
+            return fetcherRef
+                .current(params)
                 .then((either) => {
                     if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
                     const opts = optionsRef.current;

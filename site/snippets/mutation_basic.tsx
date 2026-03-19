@@ -3,7 +3,13 @@ import { useRemoteUpdate, WithRemoteUpdate } from 'use-remote-data';
 
 const saveItem = (name: string): Promise<string> =>
     new Promise((resolve) =>
-        setTimeout(() => resolve(`saved "${name}" with id #${Math.floor(Math.random() * 1000)}`), 800)
+        setTimeout(
+            () =>
+                resolve(
+                    `saved "${name}" with id #${Math.floor(Math.random() * 1000)}`
+                ),
+            800
+        )
     );
 
 export const Component: React.FC = () => {
@@ -16,7 +22,10 @@ export const Component: React.FC = () => {
         <div>
             <label>
                 name:{' '}
-                <input value={name} onChange={(e) => setName(e.currentTarget.value)} />
+                <input
+                    value={name}
+                    onChange={(e) => setName(e.currentTarget.value)}
+                />
             </label>{' '}
             <button
                 onClick={() => store.run(name)}

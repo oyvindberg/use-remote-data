@@ -6,7 +6,8 @@ const riskyOperation = (): Promise<string> =>
     new Promise((resolve, reject) => {
         attempts++;
         setTimeout(() => {
-            if (attempts % 3 === 0) reject(new Error('server error (every 3rd attempt fails)'));
+            if (attempts % 3 === 0)
+                reject(new Error('server error (every 3rd attempt fails)'));
             else resolve(`success on attempt #${attempts}`);
         }, 800);
     });
@@ -18,7 +19,9 @@ export const Component: React.FC = () => {
         <div>
             <WithRemoteUpdate
                 store={store}
-                idle={(run) => <button onClick={() => run()}>Start operation</button>}
+                idle={(run) => (
+                    <button onClick={() => run()}>Start operation</button>
+                )}
             >
                 {(result, run, reset) => (
                     <div>

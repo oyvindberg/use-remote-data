@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { useRemoteData, useRemoteUpdate, WithRemoteData, WithRemoteUpdate } from 'use-remote-data';
+import {
+    useRemoteData,
+    useRemoteUpdate,
+    WithRemoteData,
+    WithRemoteUpdate,
+} from 'use-remote-data';
 
 var counter = 0;
 const fetchCount = (): Promise<number> =>
@@ -25,8 +30,7 @@ export const Component: React.FC = () => {
                         Count: {count}
                     </span>
                 )}
-            </WithRemoteData>
-            {' '}
+            </WithRemoteData>{' '}
             <button
                 onClick={() => incrementStore.run()}
                 disabled={incrementStore.current.type === 'pending'}

@@ -8,24 +8,18 @@ The most common pattern: submit, invalidate dependent data, close the dialog.
 The mutation result itself is never rendered.
 
 ```tsx
-const saveStore = useRemoteUpdate(
-  (params: { name: string }) => api.createUser(params),
-  {
+const saveStore = useRemoteUpdate((params: { name: string }) => api.createUser(params), {
     invalidates: [usersStore],
     onSuccess: () => {
-      form.reset();
-      dialog.close();
+        form.reset();
+        dialog.close();
     },
-  },
-);
+});
 
 // In your JSX — just wire run() to the button:
-<button
-  onClick={() => saveStore.run({ name })}
-  disabled={saveStore.current.type === 'pending'}
->
-  Save
-</button>
+<button onClick={() => saveStore.run({ name })} disabled={saveStore.current.type === 'pending'}>
+    Save
+</button>;
 ```
 
 No `useState`, no conditional mounting, no side effects in render callbacks.
@@ -59,10 +53,7 @@ Since `RemoteUpdateStore` extends `RemoteDataStore`, you can combine them with r
 
 ```tsx
 const userStore = useRemoteData(() => fetchUser(id));
-const saveStore = useRemoteUpdate(
-  (data) => updateUser(id, data),
-  { invalidates: [userStore] },
-);
+const saveStore = useRemoteUpdate((data) => updateUser(id, data), { invalidates: [userStore] });
 
 // After save succeeds, userStore automatically re-fetches
 ```

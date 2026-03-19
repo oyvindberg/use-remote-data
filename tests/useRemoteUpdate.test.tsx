@@ -1,4 +1,4 @@
-import { useRemoteData, WithRemoteData } from '../src';
+import { WithRemoteData, useRemoteData } from '../src';
 import { WithRemoteUpdate } from '../src/WithRemoteUpdate';
 import { useRemoteUpdate } from '../src/useRemoteUpdate';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -9,9 +9,7 @@ test('should start in initial state and render nothing', () => {
         return (
             <div>
                 <span>state: {store.current.type}</span>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>result: {value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>result: {value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -27,9 +25,7 @@ test('should transition through pending to success', async () => {
         return (
             <div>
                 <button onClick={() => store.run('test')}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -54,9 +50,7 @@ test('should handle failure and retry with same params', async () => {
         return (
             <div>
                 <button onClick={() => store.run('alice')}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -76,9 +70,7 @@ test('should reset to initial state', async () => {
                 <button onClick={() => store.run()}>Run</button>
                 <button onClick={() => store.reset()}>Reset</button>
                 <span>state: {store.current.type}</span>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -103,9 +95,7 @@ test('should call invalidate on dependent stores after success', async () => {
         return (
             <div>
                 <button onClick={() => store.run()}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -126,9 +116,7 @@ test('should call onSuccess callback after success', async () => {
         return (
             <div>
                 <button onClick={() => store.run('bob')}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -152,9 +140,7 @@ test('should discard stale responses on rapid re-submission', async () => {
         return (
             <div>
                 <button onClick={() => store.run()}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -178,9 +164,7 @@ test('should transition to invalidated-pending when re-running after success', a
             <div>
                 <button onClick={() => store.run()}>Run</button>
                 <span>state: {store.current.type}</span>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>value: {value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>value: {value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -205,9 +189,7 @@ test('should pass params to fetcher', async () => {
         return (
             <div>
                 <button onClick={() => store.run({ a: 1, b: 'hello' })}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -224,9 +206,7 @@ test('should work with void params', async () => {
         return (
             <div>
                 <button onClick={() => store.run()}>Run</button>
-                <WithRemoteUpdate store={store}>
-                    {(value) => <span>{value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
@@ -240,10 +220,7 @@ test('should render idle content in WithRemoteUpdate', async () => {
     const Test: React.FC = () => {
         const store = useRemoteUpdate(() => Promise.resolve('done'));
         return (
-            <WithRemoteUpdate
-                store={store}
-                idle={(run) => <button onClick={() => run()}>Start</button>}
-            >
+            <WithRemoteUpdate store={store} idle={(run) => <button onClick={() => run()}>Start</button>}>
                 {(value) => <span>{value}</span>}
             </WithRemoteUpdate>
         );
@@ -296,13 +273,9 @@ test('should invalidate read stores after mutation success', async () => {
         });
         return (
             <div>
-                <WithRemoteData store={readStore}>
-                    {(value) => <span>read: {value}</span>}
-                </WithRemoteData>
+                <WithRemoteData store={readStore}>{(value) => <span>read: {value}</span>}</WithRemoteData>
                 <button onClick={() => mutateStore.run()}>Mutate</button>
-                <WithRemoteUpdate store={mutateStore}>
-                    {(value) => <span>write: {value}</span>}
-                </WithRemoteUpdate>
+                <WithRemoteUpdate store={mutateStore}>{(value) => <span>write: {value}</span>}</WithRemoteUpdate>
             </div>
         );
     };
