@@ -2,17 +2,38 @@ import { Snippet } from '../src/components/Snippet';
 
 # Getting Started
 
-## About
+## The problem
 
-`use-remote-data` is a React hook that takes a principled, **type-safe** approach to fetching and managing async data.
+Every React app fetches data. And every React app gets it slightly wrong.
 
-At its core is the `RemoteData` union type,
-which covers every possible state of a request (from “not yet fetched” to “success with stale data” or “failure”).
+You've written this code before:
 
-On top of this, a `RemoteDataStore` automatically handles orchestration — fetching, caching, error handling, invalidation,
-and retries—so you can write clear, reliable async code with minimal boilerplate.
+```tsx
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
 
-It also offers **optional** typed errors to distinguish between domain-level failures and unexpected runtime issues.
+useEffect(() => {
+    fetchUser(id)
+        .then((d) => { setData(d); setLoading(false); })
+        .catch((e) => { setError(e); setLoading(false); });
+}, [id]);
+
+if (loading) return <Spinner />;
+if (error) return <Error />;
+return <UserCard user={data} />;   // data is User | null here. Oops.
+```
+
+Three `useState` calls. A `useEffect`. Manual flag management.
+And at the end, TypeScript still thinks `data` might be `null` — because it can't see
+that you checked `loading` and `error` first.
+
+Libraries like `react-query` improve on this, but the core shape is the same: `data` is always `T | undefined`,
+and you rely on convention — not types — to check before accessing it.
+
+**`use-remote-data` takes a different approach.** Instead of giving you optional data and boolean flags,
+it gives you a single state that is _always_ one of: not yet loaded, loading, failed (with retry), or succeeded.
+You literally cannot access the data without first proving it exists.
 
 ---
 
@@ -31,24 +52,51 @@ yarn add use-remote-data
 ## Basic Usage
 
 The primary entry point is the **`useRemoteData`** hook.
-It takes one parameter—a function that produces a `Promise`—and returns a `RemoteDataStore<T>`.
-Because we need the ability to retry, you must pass a function rather than a direct `Promise`.
-
-- According to [React Hooks rules](https://reactjs.org/docs/hooks-rules.html), the hook must be used inside a component.
-- The object returned by `useRemoteData` is our `RemoteDataStore<T>`.
+Give it a function that returns a `Promise`, and you get back a store:
 
 <Snippet snippet="basic_usage" />
 
-## Rendering with `Await`
+That's it. The store handles fetching, caching, error states, and retries.
 
-In the example above, you can see that the store is passed to a `Await` component
-in order to fetch the data and render it.
+## `<Await>` — render only when data is ready
 
-One curious possibly unfamiliar thing is that it uses a [render prop](https://reactjs.org/docs/render-props.html)
-that receives your successfully loaded data (along with an `isInvalidated` boolean).
+The `<Await>` component takes a store and a render callback.
+Your callback **only runs when data is available**, and it receives the value typed as `T` — not `T | undefined`.
 
-Out of the box, `Await` handles loading and error states but is visually minimal,
-including `JSON.stringify`ing error objects.
+This is the key idea: you cannot accidentally render without data.
+TypeScript enforces it. The component structure enforces it.
+Loading and error states are handled for you by default.
 
-**Recommended usage** is therefore to copy/paste the `Await` component into your codebase,
-and provide your own rendering for everything.
+The `isInvalidated` boolean (second argument) tells you if the data is stale and a background refresh is in progress.
+This lets you grey out stale data instead of showing a spinner — much better UX.
+
+### Customize the loading and error UI
+
+Out of the box, `<Await>` renders a minimal loading spinner and `JSON.stringify`'d errors.
+You'll want to provide your own rendering. There are two ways:
+
+1. **Pass `PendingComponent` and `ErrorComponent` props** to `<Await>` directly.
+2. **Create your own `<Await>` wrapper** — copy the component into your codebase and customize it.
+   It's small (about 15 lines). The only important thing is to keep the `useEffect(store.triggerUpdate)` call.
+
+---
+
+## Why not react-query?
+
+Both libraries fetch data. The difference is what happens after.
+
+|                                      | react-query             | use-remote-data                           |
+| ------------------------------------ | ----------------------- | ----------------------------------------- |
+| Data type                            | `T \| undefined`        | `T` (inside `<Await>`)                    |
+| "Did I forget to check loading?"     | Possible                | Structurally impossible                   |
+| Invalidation with stale data visible | Background refetch flag | First-class `isInvalidated` state         |
+| Retry on error                       | Config option           | Built into the state, one click           |
+| Combining requests                   | Manual                  | `RemoteDataStore.all()` with typed tuples |
+| Global cache/context                 | Required                | None — data lives with the component      |
+| Dependencies                         | Several                 | Zero (just React)                         |
+
+`react-query` is a great library with a huge ecosystem. If you need SSR, devtools, or infinite queries, use it.
+
+`use-remote-data` is for when you want **airtight types** and a **simpler mental model**.
+No global cache to configure. No context providers. No optional data.
+Just a store, a component, and data that's always in an honest state.

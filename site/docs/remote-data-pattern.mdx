@@ -1,15 +1,44 @@
-# Remote Data pattern
+# The RemoteData type
 
-The Remote Data pattern is a popular way to model all possible states of asynchronous data requests in a single, explicit type.
-You’ll often find articles discussing it in the context of functional programming libraries,
-where a central “union type” (or “sum type”) encapsulates:
+## The idea
 
-- No data yet (lazy initialization)
-- Data is being fetched (loading)
-- An error occurred (with retry information)
-- Data is available (success)
+Every async request goes through a lifecycle: it hasn't started, it's in progress, it failed, or it succeeded.
+Most code models this with a bag of booleans and optional values (`isLoading`, `data?`, `error?`).
+The problem: nothing stops you from having `isLoading: true` and `data: someValue` at the same time.
+Impossible states are representable.
 
-This library extends the classic idea by adding [invalidation](invalidation) states for automatically re-fetching stale data.
+`RemoteData` makes impossible states impossible. It's a **union type** — the request is in exactly one state at a time,
+and TypeScript knows which one:
+
+```ts
+type RemoteData<T> =
+    | { type: 'initial' } // haven't started yet
+    | { type: 'pending' } // request in flight
+    | { type: 'no'; errors; retry } // failed — with errors and a retry function
+    | { type: 'yes'; value: T }; // succeeded — here's your data
+```
+
+When you're in the `'yes'` branch, `value` is `T`. Not `T | undefined`. Not `T | null`. Just `T`.
+TypeScript narrows it for you automatically.
+
+## Invalidation states
+
+This library extends the classic pattern with three additional states for **stale data**.
+When data is invalidated (e.g., it's older than your refresh interval), you don't lose it —
+you keep the old value while the refresh happens:
+
+| State                   | What it means                                      | You have data? |
+| ----------------------- | -------------------------------------------------- | -------------- |
+| `invalidated-immediate` | Data arrived but was already stale (e.g., polling) | Yes (stale)    |
+| `invalidated-initial`   | Data was marked stale, re-fetch hasn't started yet | Yes (stale)    |
+| `invalidated-pending`   | Re-fetch is in progress                            | Yes (stale)    |
+
+This is what makes the `isInvalidated` flag in `<Await>` work.
+Your callback still gets the value — it's just stale. You can grey it out, show a subtle spinner, or ignore staleness entirely. Your choice.
+
+## The full type
+
+For reference, here's the complete type definition:
 
 ```ts
 import { Either } from './Either';
@@ -25,7 +54,7 @@ export type RemoteData<T, E = never> =
     | RemoteData.InvalidatedPending<T>;
 
 export namespace RemoteData {
-    // We haven’t started fetching yet (lazy load)
+    // We haven't started fetching yet (lazy load)
     export interface Initial {
         type: 'initial';
     }
@@ -50,7 +79,7 @@ export namespace RemoteData {
         type: 'invalidated-immediate';
         invalidated: RemoteData.Yes<T>;
     }
-    // We have stale data but haven’t started re-fetching.
+    // We have stale data but haven't started re-fetching.
     export interface InvalidatedInitial<T> {
         type: 'invalidated-initial';
         invalidated: RemoteData.Yes<T>;
@@ -63,4 +92,5 @@ export namespace RemoteData {
 }
 ```
 
-Note that the `E` type parameter for expected errors is optional, see [typed errors](typed-errors) for more information.
+The `E` type parameter is for **typed errors** — domain-level failures like "user not found" that are different from unexpected crashes.
+It defaults to `never`, so you can ignore it entirely until you need it. See [typed errors](typed-errors) for more.

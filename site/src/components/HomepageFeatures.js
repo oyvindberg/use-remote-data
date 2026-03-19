@@ -4,46 +4,62 @@ import React from 'react';
 
 const FeatureList = [
     {
-        title: 'Remote Data pattern',
+        title: 'Your data is always in one of these states',
         Svg: require('../../static/img/undraw_docusaurus_mountain.svg').default,
         description: (
             <>
-                Known from Elm and elsewhere, the Remote Data pattern models the different states of a data request in a
-                principled manner.
+                Loading. Failed. Succeeded. Stale. <code>use-remote-data</code> makes every state explicit and
+                impossible to forget. No more <code>if (data)</code> guesswork.
             </>
         ),
     },
     {
-        title: 'Invalidation',
-        Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
-        description: <>Need warm data? No problem, just say how long you want it to be valid</>,
-    },
-    {
-        title: 'Lazy',
-        Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
-        description: <>Declare all you data sources, and fetch only those needed to render.</>,
-    },
-    {
-        title: 'Error handling',
-        Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
-        description: <>Graceful handling, with retry functionality out of the box.</>,
-    },
-    {
-        title: 'Composable',
+        title: 'Data stays fresh automatically',
         Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
         description: (
             <>
-                One request? Ten requests? Fetch them all at once. Still lazy, still invalidating, still with error
-                handling and retry.
+                Tell the store how long data should live. It re-fetches in the background when it goes stale — your
+                users keep seeing the old data while the new data loads.
             </>
         ),
     },
     {
-        title: 'Powered by React',
+        title: 'Only fetch what you render',
+        Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
+        description: (
+            <>
+                Stores are lazy. Define ten data sources at the top of your tree, pass them down as props — only the
+                ones that actually render will fire a request.
+            </>
+        ),
+    },
+    {
+        title: 'Errors and retries, handled',
+        Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
+        description: (
+            <>
+                When a request fails, a retry callback is right there in the state. One click and only the failed
+                request re-fires. No boilerplate.
+            </>
+        ),
+    },
+    {
+        title: 'Compose everything',
+        Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
+        description: (
+            <>
+                Need three API calls before you can render? Combine them into one store with{' '}
+                <code>RemoteDataStore.all()</code>. Still lazy, still type-safe, still with retry.
+            </>
+        ),
+    },
+    {
+        title: 'Zero dependencies',
         Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
         description: (
             <>
-                <code>use-remote-data</code> is built only on react hooks and has no other dependencies.
+                Just React. No runtime dependencies, no context providers to set up, no global cache to configure.
+                Install and go.
             </>
         ),
     },
