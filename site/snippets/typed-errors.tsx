@@ -3,7 +3,7 @@ import {
     Either,
     ErrorProps,
     useRemoteDataEither,
-    WithRemoteData,
+    Await,
 } from 'use-remote-data';
 
 // let's say we have a graphql schema like this:
@@ -95,12 +95,12 @@ export const Component: React.FC = () => {
     });
 
     return (
-        <WithRemoteData store={store} ErrorComponent={PersonErrorComponent}>
+        <Await store={store} ErrorComponent={PersonErrorComponent}>
             {(p) => (
                 <p>
                     Name: {p.name}, age: {p.age}
                 </p>
             )}
-        </WithRemoteData>
+        </Await>
     );
 };

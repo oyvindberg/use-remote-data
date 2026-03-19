@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useRemoteData, WithRemoteData } from 'use-remote-data';
+import { useRemoteData, Await } from 'use-remote-data';
 
 var i = 0;
 const freshData = (): Promise<number> =>
@@ -16,7 +16,7 @@ export const Component: React.FC = () => {
         <div>
             <button onClick={() => setDep(dep + 1)}>Bump dep</button>
             <br />
-            <WithRemoteData store={store}>
+            <Await store={store}>
                 {(num, isInvalidated) => (
                     <span
                         style={{ color: isInvalidated ? 'darkgray' : 'black' }}
@@ -24,7 +24,7 @@ export const Component: React.FC = () => {
                         {num}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         </div>
     );
 };

@@ -39,16 +39,16 @@ Because we need the ability to retry, you must pass a function rather than a dir
 
 <Snippet snippet="basic_usage" />
 
-## Rendering with `WithRemoteData`
+## Rendering with `Await`
 
-In the example above, you can see that the store is passed to a `WithRemoteData` component
+In the example above, you can see that the store is passed to a `Await` component
 in order to fetch the data and render it.
 
 One curious possibly unfamiliar thing is that it uses a [render prop](https://reactjs.org/docs/render-props.html)
 that receives your successfully loaded data (along with an `isInvalidated` boolean).
 
-Out of the box, `WithRemoteData` handles loading and error states but is visually minimal,
+Out of the box, `Await` handles loading and error states but is visually minimal,
 including `JSON.stringify`ing error objects.
 
-**Recommended usage** is therefore to copy/paste the `WithRemoteData` component into your codebase,
+**Recommended usage** is therefore to copy/paste the `Await` component into your codebase,
 and provide your own rendering for everything.

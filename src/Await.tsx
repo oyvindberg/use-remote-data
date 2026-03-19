@@ -19,7 +19,7 @@ interface Props<T, E> {
  *
  * If you copy/paste it, the only important thing is that you also copy the `useEffect` statement below
  */
-export function WithRemoteData<T, E>({
+export function Await<T, E>({
     store,
     children,
     ErrorComponent = DefaultErrorComponent,

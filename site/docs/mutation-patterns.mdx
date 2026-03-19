@@ -34,14 +34,14 @@ const previewStore = useRemoteUpdate(
 );
 
 <button onClick={() => previewStore.run()}>Run preview</button>
-<WithRemoteUpdate store={previewStore}>
+<AwaitUpdate store={previewStore}>
   {(result, run) => (
     <div>
       <p>Found {result.count} items</p>
       <button onClick={() => run()}>Run again</button>
     </div>
   )}
-</WithRemoteUpdate>
+</AwaitUpdate>
 ```
 
 Re-running while showing the previous result gives you the `InvalidatedPending` state automatically —

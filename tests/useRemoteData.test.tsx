@@ -1,4 +1,4 @@
-import { InvalidationStrategy, RemoteDataStore, WithRemoteData, useRemoteData } from '../src';
+import { Await, InvalidationStrategy, RemoteDataStore, useRemoteData } from '../src';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 class TestPromise {
@@ -13,7 +13,7 @@ test('should handle success', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise.next);
-        return <WithRemoteData store={store}>{(num) => <span>num: {num}</span>}</WithRemoteData>;
+        return <Await store={store}>{(num) => <span>num: {num}</span>}</Await>;
     };
 
     render(<Test />);
@@ -26,7 +26,7 @@ test('should handle failure to create promise', async () => {
         const store = useRemoteData<number>(() => {
             throw new Error('foo');
         });
-        return <WithRemoteData store={store}>{(num) => <span>num: {num}</span>}</WithRemoteData>;
+        return <Await store={store}>{(num) => <span>num: {num}</span>}</Await>;
     };
 
     render(<Test />);
@@ -41,13 +41,13 @@ test('should handle successes', async () => {
         const store2 = useRemoteData(testPromise.next);
         const store = RemoteDataStore.all(store1, store2);
         return (
-            <WithRemoteData store={store}>
+            <Await store={store}>
                 {([num1, num2]) => (
                     <span>
                         nums: {num1} and {num2}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         );
     };
 
@@ -71,7 +71,7 @@ test('should handle failure and retries', async () => {
 
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise);
-        return <WithRemoteData store={store}>{(char) => <span>char: {char}</span>}</WithRemoteData>;
+        return <Await store={store}>{(char) => <span>char: {char}</span>}</Await>;
     };
 
     render(<Test />);
@@ -86,13 +86,13 @@ test('invalidation: refetchAfterMillis should work', async () => {
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise.next, { invalidation: InvalidationStrategy.refetchAfterMillis(10) });
         return (
-            <WithRemoteData store={store}>
+            <Await store={store}>
                 {(num, isInvalidated) => (
                     <span>
                         num: {num}, isInvalidated: {isInvalidated.toString()}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         );
     };
     render(<Test />);
@@ -110,13 +110,13 @@ test('invalidation: polling should work', async () => {
             invalidation: InvalidationStrategy.pollUntil((x) => x >= 2, 10),
         });
         return (
-            <WithRemoteData store={store}>
+            <Await store={store}>
                 {(num, isInvalidated) => (
                     <span>
                         num: {num}, isInvalidated: {isInvalidated.toString()}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         );
     };
     render(<Test />);
@@ -146,13 +146,13 @@ test('invalidation: polling should stop on unmount', async () => {
             debug: (str) => messages.push(str),
         });
         return (
-            <WithRemoteData store={store}>
+            <Await store={store}>
                 {(num, isInvalidated) => (
                     <span>
                         num: {num}, isInvalidated: {isInvalidated.toString()}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         );
     };
     const rendered = render(<Test />);

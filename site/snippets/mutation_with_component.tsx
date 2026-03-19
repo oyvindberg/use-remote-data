@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useRemoteUpdate, WithRemoteUpdate } from 'use-remote-data';
+import { useRemoteUpdate, AwaitUpdate } from 'use-remote-data';
 
 var attempts = 0;
 const riskyOperation = (): Promise<string> =>
@@ -17,7 +17,7 @@ export const Component: React.FC = () => {
 
     return (
         <div>
-            <WithRemoteUpdate
+            <AwaitUpdate
                 store={store}
                 idle={(run) => (
                     <button onClick={() => run()}>Start operation</button>
@@ -30,7 +30,7 @@ export const Component: React.FC = () => {
                         <button onClick={() => reset()}>Reset</button>
                     </div>
                 )}
-            </WithRemoteUpdate>
+            </AwaitUpdate>
         </div>
     );
 };

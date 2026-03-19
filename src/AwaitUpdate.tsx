@@ -12,16 +12,16 @@ interface Props<T, P, E> {
 }
 
 /**
- * Like `WithRemoteData`, but for mutations. Never auto-triggers — fetching only starts when `run()` is called.
+ * Like `Await`, but for mutations. Never auto-triggers — fetching only starts when `run()` is called.
  */
-export function WithRemoteUpdate<T, P, E>({
+export function AwaitUpdate<T, P, E>({
     store,
     children,
     idle,
     ErrorComponent = DefaultErrorComponent,
     PendingComponent = DefaultPendingComponent,
 }: Props<T, P, E>): ReactElement | null {
-    // No useEffect(store.triggerUpdate) — the defining difference from WithRemoteData
+    // No useEffect(store.triggerUpdate) — the defining difference from Await
 
     const current = store.current;
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useRemoteUpdate, WithRemoteUpdate } from 'use-remote-data';
+import { useRemoteUpdate, AwaitUpdate } from 'use-remote-data';
 
 const saveItem = (name: string): Promise<string> =>
     new Promise((resolve) =>
@@ -33,9 +33,7 @@ export const Component: React.FC = () => {
             >
                 Save
             </button>
-            <WithRemoteUpdate store={store}>
-                {(msg) => <p>✓ {msg}</p>}
-            </WithRemoteUpdate>
+            <AwaitUpdate store={store}>{(msg) => <p>✓ {msg}</p>}</AwaitUpdate>
         </div>
     );
 };

@@ -1,9 +1,5 @@
 import * as React from 'react';
-import {
-    RemoteDataStore,
-    useRemoteData,
-    WithRemoteData,
-} from 'use-remote-data';
+import { RemoteDataStore, useRemoteData, Await } from 'use-remote-data';
 
 // all examples will use a fake API like this
 function produce<T>(value: T, delayMillis: number): Promise<T> {
@@ -19,8 +15,6 @@ export const Component: React.FC = () => {
 
     // fetch and render
     return (
-        <WithRemoteData store={computeOne}>
-            {(num: number) => <span>{num}</span>}
-        </WithRemoteData>
+        <Await store={computeOne}>{(num: number) => <span>{num}</span>}</Await>
     );
 };

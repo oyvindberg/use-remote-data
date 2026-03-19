@@ -3,7 +3,7 @@ import {
     InvalidationStrategy,
     RemoteDataStore,
     useRemoteData,
-    WithRemoteData,
+    Await,
 } from 'use-remote-data';
 
 var i = 0;
@@ -29,7 +29,7 @@ export const Component: React.FC = () => {
 export const Child: React.FC<{ store: RemoteDataStore<number> }> = ({
     store,
 }) => (
-    <WithRemoteData store={store}>
+    <Await store={store}>
         {(num, isInvalidated) => (
             <p>
                 <span style={{ color: isInvalidated ? 'darkgray' : 'black' }}>
@@ -37,5 +37,5 @@ export const Child: React.FC<{ store: RemoteDataStore<number> }> = ({
                 </span>
             </p>
         )}
-    </WithRemoteData>
+    </Await>
 );

@@ -1,5 +1,5 @@
-import { WithRemoteData, useRemoteData } from '../src';
-import { WithRemoteUpdate } from '../src/WithRemoteUpdate';
+import { Await, useRemoteData } from '../src';
+import { AwaitUpdate } from '../src/AwaitUpdate';
 import { useRemoteUpdate } from '../src/useRemoteUpdate';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
@@ -9,7 +9,7 @@ test('should start in initial state and render nothing', () => {
         return (
             <div>
                 <span>state: {store.current.type}</span>
-                <WithRemoteUpdate store={store}>{(value) => <span>result: {value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>result: {value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -25,7 +25,7 @@ test('should transition through pending to success', async () => {
         return (
             <div>
                 <button onClick={() => store.run('test')}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -50,7 +50,7 @@ test('should handle failure and retry with same params', async () => {
         return (
             <div>
                 <button onClick={() => store.run('alice')}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -70,7 +70,7 @@ test('should reset to initial state', async () => {
                 <button onClick={() => store.run()}>Run</button>
                 <button onClick={() => store.reset()}>Reset</button>
                 <span>state: {store.current.type}</span>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -95,7 +95,7 @@ test('should call invalidate on dependent stores after success', async () => {
         return (
             <div>
                 <button onClick={() => store.run()}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -116,7 +116,7 @@ test('should call onSuccess callback after success', async () => {
         return (
             <div>
                 <button onClick={() => store.run('bob')}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -140,7 +140,7 @@ test('should discard stale responses on rapid re-submission', async () => {
         return (
             <div>
                 <button onClick={() => store.run()}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -164,7 +164,7 @@ test('should transition to invalidated-pending when re-running after success', a
             <div>
                 <button onClick={() => store.run()}>Run</button>
                 <span>state: {store.current.type}</span>
-                <WithRemoteUpdate store={store}>{(value) => <span>value: {value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>value: {value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -189,7 +189,7 @@ test('should pass params to fetcher', async () => {
         return (
             <div>
                 <button onClick={() => store.run({ a: 1, b: 'hello' })}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -206,7 +206,7 @@ test('should work with void params', async () => {
         return (
             <div>
                 <button onClick={() => store.run()}>Run</button>
-                <WithRemoteUpdate store={store}>{(value) => <span>{value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
             </div>
         );
     };
@@ -216,13 +216,13 @@ test('should work with void params', async () => {
     await waitFor(() => screen.getByText('no params needed'));
 });
 
-test('should render idle content in WithRemoteUpdate', async () => {
+test('should render idle content in AwaitUpdate', async () => {
     const Test: React.FC = () => {
         const store = useRemoteUpdate(() => Promise.resolve('done'));
         return (
-            <WithRemoteUpdate store={store} idle={(run) => <button onClick={() => run()}>Start</button>}>
+            <AwaitUpdate store={store} idle={(run) => <button onClick={() => run()}>Start</button>}>
                 {(value) => <span>{value}</span>}
-            </WithRemoteUpdate>
+            </AwaitUpdate>
         );
     };
 
@@ -273,9 +273,9 @@ test('should invalidate read stores after mutation success', async () => {
         });
         return (
             <div>
-                <WithRemoteData store={readStore}>{(value) => <span>read: {value}</span>}</WithRemoteData>
+                <Await store={readStore}>{(value) => <span>read: {value}</span>}</Await>
                 <button onClick={() => mutateStore.run()}>Mutate</button>
-                <WithRemoteUpdate store={mutateStore}>{(value) => <span>write: {value}</span>}</WithRemoteUpdate>
+                <AwaitUpdate store={mutateStore}>{(value) => <span>write: {value}</span>}</AwaitUpdate>
             </div>
         );
     };

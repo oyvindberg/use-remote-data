@@ -4,7 +4,7 @@ import {
     RemoteDataStore,
     RemoteDataStores,
     useRemoteDatas,
-    WithRemoteData,
+    Await,
 } from 'use-remote-data';
 
 let is = new Map<string, number>();
@@ -51,7 +51,7 @@ export const Column: React.FC<{ rows: readonly RemoteDataStore<string>[] }> = ({
     rows,
 }) => {
     const renderedRows = rows.map((store, idx) => (
-        <WithRemoteData store={store} key={idx}>
+        <Await store={store} key={idx}>
             {(value, isInvalidated) => (
                 <p>
                     <span
@@ -61,7 +61,7 @@ export const Column: React.FC<{ rows: readonly RemoteDataStore<string>[] }> = ({
                     </span>
                 </p>
             )}
-        </WithRemoteData>
+        </Await>
     ));
     return <div>{renderedRows}</div>;
 };

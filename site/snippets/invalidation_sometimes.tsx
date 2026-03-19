@@ -1,9 +1,5 @@
 import * as React from 'react';
-import {
-    InvalidationStrategy,
-    useRemoteData,
-    WithRemoteData,
-} from 'use-remote-data';
+import { InvalidationStrategy, useRemoteData, Await } from 'use-remote-data';
 
 var i = 0;
 const freshData = (): Promise<number> =>
@@ -31,7 +27,7 @@ export const Component: React.FC = () => {
                 />
             </label>
             <br />
-            <WithRemoteData store={store}>
+            <Await store={store}>
                 {(num, isInvalidated) => (
                     <span
                         style={{ color: isInvalidated ? 'darkgray' : 'black' }}
@@ -39,7 +35,7 @@ export const Component: React.FC = () => {
                         {num}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         </div>
     );
 };

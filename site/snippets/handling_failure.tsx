@@ -3,7 +3,7 @@ import {
     InvalidationStrategy,
     RemoteDataStore,
     useRemoteData,
-    WithRemoteData,
+    Await,
 } from 'use-remote-data';
 
 var i = 0;
@@ -29,12 +29,12 @@ export const Component: React.FC = () => {
         invalidation: InvalidationStrategy.refetchAfterMillis(100),
     });
     return (
-        <WithRemoteData store={RemoteDataStore.all(one, two)}>
+        <Await store={RemoteDataStore.all(one, two)}>
             {([num1, num2]) => (
                 <span>
                     {num1} - {num2}
                 </span>
             )}
-        </WithRemoteData>
+        </Await>
     );
 };

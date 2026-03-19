@@ -2,8 +2,8 @@ import * as React from 'react';
 import {
     useRemoteData,
     useRemoteUpdate,
-    WithRemoteData,
-    WithRemoteUpdate,
+    Await,
+    AwaitUpdate,
 } from 'use-remote-data';
 
 var counter = 0;
@@ -24,22 +24,22 @@ export const Component: React.FC = () => {
 
     return (
         <div>
-            <WithRemoteData store={countStore}>
+            <Await store={countStore}>
                 {(count, isInvalidated) => (
                     <span style={{ color: isInvalidated ? 'gray' : 'black' }}>
                         Count: {count}
                     </span>
                 )}
-            </WithRemoteData>{' '}
+            </Await>{' '}
             <button
                 onClick={() => incrementStore.run()}
                 disabled={incrementStore.current.type === 'pending'}
             >
                 Increment
             </button>
-            <WithRemoteUpdate store={incrementStore}>
+            <AwaitUpdate store={incrementStore}>
                 {(msg) => <p>✓ {msg}</p>}
-            </WithRemoteUpdate>
+            </AwaitUpdate>
         </div>
     );
 };

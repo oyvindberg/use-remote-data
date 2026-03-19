@@ -34,7 +34,7 @@ The `invalidates` option does this for you — just pass the stores that should 
 <Snippet snippet="mutation_invalidation" />
 
 After success, each store in the array has its `invalidate()` called automatically.
-Any `WithRemoteData` rendering those stores will re-fetch.
+Any `Await` rendering those stores will re-fetch.
 
 ## Success and error callbacks
 
@@ -66,10 +66,10 @@ const handleClose = () => {
 You can also reset after an error (as an alternative to retrying with the same parameters),
 or after success to clear the result.
 
-## Rendering with `WithRemoteUpdate`
+## Rendering with `AwaitUpdate`
 
-For cases where you want to render the mutation result, use `WithRemoteUpdate`.
-It works like `WithRemoteData` but **never auto-triggers** — fetching only starts when `run()` is called.
+For cases where you want to render the mutation result, use `AwaitUpdate`.
+It works like `Await` but **never auto-triggers** — fetching only starts when `run()` is called.
 
 The children receive the data, the `run` function (for re-runs), and `reset`:
 

@@ -3,7 +3,7 @@ import { RemoteData } from './RemoteData';
 import { isDefined } from './internal/isDefined';
 
 export interface RemoteDataStore<T, E = never> {
-    // should always call this when the data inside is meant to be rendered, typically from `WithData`
+    // should always call this when the data inside is meant to be rendered, typically from `Await`
     readonly triggerUpdate: () => CancelTimeout;
     // you can call this explicitly to force a re-fetch
     readonly invalidate: () => void;

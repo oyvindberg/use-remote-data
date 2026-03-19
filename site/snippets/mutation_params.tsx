@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useRemoteUpdate, WithRemoteUpdate } from 'use-remote-data';
+import { useRemoteUpdate, AwaitUpdate } from 'use-remote-data';
 
 type UserParams = { firstName: string; lastName: string };
 
@@ -36,7 +36,7 @@ export const Component: React.FC = () => {
             >
                 Create
             </button>
-            <WithRemoteUpdate store={store}>
+            <AwaitUpdate store={store}>
                 {(msg, run, reset) => (
                     <div>
                         <p>{msg}</p>
@@ -46,7 +46,7 @@ export const Component: React.FC = () => {
                         <button onClick={() => reset()}>Clear</button>
                     </div>
                 )}
-            </WithRemoteUpdate>
+            </AwaitUpdate>
         </div>
     );
 };
