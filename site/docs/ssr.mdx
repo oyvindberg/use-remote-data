@@ -33,8 +33,7 @@ After hydration, the store works as usual — refreshing, re-fetching, mutations
 The server component fetches data and passes it as a plain prop.
 The client component initializes the store with it.
 
-```tsx
-// app/dashboard/page.tsx — Server Component
+```tsx title="app/dashboard/page.tsx — Server Component"
 import { ProjectList } from './ProjectList';
 
 export default async function DashboardPage() {
@@ -43,13 +42,10 @@ export default async function DashboardPage() {
 }
 ```
 
-```tsx
-// app/dashboard/ProjectList.tsx — Client Component
+```tsx title="app/dashboard/ProjectList.tsx — Client Component"
 'use client';
 
 import { Await, RefreshStrategy, RemoteData, useRemoteData } from 'use-remote-data';
-
-// app/dashboard/ProjectList.tsx — Client Component
 
 export function ProjectList({ serverData }: { serverData: Project[] }) {
     const store = useRemoteData(() => fetch('/api/projects').then((r) => r.json()), {
