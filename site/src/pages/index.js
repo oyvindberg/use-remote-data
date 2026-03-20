@@ -172,6 +172,26 @@ return (
   </Await>
 );`;
 
+const codeTesting = `
+import { RemoteData, RemoteDataStore } from "use-remote-data";
+
+// A store that's already loaded — no fetch, no mock
+const store = RemoteDataStore.always(
+  RemoteData.success({ name: "Alice", email: "alice@ex.com" })
+);
+
+render(<UserCard store={store} />);
+expect(screen.getByText("Alice")).toBeInTheDocument();
+
+// Test loading? Errors? Same idea.
+const loading = RemoteDataStore.always(RemoteData.Pending);
+const failed  = RemoteDataStore.always(
+  RemoteData.Failed(
+    [Failure.unexpected(new Error("timeout"))],
+    async () => {}
+  )
+);`;
+
 const codeLifetime = `
 function UserPage({ id }) {
   // Store is created when UserPage mounts.
@@ -194,10 +214,10 @@ function UserPage({ id }) {
 const quickHits = [
     { title: 'Zero dependencies, ~3.5kB gzipped', text: 'Just React. No runtime dependencies, no context providers, no bloat.' },
     { title: 'SSR ready', text: 'Pass server data as initial. No hydration boundaries.' },
-    { title: 'Background refresh', text: 'Stale data stays visible while fresh data loads.' },
-    { title: 'Lazy by default', text: 'Stores only fetch when rendered.' },
-    { title: 'Mutations', text: 'First-class writes with useRemoteUpdate.' },
-    { title: 'One state at a time', text: 'Your store is loading, failed, or has data — never an impossible combination. TypeScript enforces it.' },
+    { title: 'Automatic cancellation', text: 'When deps change or a component unmounts, in-flight requests are aborted. Stale responses are always discarded.' },
+    { title: 'Lazy by default', text: 'Stores only fetch when rendered. Define data dependencies upfront — only what mounts hits the network.' },
+    { title: 'Mutations that invalidate', text: 'First-class writes with useRemoteUpdate. After a successful mutation, dependent stores re-fetch automatically.' },
+    { title: 'Typed errors', text: 'Separate domain errors from crashes. Validate with Zod, handle GraphQL unions — TypeScript knows which error you have.' },
 ];
 
 function Section({ title, text, code, alt, reverse }) {
@@ -312,6 +332,15 @@ export default function Home() {
                     title="Mutations invalidate reads."
                     text="After a successful write, the stores you depend on re-fetch automatically. No manual cache busting. No imperative refetch calls. Just declare what should refresh and it happens."
                     code={codeMutationInvalidation}
+                />
+
+                {/* Testing */}
+                <Section
+                    title="Test without mocking."
+                    text="Stores are values. Pass one to your component and assert what renders — no mock servers, no providers, no async coordination. RemoteDataStore.always() creates a store in any state you want. The same approach works for Storybook."
+                    code={codeTesting}
+                    alt
+                    reverse
                 />
 
                 {/* Lifetime */}
