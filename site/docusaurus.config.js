@@ -1,3 +1,4 @@
+const path = require('path');
 const lightCodeTheme = require('prism-react-renderer').themes.github;
 const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 
@@ -5,13 +6,12 @@ const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 module.exports = {
     title: 'use-remote-data',
     tagline: 'Async data for React, without the guesswork',
-    url: 'https://your-docusaurus-test-site.com',
+    url: 'https://oyvindberg.github.io',
     baseUrl: '/use-remote-data/',
     onBrokenLinks: 'throw',
-    onBrokenMarkdownLinks: 'warn',
     favicon: 'img/favicon.ico',
-    organizationName: 'oyvindberg', // Usually your GitHub org/user name.
-    projectName: 'use-remote-data', // Usually your repo name.
+    organizationName: 'oyvindberg',
+    projectName: 'use-remote-data',
     themeConfig: {
         navbar: {
             title: 'use-remote-data',
@@ -51,18 +51,6 @@ module.exports = {
                             label: 'GitHub',
                             href: 'https://github.com/oyvindberg/use-remote-data',
                         },
-                        // {
-                        //     label: 'Stack Overflow',
-                        //     href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-                        // },
-                        // {
-                        //     label: 'Discord',
-                        //     href: 'https://discordapp.com/invite/docusaurus',
-                        // },
-                        // {
-                        //     label: 'Twitter',
-                        //     href: 'https://twitter.com/docusaurus',
-                        // },
                     ],
                 },
             ],
@@ -79,13 +67,32 @@ module.exports = {
             {
                 docs: {
                     sidebarPath: require.resolve('./sidebars.ts'),
-                    // Please change this to your repo.
-                    editUrl: 'https://github.com/facebook/docusaurus/edit/master/website/',
+                    editUrl: 'https://github.com/oyvindberg/use-remote-data/edit/master/site/',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),
                 },
             },
         ],
+    ],
+    plugins: [
+        function aliasPlugin() {
+            return {
+                name: 'use-remote-data-alias',
+                configureWebpack() {
+                    return {
+                        resolve: {
+                            alias: {
+                                // Resolve 'use-remote-data' imports to the local source.
+                                // Snippets import from 'use-remote-data' (as users would),
+                                // but webpack serves the live local source — no build step,
+                                // no npm link, no stale node_modules copy.
+                                'use-remote-data': path.resolve(__dirname, '..', 'src'),
+                            },
+                        },
+                    };
+                },
+            };
+        },
     ],
 };
