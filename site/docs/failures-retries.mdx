@@ -70,7 +70,7 @@ The `ErrorProps` type gives you:
 
 | Prop | Type | What it is |
 |---|---|---|
-| `errors` | `Either<WeakError, E>[]` | The errors that caused the failure (see below) |
+| `errors` | `Failure<WeakError, E>[]` | The errors that caused the failure (see below) |
 | `retry` | `() => Promise<void>` | Re-runs the failed request |
 | `storeName` | `string \| undefined` | The `storeName` you passed to the hook (useful for debugging) |
 
@@ -80,12 +80,12 @@ For most apps, you only need `retry` — the `errors` array is there when you wa
 
 `errors` is an array because [combined stores](#retries-with-combined-stores) can have multiple failures (one per failed request). For a single store, it's always a one-element array.
 
-Each element is an `Either<WeakError, E>` — a tagged object that is one of two things:
+Each element is a `Failure<WeakError, E>` — a tagged object that is one of two things:
 
-- `{ tag: 'left', value: WeakError }` — an **unexpected error** (network failure, thrown exception, etc.). `WeakError` is just an alias for `Error | unknown`, because JavaScript lets you `throw` anything.
-- `{ tag: 'right', value: E }` — a **typed domain error** you returned explicitly (only when using the [typed errors](typed-errors) feature).
+- `{ tag: 'unexpected', value: WeakError }` — an **unexpected error** (network failure, thrown exception, etc.). `WeakError` is just an alias for `Error | unknown`, because JavaScript lets you `throw` anything.
+- `{ tag: 'expected', value: E }` — a **typed domain error** you returned explicitly (only when using the [typed errors](typed-errors) feature).
 
-If you're not using typed errors, every error will be `left` — so you can treat `error.value` as the thrown value. Most of the time you won't inspect this at all; the `retry` callback is enough.
+If you're not using typed errors, every error will be `unexpected` — so you can treat `failure.value` as the thrown value. Most of the time you won't inspect this at all; the `retry` callback is enough.
 
 ## Mutations fail the same way
 

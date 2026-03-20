@@ -1,5 +1,5 @@
 import { CancelTimeout } from './CancelTimeout';
-import { Either } from './Either';
+import { Failure } from './Failure';
 import { IsInvalidated } from './IsInvalidated';
 import { Options } from './Options';
 import { RemoteData } from './RemoteData';
@@ -13,17 +13,17 @@ import { DependencyList, useEffect, useRef, useState, version } from 'react';
 const reactMajor = Number(version.split('.')[0]);
 
 export const useRemoteDataMap = <K extends string | number, V>(run: (key: K, signal: AbortSignal) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
-    useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Either.right), options);
+    useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Failure.expected), options);
 
 export const useRemoteDataMapEither = <K extends string | number, V, E>(
-    run: (key: K, signal: AbortSignal) => Promise<Either<E, V>>,
+    run: (key: K, signal: AbortSignal) => Promise<Failure<E, V>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> =>
     useRemoteDataMapCore(run, options);
 
 /** Internal core — also accepts undefined as K (used by useRemoteData). Not exported from the package. */
 export const useRemoteDataMapCore = <K extends string | number | undefined, V, E>(
-    run: (key: K, signal: AbortSignal) => Promise<Either<E, V>>,
+    run: (key: K, signal: AbortSignal) => Promise<Failure<E, V>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> => {
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<K, RemoteData<V, E>>>(() => {
@@ -102,19 +102,19 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
         set(key, pendingState);
         try {
             return run(key, controller.signal)
-                .then((either) => {
+                .then((result) => {
                     if (controller.signal.aborted) return;
                     if (requestVersionsRef.current.get(key) !== requestVersion) return;
-                    switch (either.tag) {
-                        case 'left': {
-                            const no = RemoteData.Failed([Either.right(either.value)], () =>
+                    switch (result.tag) {
+                        case 'unexpected': {
+                            const no = RemoteData.Failed([Failure.expected(result.value)], () =>
                                 runAndUpdate(key, RemoteData.Pending)
                             );
                             set(key, no);
                             break;
                         }
-                        case 'right': {
-                            const value: V = either.value;
+                        case 'expected': {
+                            const value: V = result.value;
                             const now = new Date();
                             let res: RemoteData<V, E> = RemoteData.Success(value, now);
                             if (
@@ -133,13 +133,13 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
                     if (requestVersionsRef.current.get(key) !== requestVersion) return;
                     set(
                         key,
-                        RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, RemoteData.Pending))
+                        RemoteData.Failed<E>([Failure.unexpected(error)], () => runAndUpdate(key, RemoteData.Pending))
                     );
                 });
         } catch (error: WeakError) {
             set(
                 key,
-                RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, RemoteData.Pending))
+                RemoteData.Failed<E>([Failure.unexpected(error)], () => runAndUpdate(key, RemoteData.Pending))
             );
             return Promise.resolve();
         }

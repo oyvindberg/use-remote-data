@@ -24,9 +24,9 @@ Most libraries throw your data away when they re-fetch. You had a dashboard full
 
 | State                   | What's happening                     | You have data? |
 | ----------------------- | ------------------------------------ | -------------- |
-| `invalidated-immediate` | Data arrived but was already stale   | Yes            |
-| `invalidated-initial`   | Marked stale, re-fetch hasn't started | Yes            |
-| `invalidated-pending`   | Re-fetch is in progress              | Yes            |
+| `invalidated-immediate` | Data just arrived but the invalidation strategy already considers it stale (e.g. a very short TTL, or `pollUntil` rejected it) | Yes |
+| `invalidated-initial`   | Previously-fresh data was marked stale, re-fetch hasn't started yet | Yes |
+| `invalidated-pending`   | Re-fetch is in progress, old data still visible | Yes |
 
 **You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean — `isInvalidated` — which tells you everything:
 

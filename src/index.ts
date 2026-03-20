@@ -1,7 +1,7 @@
 export { CancelTimeout } from './CancelTimeout';
 export { DefaultErrorComponent, type ErrorProps } from './DefaultErrorComponent';
 export { DefaultPendingComponent } from './DefaultPendingComponent';
-export { Either } from './Either';
+export { Failure } from './Failure';
 export { InvalidationStrategy } from './InvalidationStrategy';
 export { IsInvalidated } from './IsInvalidated';
 export { RemoteData } from './RemoteData';

@@ -44,4 +44,10 @@ useRemoteData(() => fetchData(), {
 When the dependency array changes, the store invalidates automatically, and `triggerUpdate()` will re-fetch if needed.
 Each element is compared using `Object.is` — the same semantics as React's `useEffect` dependencies.
 
+:::caution Pass primitives, not objects
+Since `Object.is` compares by reference, passing an object or array that gets re-created every render
+(like `{ userId: id }` or `[id, name]` built inline) will cause **infinite re-fetches**.
+Stick to primitive values (strings, numbers, booleans) in the dependencies array.
+:::
+
 <Snippet snippet="invalidation_dependencies" />

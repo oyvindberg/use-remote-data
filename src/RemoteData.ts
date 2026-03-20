@@ -1,4 +1,4 @@
-import { Either } from './Either';
+import { Failure } from './Failure';
 import { WeakError } from './WeakError';
 import { isDefined } from './internal/isDefined';
 
@@ -26,7 +26,7 @@ export namespace RemoteData {
         readonly type: 'pending';
     }
 
-    export const Failed = <E>(errors: readonly Either<WeakError, E>[], retry: () => Promise<void>): Failed<E> => ({
+    export const Failed = <E>(errors: readonly Failure<WeakError, E>[], retry: () => Promise<void>): Failed<E> => ({
         type: 'failed',
         errors,
         retry,
@@ -34,7 +34,7 @@ export namespace RemoteData {
 
     export interface Failed<E> {
         readonly type: 'failed';
-        readonly errors: readonly Either<WeakError, E>[];
+        readonly errors: readonly Failure<WeakError, E>[];
         readonly retry: () => Promise<void>;
     }
 
@@ -132,11 +132,11 @@ export namespace RemoteData {
 
         if (foundFailed.length > 0) {
             const retry = () => Promise.all(foundFailed.map((f) => f.retry())).then(() => {});
-            const allErrors = foundFailed.reduce<readonly Either<WeakError, unknown>[]>(
+            const allErrors = foundFailed.reduce<readonly Failure<WeakError, unknown>[]>(
                 (acc, f) => [...acc, ...f.errors],
                 []
             );
-            return RemoteData.Failed(allErrors as Either<WeakError, ErrorsFrom<RemoteDatas>>[], retry);
+            return RemoteData.Failed(allErrors as Failure<WeakError, ErrorsFrom<RemoteDatas>>[], retry);
         } else if (isDefined(foundPending)) {
             return foundPending;
         } else if (isDefined(foundInitial)) {
@@ -164,7 +164,7 @@ export namespace RemoteData {
         <Out>(
             onData: (value: T, isInvalidated: boolean, updatedAt: Date) => Out,
             onEmpty: () => Out,
-            onFailed: (err: readonly Either<WeakError, E>[], retry: () => Promise<void>) => Out
+            onFailed: (err: readonly Failure<WeakError, E>[], retry: () => Promise<void>) => Out
         ): Out => {
             switch (remoteData.type) {
                 case 'initial':

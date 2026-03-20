@@ -1,5 +1,5 @@
 import { RemoteData } from '../src';
-import { Either } from '../src';
+import { Failure } from '../src';
 
 test('Pending takes precedence over Initial, Success', async () => {
     expect(RemoteData.all(RemoteData.Success(1, RemoteData.Epoch), RemoteData.Initial, RemoteData.Pending)).toStrictEqual(
@@ -17,7 +17,7 @@ test('Failed takes precedence over everything', async () => {
         RemoteData.Success(1, RemoteData.Epoch),
         RemoteData.InvalidatedPending(RemoteData.Success(1, RemoteData.Epoch)),
         RemoteData.InvalidatedInitial(RemoteData.Success(1, RemoteData.Epoch)),
-        RemoteData.Failed([Either.right('error' as const)], () => Promise.reject())
+        RemoteData.Failed([Failure.expected('error' as const)], () => Promise.reject())
     );
     expect(all.type).toStrictEqual('failed');
 });
@@ -57,12 +57,12 @@ test('properly combine retries', async () => {
     const combined = RemoteData.all(
         RemoteData.Pending,
         RemoteData.Success(1, RemoteData.Epoch),
-        RemoteData.Failed([Either.right('no1')], retry1),
-        RemoteData.Failed([Either.right('no2')], retry2)
+        RemoteData.Failed([Failure.expected('no1')], retry1),
+        RemoteData.Failed([Failure.expected('no2')], retry2)
     );
     if (combined.type === 'failed') {
         await combined.retry();
-        expect(combined.errors).toStrictEqual([Either.right('no1'), Either.right('no2')]);
+        expect(combined.errors).toStrictEqual([Failure.expected('no1'), Failure.expected('no2')]);
         expect(value1).toStrictEqual(1);
         expect(value2).toStrictEqual(1);
     } else {

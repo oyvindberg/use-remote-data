@@ -1,4 +1,4 @@
-import { Either, ErrorProps, useRemoteDataEither, Await } from 'use-remote-data';
+import { Failure, ErrorProps, useRemoteDataEither, Await } from 'use-remote-data';
 
 // GraphQL APIs often return union types for errors
 type Person = { __typename: 'Person'; name: string; age: number };
@@ -26,16 +26,16 @@ function fetchPerson(): Promise<PersonResult> {
 function PersonErrorView({ errors, retry }: ErrorProps<PersonError>) {
     return (
         <div>
-            {errors.map((either, i) =>
-                either.tag === 'right' ? (
+            {errors.map((failure, i) =>
+                failure.tag === 'expected' ? (
                     <div key={i}>
-                        {either.value.__typename === 'PersonNotFound'
-                            ? `Not found: ${either.value.reason}`
-                            : `Deleted: ${either.value.reason}`}
+                        {failure.value.__typename === 'PersonNotFound'
+                            ? `Not found: ${failure.value.reason}`
+                            : `Deleted: ${failure.value.reason}`}
                     </div>
                 ) : (
                     <div key={i}>
-                        Unexpected error: {either.value instanceof Error ? either.value.message : 'unknown'}
+                        Unexpected error: {failure.value instanceof Error ? failure.value.message : 'unknown'}
                     </div>
                 ),
             )}
@@ -47,8 +47,8 @@ function PersonErrorView({ errors, retry }: ErrorProps<PersonError>) {
 export function Component() {
     const store = useRemoteDataEither(async () => {
         const result = await fetchPerson();
-        if (result.__typename === 'Person') return Either.right(result);
-        return Either.left(result);
+        if (result.__typename === 'Person') return Failure.expected(result);
+        return Failure.unexpected(result);
     });
 
     return (

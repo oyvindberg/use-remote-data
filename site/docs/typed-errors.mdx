@@ -16,23 +16,23 @@ Two common cases:
 
 ## The idea
 
-Your fetch function returns an `Either` instead of a plain value:
+Your fetch function returns a `Failure` instead of a plain value:
 
-- `Either.right(value)` — success
-- `Either.left(error)` — a domain error you expected
+- `Failure.expected(value)` — success (the expected outcome)
+- `Failure.unexpected(error)` — a domain error (not the outcome you wanted)
 
-If the promise *rejects* (network failure, thrown exception), that's still an unexpected error.
-If it *resolves* with `Either.left(...)`, that's a typed domain error you handle explicitly.
+If the promise *rejects* (network failure, thrown exception), that's an unexpected error handled automatically.
+If it *resolves* with `Failure.unexpected(...)`, that's a typed domain error you handle explicitly.
 
 Both end up in the `Failed` state, but your error component can tell them apart:
 
 ```tsx
 error={({ errors, retry }) => (
   <div>
-    {errors.map((e, i) =>
-      e.tag === 'right'
-        ? /* e.value is your typed error E */
-        : /* e.value is the thrown exception */
+    {errors.map((failure, i) =>
+      failure.tag === 'expected'
+        ? /* failure.value is your typed error E */
+        : /* failure.value is the thrown exception */
     )}
     <button onClick={retry}>Retry</button>
   </div>
@@ -47,7 +47,7 @@ with field-level details you can render.
 
 ```tsx
 import { z } from 'zod';
-import { Either, useRemoteDataEither, Await } from 'use-remote-data';
+import { Failure, useRemoteDataEither, Await } from 'use-remote-data';
 
 const UserSchema = z.object({
     name: z.string().min(1, 'Name is required'),
@@ -57,13 +57,13 @@ const UserSchema = z.object({
 
 type User = z.infer<typeof UserSchema>;
 
-function fetchAndValidateUser(): Promise<Either<z.ZodError, User>> {
+function fetchAndValidateUser(): Promise<Failure<z.ZodError, User>> {
     return fetch('/api/user')
         .then((r) => r.json())
         .then((raw) => {
             const result = UserSchema.safeParse(raw);
-            if (result.success) return Either.right(result.data);
-            return Either.left(result.error);
+            if (result.success) return Failure.expected(result.data);
+            return Failure.unexpected(result.error);
         });
 }
 ```
@@ -75,10 +75,10 @@ with a `ZodError` containing three issues — one per field. Your error componen
 <Await store={store}
   error={({ errors, retry }) => (
     <div>
-      {errors.map((e, i) =>
-        e.tag === 'right' ? (
+      {errors.map((failure, i) =>
+        failure.tag === 'expected' ? (
           <ul key={i}>
-            {e.value.issues.map((issue, j) => (
+            {failure.value.issues.map((issue, j) => (
               <li key={j}>{issue.path.join('.')}: {issue.message}</li>
             ))}
           </ul>
@@ -105,12 +105,12 @@ These aren't crashes — they're expected outcomes with structured data.
 You decide which variants are successes and which are domain errors:
 
 ```tsx
-import { Either, useRemoteDataEither, Await } from 'use-remote-data';
+import { Failure, useRemoteDataEither, Await } from 'use-remote-data';
 
 const store = useRemoteDataEither(async () => {
     const result = await graphql<PersonResult>(PERSON_QUERY);
-    if (result.__typename === 'Person') return Either.right(result);
-    return Either.left(result); // PersonNotFound | PersonDeleted
+    if (result.__typename === 'Person') return Failure.expected(result);
+    return Failure.unexpected(result); // PersonNotFound | PersonDeleted
 });
 ```
 
@@ -120,16 +120,12 @@ Your error component can switch on the `__typename` to show different messages f
 
 ## How the error array works
 
-Each element in the `errors` array is an `Either` with two possible shapes:
+Each element in the `errors` array is a `Failure` with two possible shapes:
 
-| `e.tag` | `e.value` is | Meaning |
+| `failure.tag` | `failure.value` is | Meaning |
 |---|---|---|
-| `'right'` | `E` (your domain error type) | Expected failure you returned via `Either.left()` |
-| `'left'` | `Error \| unknown` | Unexpected crash (network failure, thrown exception) |
+| `'expected'` | `E` (your domain error type) | A domain error you designed for |
+| `'unexpected'` | `Error \| unknown` | A surprise crash (network failure, thrown exception) |
 
 For a single store, `errors` always has one element.
 For [combined stores](combining-stores), it can have multiple — one per failed request.
-
-The naming follows the `Either` convention: `right` = "the right thing" (your typed error),
-`left` = "what's left over" (unexpected crashes). If this feels backwards, just remember:
-your custom error type is always at `tag === 'right'`.

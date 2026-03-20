@@ -52,7 +52,7 @@ Testing every state is straightforward:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
-import { RemoteData, RemoteDataStore, Either } from 'use-remote-data';
+import { RemoteData, RemoteDataStore, Failure } from 'use-remote-data';
 
 test('renders the user when data is available', () => {
   const store = RemoteDataStore.always(
@@ -70,10 +70,10 @@ test('renders a spinner while loading', () => {
 
 test('renders an error with retry', () => {
   const retry = vi.fn().mockResolvedValue(undefined);
-  // Either.left() wraps an unexpected error (like a network failure).
+  // Failure.unexpected() wraps a crash (like a network failure).
   // The errors array is one element for a single store.
   const store = RemoteDataStore.always(
-    RemoteData.Failed([Either.left(new Error('Network error'))], retry)
+    RemoteData.Failed([Failure.unexpected(new Error('Network error'))], retry)
   );
   render(<UserCard store={store} />);
   expect(screen.getByText(/Network error/)).toBeInTheDocument();
@@ -106,9 +106,9 @@ test('dashboard shows error when one request fails', () => {
   const userStore = RemoteDataStore.always(
     RemoteData.success({ name: 'Alice' })
   );
-  // Either.left() wraps an unexpected error — see "Failures and Retries" for details
+  // Failure.unexpected() wraps a crash — see "Failures and Retries" for details
   const postsStore = RemoteDataStore.always(
-    RemoteData.Failed([Either.left(new Error('timeout'))], async () => {})
+    RemoteData.Failed([Failure.unexpected(new Error('timeout'))], async () => {})
   );
 
   const combined = RemoteDataStore.all(userStore, postsStore);
@@ -144,7 +144,7 @@ test('shows dimmed text during background refresh', () => {
 The same approach works for Storybook. Each story is a different state:
 
 ```tsx
-import { RemoteData, RemoteDataStore, Either } from 'use-remote-data';
+import { RemoteData, RemoteDataStore, Failure } from 'use-remote-data';
 
 export const Loaded = () => (
   <UserCard store={RemoteDataStore.always(
@@ -159,7 +159,7 @@ export const Loading = () => (
 export const Failed = () => (
   <UserCard store={RemoteDataStore.always(
     RemoteData.Failed(
-      [Either.left(new Error('Server returned 500'))],
+      [Failure.unexpected(new Error('Server returned 500'))],
       async () => {}
     )
   )} />

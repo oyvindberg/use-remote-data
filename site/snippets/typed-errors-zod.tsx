@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Either, ErrorProps, useRemoteDataEither, Await } from 'use-remote-data';
+import { Failure, ErrorProps, useRemoteDataEither, Await } from 'use-remote-data';
 
 // Define the shape you expect from the API
 const UserSchema = z.object({
@@ -27,22 +27,22 @@ function fetchUser(): Promise<unknown> {
 
 // Validate the response — if it doesn't match, return
 // the ZodError as a typed domain error
-async function fetchAndValidateUser(): Promise<Either<z.ZodError, User>> {
+async function fetchAndValidateUser(): Promise<Failure<z.ZodError, User>> {
     const raw = await fetchUser();
     const result = UserSchema.safeParse(raw);
-    if (result.success) return Either.right(result.data);
-    return Either.left(result.error);
+    if (result.success) return Failure.expected(result.data);
+    return Failure.unexpected(result.error);
 }
 
 function UserError({ errors, retry }: ErrorProps<z.ZodError>) {
     return (
         <div>
-            {errors.map((either, i) =>
-                either.tag === 'right' ? (
+            {errors.map((failure, i) =>
+                failure.tag === 'expected' ? (
                     <div key={i}>
                         <strong>Validation failed:</strong>
                         <ul>
-                            {either.value.issues.map((issue, j) => (
+                            {failure.value.issues.map((issue, j) => (
                                 <li key={j}>
                                     <code>{issue.path.join('.')}</code>: {issue.message}
                                 </li>
@@ -51,7 +51,7 @@ function UserError({ errors, retry }: ErrorProps<z.ZodError>) {
                     </div>
                 ) : (
                     <div key={i}>
-                        Unexpected error: {either.value instanceof Error ? either.value.message : 'unknown'}
+                        Unexpected error: {failure.value instanceof Error ? failure.value.message : 'unknown'}
                     </div>
                 ),
             )}

@@ -61,7 +61,7 @@ yarn add use-remote-data
 ## Basic Usage
 
 The primary entry point is the **`useRemoteData`** hook.
-Give it a function that returns a `Promise`, and you get back a store:
+Give it a function that returns a `Promise`, and you get back a **store** — an object that holds the current state of one async request (loading, failed, or success) and re-renders your component when that state changes:
 
 <Snippet snippet="basic_usage" />
 
@@ -86,6 +86,10 @@ function UserProfile({ id }: { id: string }) {
 
 That's it. The store handles fetching, caching, error states, and retries.
 
+The `dependencies` array works like React's `useEffect` deps — when any value changes, the store re-fetches.
+Use it when your fetch depends on props or state that can change. Each element is compared with `Object.is`,
+so pass primitives (strings, numbers) rather than objects or arrays that get re-created every render.
+
 ## `<Await>` — render only when data is ready
 
 The `<Await>` component takes a store and a render callback.
@@ -109,22 +113,29 @@ You'll want to provide your own rendering. There are two ways:
 
 ---
 
-## Why not react-query?
+## Why not react-query / SWR?
 
-Both libraries fetch data. The difference is what happens after.
+Both react-query and SWR fetch data well. The difference is what happens after.
 
-|                                      | react-query                              | use-remote-data                           |
+|                                      | react-query / SWR                        | use-remote-data                           |
 | ------------------------------------ | ---------------------------------------- | ----------------------------------------- |
 | Data type                            | `T \| undefined`                         | `T` (inside `<Await>`)                    |
 | "Did I forget to check loading?"     | Possible                                 | Structurally impossible                   |
-| Stale data during refetch            | Yes (`isFetching` flag)                  | Yes (`isInvalidated` flag)                |
+| Stale data during refetch            | Yes (`isFetching` / `isValidating`)      | Yes (`isInvalidated` flag)                |
 | Retry on error                       | Automatic + manual `refetch()`           | `retry()` callback in Failed state        |
 | Combining requests                   | `useQueries` (typed arrays)              | `RemoteDataStore.all()` (typed tuples)    |
 | Global cache                         | Yes — deduplication across components    | None — data lives with the component      |
-| Runtime dependencies                 | One (`@tanstack/query-core`)             | Zero                                      |
+| Runtime dependencies                 | One (`@tanstack/query-core` / `swr`)     | Zero                                      |
+| Providers / context                  | `QueryClientProvider` / `SWRConfig`      | None                                      |
 
-`react-query` is a great library with a huge ecosystem. If you need devtools, infinite queries, or automatic deduplication across components, use it.
+react-query and SWR are great libraries with large ecosystems. If you need devtools, infinite queries, or automatic deduplication across components, use them.
 
 `use-remote-data` is for when you want **airtight types** and a **simpler mental model**.
 No global cache to configure. No context providers. No optional data.
 Just a store, a component, and data that's always in an honest state.
+
+### What about React 19's `use()` hook?
+
+React 19 introduced the `use()` hook for consuming promises during render. It integrates with Suspense boundaries for loading states and error boundaries for failures.
+
+`use-remote-data` takes a different approach: instead of Suspense and error boundaries (which propagate up the tree), it handles loading and error states locally with `<Await>`. This gives you explicit control — you decide exactly what renders for each state, in the same component where you fetch. The two approaches can coexist: use `use()` for simple server-driven data, and `use-remote-data` when you want typed state machines, retry logic, invalidation, and composable stores.
