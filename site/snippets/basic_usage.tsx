@@ -12,7 +12,5 @@ export function Component() {
     const computeOne = useRemoteData(() => produce(1, 1000));
 
     // fetch and render
-    return (
-        <Await store={computeOne}>{(num) => <span>{num}</span>}</Await>
-    );
+    return <Await store={computeOne}>{(num) => <span>{num}</span>}</Await>;
 }

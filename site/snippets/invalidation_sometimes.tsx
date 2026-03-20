@@ -11,9 +11,7 @@ const freshData = (): Promise<number> =>
 export function Component() {
     const [autoRefresh, setAutoRefresh] = useState(true);
     const store = useRemoteData(freshData, {
-        refresh: autoRefresh
-            ? RefreshStrategy.afterMillis(1000)
-            : undefined,
+        refresh: autoRefresh ? RefreshStrategy.afterMillis(1000) : undefined,
     });
 
     return (
@@ -29,9 +27,7 @@ export function Component() {
             <br />
             <Await store={store}>
                 {(num, isStale) => (
-                    <span
-                        style={{ color: isStale ? 'darkgray' : 'black' }}
-                    >
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
                         {num}
                     </span>
                 )}

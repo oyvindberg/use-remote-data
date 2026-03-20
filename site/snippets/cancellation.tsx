@@ -7,7 +7,12 @@ let abortCount = 0;
 function search(query: string, signal: AbortSignal): Promise<string[]> {
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(
-            () => resolve([`"${query}" — result 1`, `"${query}" — result 2`, `"${query}" — result 3`]),
+            () =>
+                resolve([
+                    `"${query}" — result 1`,
+                    `"${query}" — result 2`,
+                    `"${query}" — result 3`,
+                ]),
             800
         );
         signal.addEventListener('abort', () => {
@@ -21,10 +26,9 @@ function search(query: string, signal: AbortSignal): Promise<string[]> {
 export function Component() {
     const [query, setQuery] = useState('react');
 
-    const store = useRemoteData(
-        (signal) => search(query, signal),
-        { dependencies: [query] }
-    );
+    const store = useRemoteData((signal) => search(query, signal), {
+        dependencies: [query],
+    });
 
     return (
         <div>

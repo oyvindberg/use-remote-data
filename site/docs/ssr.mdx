@@ -7,11 +7,7 @@ Client fetch, server fetch, hardcoded test data — it doesn't matter. It just r
 
 ```tsx
 function ProjectCard({ store }: { store: RemoteDataStore<Project> }) {
-    return (
-        <Await store={store}>
-            {(project) => <h2>{project.name}</h2>}
-        </Await>
-    );
+    return <Await store={store}>{(project) => <h2>{project.name}</h2>}</Await>;
 }
 ```
 
@@ -51,22 +47,23 @@ export default async function DashboardPage() {
 // app/dashboard/ProjectList.tsx — Client Component
 'use client';
 
-import { RemoteData, useRemoteData, Await, RefreshStrategy } from 'use-remote-data';
+import { Await, RefreshStrategy, RemoteData, useRemoteData } from 'use-remote-data';
+
+// app/dashboard/ProjectList.tsx — Client Component
 
 export function ProjectList({ serverData }: { serverData: Project[] }) {
-    const store = useRemoteData(
-        () => fetch('/api/projects').then((r) => r.json()),
-        {
-            initial: RemoteData.success(serverData),
-            refresh: RefreshStrategy.afterMillis(30_000),
-        },
-    );
+    const store = useRemoteData(() => fetch('/api/projects').then((r) => r.json()), {
+        initial: RemoteData.success(serverData),
+        refresh: RefreshStrategy.afterMillis(30_000),
+    });
 
     return (
         <Await store={store}>
             {(projects, isRefreshing) => (
                 <ul style={{ opacity: isRefreshing ? 0.6 : 1 }}>
-                    {projects.map((p) => <li key={p.id}>{p.name}</li>)}
+                    {projects.map((p) => (
+                        <li key={p.id}>{p.name}</li>
+                    ))}
                 </ul>
             )}
         </Await>

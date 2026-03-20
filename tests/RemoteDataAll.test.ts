@@ -2,12 +2,14 @@ import { RemoteData } from '../src';
 import { Failure } from '../src';
 
 test('Pending takes precedence over Initial, Success', async () => {
-    expect(RemoteData.all(RemoteData.Success(1, RemoteData.Epoch), RemoteData.Initial, RemoteData.Pending)).toStrictEqual(
-        RemoteData.Pending
-    );
+    expect(
+        RemoteData.all(RemoteData.Success(1, RemoteData.Epoch), RemoteData.Initial, RemoteData.Pending)
+    ).toStrictEqual(RemoteData.Pending);
 });
 test('Initial takes precedence over Success', async () => {
-    expect(RemoteData.all(RemoteData.Initial, RemoteData.Success(1, RemoteData.Epoch))).toStrictEqual(RemoteData.Initial);
+    expect(RemoteData.all(RemoteData.Initial, RemoteData.Success(1, RemoteData.Epoch))).toStrictEqual(
+        RemoteData.Initial
+    );
 });
 
 test('Failed takes precedence over everything', async () => {

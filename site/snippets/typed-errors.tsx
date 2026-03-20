@@ -1,4 +1,9 @@
-import { Result, ErrorProps, useRemoteDataResult, Await } from 'use-remote-data';
+import {
+    Result,
+    ErrorProps,
+    useRemoteDataResult,
+    Await,
+} from 'use-remote-data';
 
 // GraphQL APIs often return union types for errors
 type Person = { __typename: 'Person'; name: string; age: number };
@@ -35,9 +40,12 @@ function PersonErrorView({ errors, retry }: ErrorProps<PersonError>) {
                     </div>
                 ) : (
                     <div key={i}>
-                        Unexpected error: {failure.value instanceof Error ? failure.value.message : 'unknown'}
+                        Unexpected error:{' '}
+                        {failure.value instanceof Error
+                            ? failure.value.message
+                            : 'unknown'}
                     </div>
-                ),
+                )
             )}
             <button onClick={retry}>Retry</button>
         </div>

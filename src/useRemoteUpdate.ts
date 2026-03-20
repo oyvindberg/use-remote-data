@@ -12,7 +12,8 @@ const reactMajor = Number(version.split('.')[0]);
 export const useRemoteUpdate = <T, P = void, E = never>(
     run: (params: P, signal: AbortSignal) => Promise<T>,
     options?: RemoteUpdateOptions<T, E>
-): RemoteUpdateStore<T, P, E> => useRemoteUpdateResult<T, P, E>((params, signal) => run(params, signal).then(Result.ok), options);
+): RemoteUpdateStore<T, P, E> =>
+    useRemoteUpdateResult<T, P, E>((params, signal) => run(params, signal).then(Result.ok), options);
 
 export const useRemoteUpdateResult = <T, P = void, E = never>(
     run: (params: P, signal: AbortSignal) => Promise<Result<T, E>>,

@@ -52,9 +52,7 @@ export function Column({ rows }: { rows: readonly RemoteDataStore<string>[] }) {
         <Await store={store} key={idx}>
             {(value, isStale) => (
                 <p>
-                    <span
-                        style={{ color: isStale ? 'darkgray' : 'black' }}
-                    >
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
                         {value}
                     </span>
                 </p>

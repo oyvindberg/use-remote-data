@@ -1,11 +1,11 @@
 import { CancelTimeout } from './CancelTimeout';
 import { Failure } from './Failure';
-import { Staleness } from './Staleness';
 import { Options } from './Options';
 import { RemoteData } from './RemoteData';
-import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataMap } from './RemoteDataMap';
+import { RemoteDataStore } from './RemoteDataStore';
 import { Result } from './Result';
+import { Staleness } from './Staleness';
 import { WeakError } from './WeakError';
 import { depsChanged } from './internal/depsChanged';
 import { isDefined } from './internal/isDefined';
@@ -13,14 +13,15 @@ import { DependencyList, useEffect, useRef, useState, version } from 'react';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDataMap = <K extends string | number, V>(run: (key: K, signal: AbortSignal) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
-    useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Result.ok), options);
+export const useRemoteDataMap = <K extends string | number, V>(
+    run: (key: K, signal: AbortSignal) => Promise<V>,
+    options: Options<V> = {}
+): RemoteDataMap<K, V> => useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Result.ok), options);
 
 export const useRemoteDataMapResult = <K extends string | number, V, E>(
     run: (key: K, signal: AbortSignal) => Promise<Result<V, E>>,
     options: Options<V> = {}
-): RemoteDataMap<K, V, E> =>
-    useRemoteDataMapCore(run, options);
+): RemoteDataMap<K, V, E> => useRemoteDataMapCore(run, options);
 
 /** Internal core — also accepts undefined as K (used by useRemoteData). Not exported from the package. */
 export const useRemoteDataMapCore = <K extends string | number | undefined, V, E>(
@@ -164,7 +165,11 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
         /** step one: if dependencies have changed, abort in-flight requests and refresh all data */
         if (depsChanged(depsRef.current, options.dependencies)) {
             if (options.debug) {
-                options.debug(`${storeName(key)} refreshing due to deps, from/to:`, depsRef.current, options.dependencies);
+                options.debug(
+                    `${storeName(key)} refreshing due to deps, from/to:`,
+                    depsRef.current,
+                    options.dependencies
+                );
             }
 
             // abort all in-flight requests and bump their versions so stale responses are discarded
@@ -200,10 +205,7 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
         }
 
         /** step four: refresh logic (if enabled in `options.refresh`) */
-        if (
-            isDefined(options.refresh) &&
-            (remoteData.type === 'success' || remoteData.type === 'stale-immediate')
-        ) {
+        if (isDefined(options.refresh) && (remoteData.type === 'success' || remoteData.type === 'stale-immediate')) {
             const success = remoteData.type === 'success' ? remoteData : remoteData.stale;
             const staleness = options.refresh.decide(success.value, success.updatedAt, new Date());
 
@@ -218,10 +220,7 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
                         options.debug(`${storeName(key)}: will refresh in ${staleness.millis}`);
                     }
 
-                    const handle = setTimeout(
-                        () => set(key, RemoteData.StaleInitial(success)),
-                        staleness.millis
-                    );
+                    const handle = setTimeout(() => set(key, RemoteData.StaleInitial(success)), staleness.millis);
                     return () => {
                         if (options.debug) {
                             options.debug(`${storeName(key)}: cancelled refresh on unmount`);

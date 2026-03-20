@@ -3,10 +3,10 @@ import {
     RefreshStrategy,
     RemoteDataStore,
     SharedStoreProvider,
-    useSharedRemoteData,
     useRemoteData,
+    useSharedRemoteData,
 } from '../src';
-import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode, useState } from 'react';
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -335,15 +335,12 @@ test('store.map() should work', async () => {
 
 test('store.orNull should work', async () => {
     const Test = () => {
-        const store = useSharedRemoteData('ornull-test', () =>
-            new Promise<string>((resolve) => setTimeout(() => resolve('loaded'), 50))
+        const store = useSharedRemoteData(
+            'ornull-test',
+            () => new Promise<string>((resolve) => setTimeout(() => resolve('loaded'), 50))
         );
         const orNull = store.orNull;
-        return (
-            <Await store={orNull}>
-                {(val) => <span>value: {val === null ? 'null' : val}</span>}
-            </Await>
-        );
+        return <Await store={orNull}>{(val) => <span>value: {val === null ? 'null' : val}</span>}</Await>;
     };
 
     render(<Test />, { wrapper });

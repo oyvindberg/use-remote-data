@@ -1,6 +1,6 @@
-import { Result } from './Result';
 import { Options } from './Options';
 import { RemoteDataStore } from './RemoteDataStore';
+import { Result } from './Result';
 import { useRemoteDataMapCore } from './useRemoteDataMap';
 
 export const useRemoteData = <T>(run: (signal: AbortSignal) => Promise<T>, options?: Options<T>): RemoteDataStore<T> =>
@@ -9,4 +9,5 @@ export const useRemoteData = <T>(run: (signal: AbortSignal) => Promise<T>, optio
 export const useRemoteDataResult = <T, E>(
     run: (signal: AbortSignal) => Promise<Result<T, E>>,
     options?: Options<T>
-): RemoteDataStore<T, E> => useRemoteDataMapCore<undefined, T, E>((_key, signal) => run(signal), options).get(undefined);
+): RemoteDataStore<T, E> =>
+    useRemoteDataMapCore<undefined, T, E>((_key, signal) => run(signal), options).get(undefined);

@@ -5,9 +5,9 @@ export interface RefreshStrategy<T> {
 }
 
 export namespace RefreshStrategy {
-    export const of = <T>(
-        decide: (value: T, fetchedAt: Date, now: Date) => Staleness
-    ): RefreshStrategy<T> => ({ decide });
+    export const of = <T>(decide: (value: T, fetchedAt: Date, now: Date) => Staleness): RefreshStrategy<T> => ({
+        decide,
+    });
 
     export const alwaysFresh = <T>(): RefreshStrategy<T> => of(() => Staleness.Fresh);
 

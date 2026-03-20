@@ -5,7 +5,7 @@ import { Snippet } from '../src/components/Snippet';
 By default, `use-remote-data` treats all failures the same: a rejected promise means something went wrong,
 and the error view gets a `retry` button. That's enough for most apps.
 
-But sometimes you know *what kind* of failure happened and want to render it differently.
+But sometimes you know _what kind_ of failure happened and want to render it differently.
 Two common cases:
 
 - **Validation** — you parse the API response with [Zod](https://zod.dev/) and get field-level errors.
@@ -21,8 +21,8 @@ Your fetch function returns a `Result` instead of a plain value:
 - `Result.ok(value)` — success
 - `Result.err(error)` — a domain error
 
-If the promise *rejects* (network failure, thrown exception), that's an unexpected error handled automatically.
-If it *resolves* with `Result.err(...)`, that's a typed domain error you handle explicitly.
+If the promise _rejects_ (network failure, thrown exception), that's an unexpected error handled automatically.
+If it _resolves_ with `Result.err(...)`, that's a typed domain error you handle explicitly.
 
 Both end up in the `Failed` state, but your error component can tell them apart:
 
@@ -46,8 +46,8 @@ When the response doesn't match, the `ZodError` becomes a typed domain error
 with field-level details you can render.
 
 ```tsx
+import { Await, Result, useRemoteDataResult } from 'use-remote-data';
 import { z } from 'zod';
-import { Result, useRemoteDataResult, Await } from 'use-remote-data';
 
 const UserSchema = z.object({
     name: z.string().min(1, 'Name is required'),
@@ -72,25 +72,32 @@ If the API returns `{ name: "", email: "not-an-email", age: -5 }`, the store mov
 with a `ZodError` containing three issues — one per field. Your error component renders each one:
 
 ```tsx
-<Await store={store}
-  error={({ errors, retry }) => (
-    <div>
-      {errors.map((failure, i) =>
-        failure.tag === 'expected' ? (
-          <ul key={i}>
-            {failure.value.issues.map((issue, j) => (
-              <li key={j}>{issue.path.join('.')}: {issue.message}</li>
-            ))}
-          </ul>
-        ) : (
-          <p key={i}>Network error</p>
-        )
-      )}
-      <button onClick={retry}>Retry</button>
-    </div>
-  )}
+<Await
+    store={store}
+    error={({ errors, retry }) => (
+        <div>
+            {errors.map((failure, i) =>
+                failure.tag === 'expected' ? (
+                    <ul key={i}>
+                        {failure.value.issues.map((issue, j) => (
+                            <li key={j}>
+                                {issue.path.join('.')}: {issue.message}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p key={i}>Network error</p>
+                )
+            )}
+            <button onClick={retry}>Retry</button>
+        </div>
+    )}
 >
-  {(user) => <p>{user.name} ({user.email})</p>}
+    {(user) => (
+        <p>
+            {user.name} ({user.email})
+        </p>
+    )}
 </Await>
 ```
 
@@ -105,7 +112,7 @@ These aren't crashes — they're expected outcomes with structured data.
 You decide which variants are successes and which are domain errors:
 
 ```tsx
-import { Result, useRemoteDataResult, Await } from 'use-remote-data';
+import { Await, Result, useRemoteDataResult } from 'use-remote-data';
 
 const store = useRemoteDataResult(async () => {
     const result = await graphql<PersonResult>(PERSON_QUERY);
@@ -122,10 +129,10 @@ Your error component can switch on the `__typename` to show different messages f
 
 Each element in the `errors` array is a `Failure` with two possible shapes:
 
-| `failure.tag` | `failure.value` is | Meaning |
-|---|---|---|
-| `'expected'` | `E` (your domain error type) | A domain error you designed for |
-| `'unexpected'` | `Error \| unknown` | A surprise crash (network failure, thrown exception) |
+| `failure.tag`  | `failure.value` is           | Meaning                                              |
+| -------------- | ---------------------------- | ---------------------------------------------------- |
+| `'expected'`   | `E` (your domain error type) | A domain error you designed for                      |
+| `'unexpected'` | `Error \| unknown`           | A surprise crash (network failure, thrown exception) |
 
 For a single store, `errors` always has one element.
 For [combined stores](combining-stores), it can have multiple — one per failed request.

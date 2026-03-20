@@ -16,9 +16,7 @@ The key function for testing is `RemoteDataStore.always()`. It creates a store t
 import { RemoteData, RemoteDataStore } from 'use-remote-data';
 
 // A store that has data
-const loaded = RemoteDataStore.always(
-  RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
-);
+const loaded = RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
 
 // A store that's loading
 const loading = RemoteDataStore.always(RemoteData.Pending);
@@ -35,16 +33,16 @@ Suppose you have a component that displays a user profile:
 
 ```tsx
 function UserCard({ store }: { store: RemoteDataStore<User> }) {
-  return (
-    <Await store={store}>
-      {(user) => (
-        <div>
-          <h1>{user.name}</h1>
-          <p>{user.email}</p>
-        </div>
-      )}
-    </Await>
-  );
+    return (
+        <Await store={store}>
+            {(user) => (
+                <div>
+                    <h1>{user.name}</h1>
+                    <p>{user.email}</p>
+                </div>
+            )}
+        </Await>
+    );
 }
 ```
 
@@ -52,31 +50,27 @@ Testing every state is straightforward:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
-import { RemoteData, RemoteDataStore, Failure } from 'use-remote-data';
+import { Failure, RemoteData, RemoteDataStore } from 'use-remote-data';
 
 test('renders the user when data is available', () => {
-  const store = RemoteDataStore.always(
-    RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
-  );
-  render(<UserCard store={store} />);
-  expect(screen.getByText('Alice')).toBeInTheDocument();
+    const store = RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
+    render(<UserCard store={store} />);
+    expect(screen.getByText('Alice')).toBeInTheDocument();
 });
 
 test('renders a spinner while loading', () => {
-  const store = RemoteDataStore.always(RemoteData.Pending);
-  render(<UserCard store={store} />);
-  expect(screen.getByText('Loading...')).toBeInTheDocument();
+    const store = RemoteDataStore.always(RemoteData.Pending);
+    render(<UserCard store={store} />);
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
 });
 
 test('renders an error with retry', () => {
-  const retry = vi.fn().mockResolvedValue(undefined);
-  // Failure.unexpected() wraps a crash (like a network failure).
-  // The errors array is one element for a single store.
-  const store = RemoteDataStore.always(
-    RemoteData.Failed([Failure.unexpected(new Error('Network error'))], retry)
-  );
-  render(<UserCard store={store} />);
-  expect(screen.getByText(/Network error/)).toBeInTheDocument();
+    const retry = vi.fn().mockResolvedValue(undefined);
+    // Failure.unexpected() wraps a crash (like a network failure).
+    // The errors array is one element for a single store.
+    const store = RemoteDataStore.always(RemoteData.Failed([Failure.unexpected(new Error('Network error'))], retry));
+    render(<UserCard store={store} />);
+    expect(screen.getByText(/Network error/)).toBeInTheDocument();
 });
 ```
 
@@ -88,33 +82,27 @@ No `act()` wrappers. No `waitFor()`. No timers. The store is already in the stat
 
 ```tsx
 test('dashboard renders when all data is loaded', () => {
-  const userStore = RemoteDataStore.always(
-    RemoteData.success({ name: 'Alice' })
-  );
-  const postsStore = RemoteDataStore.always(
-    RemoteData.success([{ title: 'Hello world' }])
-  );
+    const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
+    const postsStore = RemoteDataStore.always(RemoteData.success([{ title: 'Hello world' }]));
 
-  const combined = RemoteDataStore.all(userStore, postsStore);
-  render(<Dashboard store={combined} />);
+    const combined = RemoteDataStore.all(userStore, postsStore);
+    render(<Dashboard store={combined} />);
 
-  expect(screen.getByText('Alice')).toBeInTheDocument();
-  expect(screen.getByText('Hello world')).toBeInTheDocument();
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Hello world')).toBeInTheDocument();
 });
 
 test('dashboard shows error when one request fails', () => {
-  const userStore = RemoteDataStore.always(
-    RemoteData.success({ name: 'Alice' })
-  );
-  // Failure.unexpected() wraps a crash — see "Failures and Retries" for details
-  const postsStore = RemoteDataStore.always(
-    RemoteData.Failed([Failure.unexpected(new Error('timeout'))], async () => {})
-  );
+    const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
+    // Failure.unexpected() wraps a crash — see "Failures and Retries" for details
+    const postsStore = RemoteDataStore.always(
+        RemoteData.Failed([Failure.unexpected(new Error('timeout'))], async () => {})
+    );
 
-  const combined = RemoteDataStore.all(userStore, postsStore);
-  render(<Dashboard store={combined} />);
+    const combined = RemoteDataStore.all(userStore, postsStore);
+    render(<Dashboard store={combined} />);
 
-  expect(screen.getByText(/timeout/)).toBeInTheDocument();
+    expect(screen.getByText(/timeout/)).toBeInTheDocument();
 });
 ```
 
@@ -126,16 +114,14 @@ You can test how your component looks when data is stale:
 
 ```tsx
 test('shows dimmed text during background refresh', () => {
-  const staleStore = RemoteDataStore.always(
-    RemoteData.StalePending(
-      RemoteData.Success({ name: 'Alice' }, new Date())
-    )
-  );
-  render(<UserCard store={staleStore} />);
+    const staleStore = RemoteDataStore.always(
+        RemoteData.StalePending(RemoteData.Success({ name: 'Alice' }, new Date()))
+    );
+    render(<UserCard store={staleStore} />);
 
-  // The data is still visible (it's stale, not gone)
-  expect(screen.getByText('Alice')).toBeInTheDocument();
-  // Your component can use isStale to style it differently
+    // The data is still visible (it's stale, not gone)
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    // Your component can use isStale to style it differently
 });
 ```
 
@@ -144,33 +130,30 @@ test('shows dimmed text during background refresh', () => {
 The same approach works for Storybook. Each story is a different state:
 
 ```tsx
-import { RemoteData, RemoteDataStore, Failure } from 'use-remote-data';
+import { Failure, RemoteData, RemoteDataStore } from 'use-remote-data';
 
 export const Loaded = () => (
-  <UserCard store={RemoteDataStore.always(
-    RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
-  )} />
+    <UserCard store={RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }))} />
 );
 
-export const Loading = () => (
-  <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />
-);
+export const Loading = () => <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />;
 
 export const Failed = () => (
-  <UserCard store={RemoteDataStore.always(
-    RemoteData.Failed(
-      [Failure.unexpected(new Error('Server returned 500'))],
-      async () => {}
-    )
-  )} />
+    <UserCard
+        store={RemoteDataStore.always(
+            RemoteData.Failed([Failure.unexpected(new Error('Server returned 500'))], async () => {})
+        )}
+    />
 );
 
 export const Refreshing = () => (
-  <UserCard store={RemoteDataStore.always(
-    RemoteData.StalePending(
-      RemoteData.Success({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
-    )
-  )} />
+    <UserCard
+        store={RemoteDataStore.always(
+            RemoteData.StalePending(
+                RemoteData.Success({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
+            )
+        )}
+    />
 );
 ```
 

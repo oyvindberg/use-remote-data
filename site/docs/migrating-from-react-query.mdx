@@ -10,26 +10,26 @@ react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isE
 
 ## Concept mapping
 
-| react-query | use-remote-data | Notes |
-|---|---|---|
-| `QueryClientProvider` | `SharedStoreProvider` | Only needed if you use `useSharedRemoteData` for global deduplication. `useRemoteData` needs no provider. |
-| `useQuery({ queryKey, queryFn })` | `useSharedRemoteData(name, queryFn)` | For global deduplication. Or `useRemoteData(queryFn)` for component-scoped data. |
-| `queryKey: ['users', id]` | `name: 'users'` + `dependencies: [id]` | Shared stores use a string name for deduplication. Dependency changes trigger re-fetch. |
-| `data: T \| undefined` | `<Await store={store}>{(data: T) => ...}</Await>` | Data is `T` inside `<Await>`, never `undefined`. |
-| `isLoading` | `store.current.type === 'pending'` | Or just use `<Await>` — it handles loading for you. |
-| `isFetching` / `isValidating` | `isStale` (second arg in `<Await>`) | `{(data, isStale) => ...}` — stale data stays visible during background refresh. |
-| `error` | `Failed` state with `retry` callback | Errors are data, not exceptions. `<Await>` renders them automatically. |
-| `refetch()` | `store.refresh()` | Manual re-fetch. |
-| `gcTime` / `cacheTime` | `gcTime` option on `useSharedRemoteData` | Grace period before cleanup after last subscriber unmounts. |
-| `staleTime` | `RefreshStrategy.afterMillis(ms)` | How long data stays fresh before a background re-fetch. |
-| `refetchInterval` | `RefreshStrategy.afterMillis(ms)` | Same mechanism — automatically re-fetches on schedule. |
-| `enabled: false` | Don't render the `<Await>` | Stores are lazy — they only fetch when rendered. |
-| `select: (data) => data.name` | `store.map((data) => data.name)` | Transform the success value. |
-| `placeholderData` | `initial: RemoteData.success(placeholder)` | Seed the store with placeholder data. |
-| `useMutation` | `useRemoteUpdate` | First-class mutations with `run()`, `reset()`, typed state machine. |
-| `invalidateQueries(['users'])` | `refreshes: [usersStore]` on `useRemoteUpdate` | Declare which stores refresh after a successful mutation. Or call `store.refresh()` manually. |
-| `useQueries([...])` | `RemoteDataStore.all(store1, store2)` | Combine into a typed tuple. Retry only re-fetches failed requests. |
-| `QueryClient` devtools | `debug: console.warn` | No devtools panel, but full state-transition logging. |
+| react-query                       | use-remote-data                                   | Notes                                                                                                     |
+| --------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `QueryClientProvider`             | `SharedStoreProvider`                             | Only needed if you use `useSharedRemoteData` for global deduplication. `useRemoteData` needs no provider. |
+| `useQuery({ queryKey, queryFn })` | `useSharedRemoteData(name, queryFn)`              | For global deduplication. Or `useRemoteData(queryFn)` for component-scoped data.                          |
+| `queryKey: ['users', id]`         | `name: 'users'` + `dependencies: [id]`            | Shared stores use a string name for deduplication. Dependency changes trigger re-fetch.                   |
+| `data: T \| undefined`            | `<Await store={store}>{(data: T) => ...}</Await>` | Data is `T` inside `<Await>`, never `undefined`.                                                          |
+| `isLoading`                       | `store.current.type === 'pending'`                | Or just use `<Await>` — it handles loading for you.                                                       |
+| `isFetching` / `isValidating`     | `isStale` (second arg in `<Await>`)               | `{(data, isStale) => ...}` — stale data stays visible during background refresh.                          |
+| `error`                           | `Failed` state with `retry` callback              | Errors are data, not exceptions. `<Await>` renders them automatically.                                    |
+| `refetch()`                       | `store.refresh()`                                 | Manual re-fetch.                                                                                          |
+| `gcTime` / `cacheTime`            | `gcTime` option on `useSharedRemoteData`          | Grace period before cleanup after last subscriber unmounts.                                               |
+| `staleTime`                       | `RefreshStrategy.afterMillis(ms)`                 | How long data stays fresh before a background re-fetch.                                                   |
+| `refetchInterval`                 | `RefreshStrategy.afterMillis(ms)`                 | Same mechanism — automatically re-fetches on schedule.                                                    |
+| `enabled: false`                  | Don't render the `<Await>`                        | Stores are lazy — they only fetch when rendered.                                                          |
+| `select: (data) => data.name`     | `store.map((data) => data.name)`                  | Transform the success value.                                                                              |
+| `placeholderData`                 | `initial: RemoteData.success(placeholder)`        | Seed the store with placeholder data.                                                                     |
+| `useMutation`                     | `useRemoteUpdate`                                 | First-class mutations with `run()`, `reset()`, typed state machine.                                       |
+| `invalidateQueries(['users'])`    | `refreshes: [usersStore]` on `useRemoteUpdate`    | Declare which stores refresh after a successful mutation. Or call `store.refresh()` manually.             |
+| `useQueries([...])`               | `RemoteDataStore.all(store1, store2)`             | Combine into a typed tuple. Retry only re-fetches failed requests.                                        |
+| `QueryClient` devtools            | `debug: console.warn`                             | No devtools panel, but full state-transition logging.                                                     |
 
 ## Step-by-step migration
 
@@ -59,9 +59,13 @@ function App() {
 import { useQuery } from '@tanstack/react-query';
 
 function UserProfile({ id }) {
-    const { data: user, isLoading, error } = useQuery({
+    const {
+        data: user,
+        isLoading,
+        error,
+    } = useQuery({
         queryKey: ['user', id],
-        queryFn: () => fetch(`/api/users/${id}`).then(r => r.json()),
+        queryFn: () => fetch(`/api/users/${id}`).then((r) => r.json()),
         staleTime: 30_000,
     });
 
@@ -77,10 +81,9 @@ function UserProfile({ id }) {
 **After (use-remote-data with shared stores):**
 
 ```tsx
-import { useSharedRemoteData, Await, RefreshStrategy } from 'use-remote-data';
+import { Await, RefreshStrategy, useSharedRemoteData } from 'use-remote-data';
 
-const fetchUser = (id: string) => (signal: AbortSignal) =>
-    fetch(`/api/users/${id}`, { signal }).then(r => r.json());
+const fetchUser = (id: string) => (signal: AbortSignal) => fetch(`/api/users/${id}`, { signal }).then((r) => r.json());
 
 function UserProfile({ id }) {
     const store = useSharedRemoteData(`user-${id}`, fetchUser(id), {
@@ -88,7 +91,8 @@ function UserProfile({ id }) {
     });
 
     return (
-        <Await store={store}
+        <Await
+            store={store}
             loading={() => <Spinner />}
             error={({ retry }) => (
                 <div>
@@ -122,10 +126,7 @@ mutation.mutate({ name: 'Alice' });
 ```tsx
 const userStore = useSharedRemoteData(`user-${id}`, fetchUser(id));
 
-const saveStore = useRemoteUpdate(
-    (data: { name: string }) => updateUser(id, data),
-    { refreshes: [userStore] }
-);
+const saveStore = useRemoteUpdate((data: { name: string }) => updateUser(id, data), { refreshes: [userStore] });
 
 saveStore.run({ name: 'Alice' });
 ```

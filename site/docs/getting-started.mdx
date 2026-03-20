@@ -68,19 +68,12 @@ Give it a function that returns a `Promise`, and you get back a **store** — an
 With a real API call, it looks like this:
 
 ```tsx
-import { useRemoteData, Await } from 'use-remote-data';
+import { Await, useRemoteData } from 'use-remote-data';
 
 function UserProfile({ id }: { id: string }) {
-  const store = useRemoteData(
-    () => fetch(`/api/users/${id}`).then(r => r.json()),
-    { dependencies: [id] }
-  );
+    const store = useRemoteData(() => fetch(`/api/users/${id}`).then((r) => r.json()), { dependencies: [id] });
 
-  return (
-    <Await store={store}>
-      {(user) => <h1>{user.name}</h1>}
-    </Await>
-  );
+    return <Await store={store}>{(user) => <h1>{user.name}</h1>}</Await>;
 }
 ```
 
@@ -117,16 +110,16 @@ You'll want to provide your own rendering. There are two ways:
 
 Both react-query and SWR fetch data well. The difference is what happens after.
 
-|                                      | react-query / SWR                        | use-remote-data                           |
-| ------------------------------------ | ---------------------------------------- | ----------------------------------------- |
-| Data type                            | `T \| undefined`                         | `T` (inside `<Await>`)                    |
-| "Did I forget to check loading?"     | Possible                                 | Structurally impossible                   |
-| Stale data during refetch            | Yes (`isFetching` / `isValidating`)      | Yes (`isStale` flag)                |
-| Retry on error                       | Automatic + manual `refetch()`           | `retry()` callback in Failed state        |
-| Combining requests                   | `useQueries` (typed arrays)              | `RemoteDataStore.all()` (typed tuples)    |
-| Global cache                         | Yes — deduplication across components    | Opt-in via [`SharedStoreProvider`](shared-stores) — local by default |
-| Runtime dependencies                 | One (`@tanstack/query-core` / `swr`)     | Zero                                      |
-| Providers / context                  | `QueryClientProvider` / `SWRConfig`      | None                                      |
+|                                  | react-query / SWR                     | use-remote-data                                                      |
+| -------------------------------- | ------------------------------------- | -------------------------------------------------------------------- |
+| Data type                        | `T \| undefined`                      | `T` (inside `<Await>`)                                               |
+| "Did I forget to check loading?" | Possible                              | Structurally impossible                                              |
+| Stale data during refetch        | Yes (`isFetching` / `isValidating`)   | Yes (`isStale` flag)                                                 |
+| Retry on error                   | Automatic + manual `refetch()`        | `retry()` callback in Failed state                                   |
+| Combining requests               | `useQueries` (typed arrays)           | `RemoteDataStore.all()` (typed tuples)                               |
+| Global cache                     | Yes — deduplication across components | Opt-in via [`SharedStoreProvider`](shared-stores) — local by default |
+| Runtime dependencies             | One (`@tanstack/query-core` / `swr`)  | Zero                                                                 |
+| Providers / context              | `QueryClientProvider` / `SWRConfig`   | None                                                                 |
 
 react-query and SWR are great libraries with large ecosystems. If you need devtools, infinite queries, or automatic deduplication across components, use them.
 

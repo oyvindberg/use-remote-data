@@ -34,9 +34,10 @@ export namespace RemoteDataStore {
         ...stores: Stores
     ): RemoteDataStore<ValuesFrom<Stores>, ErrorsFrom<Stores>> => new All(stores);
 
-    class All<Stores extends RemoteDataStore<unknown, unknown>[]>
-        implements RemoteDataStore<ValuesFrom<Stores>, ErrorsFrom<Stores>>
-    {
+    class All<Stores extends RemoteDataStore<unknown, unknown>[]> implements RemoteDataStore<
+        ValuesFrom<Stores>,
+        ErrorsFrom<Stores>
+    > {
         readonly #stores: Stores;
 
         constructor(stores: Stores) {

@@ -17,7 +17,8 @@ function UserBadge() {
         <Await store={store}>
             {(user) => (
                 <div>
-                    Badge: <strong>{user.name}</strong> (fetch #{user.fetchNumber})
+                    Badge: <strong>{user.name}</strong> (fetch #
+                    {user.fetchNumber})
                 </div>
             )}
         </Await>
@@ -30,7 +31,8 @@ function UserGreeting() {
         <Await store={store}>
             {(user) => (
                 <div>
-                    Hello, <strong>{user.name}</strong>! (fetch #{user.fetchNumber})
+                    Hello, <strong>{user.name}</strong>! (fetch #
+                    {user.fetchNumber})
                 </div>
             )}
         </Await>
@@ -43,7 +45,8 @@ export function Component() {
             <UserBadge />
             <UserGreeting />
             <p style={{ fontSize: '0.85em', color: 'gray' }}>
-                Both components show the same fetch number — one fetch, shared state.
+                Both components show the same fetch number — one fetch, shared
+                state.
             </p>
         </SharedStoreProvider>
     );

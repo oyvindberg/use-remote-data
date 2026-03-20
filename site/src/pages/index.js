@@ -211,12 +211,27 @@ function UserPage({ id }) {
 }`;
 
 const quickHits = [
-    { title: 'Zero dependencies, ~3.5kB gzipped', text: 'Just React. No runtime dependencies, no context providers, no bloat.' },
+    {
+        title: 'Zero dependencies, ~3.5kB gzipped',
+        text: 'Just React. No runtime dependencies, no context providers, no bloat.',
+    },
     { title: 'SSR ready', text: 'Pass server data as initial. No hydration boundaries.' },
-    { title: 'Automatic cancellation', text: 'When deps change or a component unmounts, in-flight requests are aborted. Stale responses are always discarded.' },
-    { title: 'Lazy by default', text: 'Stores only fetch when rendered. Define data dependencies upfront — only what mounts hits the network.' },
-    { title: 'Mutations that refresh', text: 'First-class writes with useRemoteUpdate. After a successful mutation, dependent stores re-fetch automatically.' },
-    { title: 'Typed errors', text: 'Separate domain errors from crashes. Validate with Zod, handle GraphQL unions — TypeScript knows which error you have.' },
+    {
+        title: 'Automatic cancellation',
+        text: 'When deps change or a component unmounts, in-flight requests are aborted. Stale responses are always discarded.',
+    },
+    {
+        title: 'Lazy by default',
+        text: 'Stores only fetch when rendered. Define data dependencies upfront — only what mounts hits the network.',
+    },
+    {
+        title: 'Mutations that refresh',
+        text: 'First-class writes with useRemoteUpdate. After a successful mutation, dependent stores re-fetch automatically.',
+    },
+    {
+        title: 'Typed errors',
+        text: 'Separate domain errors from crashes. Validate with Zod, handle GraphQL unions — TypeScript knows which error you have.',
+    },
 ];
 
 function Section({ title, text, code, alt, reverse }) {
@@ -244,11 +259,10 @@ export default function Home() {
             {/* Hero */}
             <header className={styles.hero}>
                 <div className={styles.heroInner}>
-                    <h1 className={styles.heroHeadline}>
-                        Fetch data in React without the boilerplate.
-                    </h1>
+                    <h1 className={styles.heroHeadline}>Fetch data in React without the boilerplate.</h1>
                     <p className={styles.heroSubtitle}>
-                        One hook. One component. Your data is <code>T</code>, not <code>T&nbsp;|&nbsp;undefined</code>.<br />
+                        One hook. One component. Your data is <code>T</code>, not <code>T&nbsp;|&nbsp;undefined</code>.
+                        <br />
                         Loading, error, success — always one state, always type-safe.
                     </p>
                     <div className={styles.heroCta}>

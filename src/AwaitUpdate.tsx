@@ -14,13 +14,7 @@ interface Props<T, P, E> {
 /**
  * Like `Await`, but for mutations. Never auto-triggers — fetching only starts when `run()` is called.
  */
-export function AwaitUpdate<T, P, E>({
-    store,
-    children,
-    idle,
-    error,
-    loading,
-}: Props<T, P, E>): ReactElement | null {
+export function AwaitUpdate<T, P, E>({ store, children, idle, error, loading }: Props<T, P, E>): ReactElement | null {
     // No useEffect(store.triggerUpdate) — the defining difference from Await
 
     const renderError = error ?? ((props: ErrorProps<E>) => <DefaultErrorComponent {...props} />);

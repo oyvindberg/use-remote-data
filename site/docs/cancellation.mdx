@@ -11,10 +11,9 @@ Every fetch function receives an [`AbortSignal`](https://developer.mozilla.org/e
 Forward it to `fetch()` (or any API client that supports signals) to enable real cancellation:
 
 ```tsx
-const store = useRemoteData(
-  (signal) => fetch(`/api/users/${id}`, { signal }).then(r => r.json()),
-  { dependencies: [id] }
-);
+const store = useRemoteData((signal) => fetch(`/api/users/${id}`, { signal }).then((r) => r.json()), {
+    dependencies: [id],
+});
 ```
 
 When `id` changes, the library:
@@ -28,13 +27,13 @@ Forwarding the signal is optional but recommended: it saves bandwidth and frees 
 
 ## When does cancellation happen?
 
-| Event | What gets cancelled |
-|---|---|
-| `dependencies` change | Previous request for that store |
-| Component unmounts | All in-flight requests for that store |
-| `store.refresh()` called | Current in-flight request (before re-fetch) |
-| `useRemoteUpdate`: `run()` called again | Previous mutation |
-| `useRemoteUpdate`: `reset()` called | Current mutation |
+| Event                                   | What gets cancelled                         |
+| --------------------------------------- | ------------------------------------------- |
+| `dependencies` change                   | Previous request for that store             |
+| Component unmounts                      | All in-flight requests for that store       |
+| `store.refresh()` called                | Current in-flight request (before re-fetch) |
+| `useRemoteUpdate`: `run()` called again | Previous mutation                           |
+| `useRemoteUpdate`: `reset()` called     | Current mutation                            |
 
 ## Works with any fetch library
 
@@ -42,10 +41,10 @@ The signal is a standard `AbortSignal`. It works with anything that supports it:
 
 ```tsx
 // fetch
-useRemoteData((signal) => fetch(url, { signal }).then(r => r.json()));
+useRemoteData((signal) => fetch(url, { signal }).then((r) => r.json()));
 
 // axios
-useRemoteData((signal) => axios.get(url, { signal }).then(r => r.data));
+useRemoteData((signal) => axios.get(url, { signal }).then((r) => r.data));
 ```
 
 ## Mutations too
@@ -54,12 +53,12 @@ useRemoteData((signal) => axios.get(url, { signal }).then(r => r.data));
 the first request is aborted:
 
 ```tsx
-const saveStore = useRemoteUpdate(
-  (params, signal) => fetch('/api/save', {
-    method: 'POST',
-    body: JSON.stringify(params),
-    signal,
-  }).then(r => r.json())
+const saveStore = useRemoteUpdate((params, signal) =>
+    fetch('/api/save', {
+        method: 'POST',
+        body: JSON.stringify(params),
+        signal,
+    }).then((r) => r.json())
 );
 ```
 

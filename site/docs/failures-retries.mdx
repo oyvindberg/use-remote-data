@@ -68,11 +68,11 @@ Pass your own `error` render prop to `<Await>`:
 
 The `ErrorProps` type gives you:
 
-| Prop | Type | What it is |
-|---|---|---|
-| `errors` | `Failure<WeakError, E>[]` | The errors that caused the failure (see below) |
-| `retry` | `() => Promise<void>` | Re-runs the failed request |
-| `storeName` | `string \| undefined` | The `storeName` you passed to the hook (useful for debugging) |
+| Prop        | Type                      | What it is                                                    |
+| ----------- | ------------------------- | ------------------------------------------------------------- |
+| `errors`    | `Failure<WeakError, E>[]` | The errors that caused the failure (see below)                |
+| `retry`     | `() => Promise<void>`     | Re-runs the failed request                                    |
+| `storeName` | `string \| undefined`     | The `storeName` you passed to the hook (useful for debugging) |
 
 For most apps, you only need `retry` — the `errors` array is there when you want to show specifics.
 
@@ -96,7 +96,7 @@ If a mutation fails, the store moves to `Failed`, and the default `<AwaitUpdate>
 const saveStore = useRemoteUpdate((name: string) => api.save(name));
 
 // If save("Alice") fails, retry() calls save("Alice") again
-saveStore.run("Alice");
+saveStore.run('Alice');
 ```
 
 You can also call `reset()` to go back to `Initial` instead of retrying — useful when you'd rather let the user fix their input and try again.

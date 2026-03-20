@@ -27,29 +27,17 @@ function App() {
 ## Usage
 
 ```tsx
-import { useSharedRemoteData, Await } from 'use-remote-data';
+import { Await, useSharedRemoteData } from 'use-remote-data';
 
 function NavBar() {
-    const store = useSharedRemoteData('currentUser', (signal) =>
-        fetch('/api/me', { signal }).then((r) => r.json())
-    );
-    return (
-        <Await store={store}>
-            {(user) => <span>{user.name}</span>}
-        </Await>
-    );
+    const store = useSharedRemoteData('currentUser', (signal) => fetch('/api/me', { signal }).then((r) => r.json()));
+    return <Await store={store}>{(user) => <span>{user.name}</span>}</Await>;
 }
 
 function SettingsPanel() {
     // Same name, same data. No second fetch.
-    const store = useSharedRemoteData('currentUser', (signal) =>
-        fetch('/api/me', { signal }).then((r) => r.json())
-    );
-    return (
-        <Await store={store}>
-            {(user) => <h1>Settings for {user.name}</h1>}
-        </Await>
-    );
+    const store = useSharedRemoteData('currentUser', (signal) => fetch('/api/me', { signal }).then((r) => r.json()));
+    return <Await store={store}>{(user) => <h1>Settings for {user.name}</h1>}</Await>;
 }
 ```
 
@@ -70,14 +58,14 @@ Since the first registrant's fetcher wins, avoid defining fetchers inline (which
 
 ```tsx
 // Good — stable reference
-const fetchUser = (signal: AbortSignal) =>
-    fetch('/api/me', { signal }).then((r) => r.json());
+const fetchUser = (signal: AbortSignal) => fetch('/api/me', { signal }).then((r) => r.json());
 
 function NavBar() {
     const store = useSharedRemoteData('currentUser', fetchUser);
     // ...
 }
 ```
+
 :::
 
 ## `gcTime` — grace period before cleanup
@@ -131,7 +119,7 @@ const posts = await db.posts.findMany();
 // Client wrapper
 <SharedStoreProvider initialData={{ currentUser: user, posts: posts }}>
     <App />
-</SharedStoreProvider>
+</SharedStoreProvider>;
 ```
 
 Components that call `useSharedRemoteData("currentUser", ...)` render immediately with the server data. If a `refresh` strategy is configured, it kicks in after hydration.
@@ -155,20 +143,20 @@ const userOrNull = sharedUser.orNull;
 
 ## When to use `useRemoteData` vs `useSharedRemoteData`
 
-| | `useRemoteData` | `useSharedRemoteData` |
-|---|---|---|
-| Store lifetime | Component that called the hook | While any subscriber is mounted (+ `gcTime`) |
-| Deduplication | None — each call creates its own store | By name — same name = same store |
-| Requires provider | No | Yes (`<SharedStoreProvider>`) |
-| Prop-drilling needed | Yes, for sharing | No — same name = same store |
-| Best for | Data owned by one component tree | Data shared across unrelated components |
+|                      | `useRemoteData`                        | `useSharedRemoteData`                        |
+| -------------------- | -------------------------------------- | -------------------------------------------- |
+| Store lifetime       | Component that called the hook         | While any subscriber is mounted (+ `gcTime`) |
+| Deduplication        | None — each call creates its own store | By name — same name = same store             |
+| Requires provider    | No                                     | Yes (`<SharedStoreProvider>`)                |
+| Prop-drilling needed | Yes, for sharing                       | No — same name = same store                  |
+| Best for             | Data owned by one component tree       | Data shared across unrelated components      |
 
 **Start with `useRemoteData`.** It's simpler, has no provider, and the component-scoped lifetime prevents stale cache bugs. Reach for `useSharedRemoteData` when you find yourself prop-drilling the same store through 3+ levels, or when truly unrelated components need the same data.
 
 ## Options
 
-| Option | Type | Description |
-|---|---|---|
-| `refresh` | `RefreshStrategy<T>` | Auto-refresh strategy (same as `useRemoteData`) |
-| `gcTime` | `number` | Milliseconds to keep the entry alive after the last subscriber unmounts |
-| `debug` | `Console['warn']` | Log state transitions and warnings |
+| Option    | Type                 | Description                                                             |
+| --------- | -------------------- | ----------------------------------------------------------------------- |
+| `refresh` | `RefreshStrategy<T>` | Auto-refresh strategy (same as `useRemoteData`)                         |
+| `gcTime`  | `number`             | Milliseconds to keep the entry alive after the last subscriber unmounts |
+| `debug`   | `Console['warn']`    | Log state transitions and warnings                                      |

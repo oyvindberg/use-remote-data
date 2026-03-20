@@ -18,9 +18,7 @@ export function Component() {
             <br />
             <Await store={store}>
                 {(num, isStale) => (
-                    <span
-                        style={{ color: isStale ? 'darkgray' : 'black' }}
-                    >
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
                         {num}
                     </span>
                 )}

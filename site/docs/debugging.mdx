@@ -33,10 +33,7 @@ const allStore = RemoteDataStore.all(userStore, postsStore);
 For `useRemoteDataMap`, the key is appended to the name:
 
 ```tsx
-const itemsStore = useRemoteDataMap(
-    (page: number) => fetchItems(page),
-    { storeName: 'items' },
-);
+const itemsStore = useRemoteDataMap((page: number) => fetchItems(page), { storeName: 'items' });
 
 itemsStore.get(3);
 // store.storeName → "items(3)"
@@ -74,15 +71,15 @@ const store = useRemoteData(() => fetchUser(id), {
 
 This logs:
 
-| When | Message |
-|---|---|
-| Store state changes | `user => { type: 'pending' }` |
-| Data arrives | `user => { type: 'success', value: {...}, updatedAt: ... }` |
-| Dependency change | `user refreshing due to deps, from/to: [1] [2]` |
-| Refresh scheduled | `user: will refresh in 30000` |
-| Unmount cancels timer | `user: cancelled refresh on unmount` |
-| Component unmounted (React 17) | `user unmounting` |
-| Update after unmount (React 17) | `user dropped update because component has been unmounted` |
+| When                            | Message                                                     |
+| ------------------------------- | ----------------------------------------------------------- |
+| Store state changes             | `user => { type: 'pending' }`                               |
+| Data arrives                    | `user => { type: 'success', value: {...}, updatedAt: ... }` |
+| Dependency change               | `user refreshing due to deps, from/to: [1] [2]`             |
+| Refresh scheduled               | `user: will refresh in 30000`                               |
+| Unmount cancels timer           | `user: cancelled refresh on unmount`                        |
+| Component unmounted (React 17)  | `user unmounting`                                           |
+| Update after unmount (React 17) | `user dropped update because component has been unmounted`  |
 
 Every message is prefixed with `storeName` when set, so you can filter your console by store name.
 
@@ -102,14 +99,11 @@ const store = useRemoteData(() => fetchUser(id), {
 `useRemoteUpdate` accepts `debug` and `storeName` in its options too:
 
 ```tsx
-const saveStore = useRemoteUpdate(
-    (params: { name: string }) => api.createUser(params),
-    {
-        storeName: 'createUser',
-        debug: console.warn,
-        refreshes: [usersStore],
-    },
-);
+const saveStore = useRemoteUpdate((params: { name: string }) => api.createUser(params), {
+    storeName: 'createUser',
+    debug: console.warn,
+    refreshes: [usersStore],
+});
 ```
 
 ## Inspecting state directly

@@ -1,18 +1,11 @@
-import {
-    createContext,
-    useContext,
-    useRef,
-    useState,
-    useEffect,
-    type ReactNode,
-} from 'react';
 import { CancelTimeout } from './CancelTimeout';
 import { Failure } from './Failure';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
-import { Staleness } from './Staleness';
 import { type SharedStoreOptions } from './SharedStoreOptions';
+import { Staleness } from './Staleness';
 import { type WeakError } from './WeakError';
+import { type ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Registry — the mutable bag of shared state, held in a ref
@@ -51,11 +44,7 @@ class StoreRegistry {
         return this.#entries.get(name) as Entry<T> | undefined;
     }
 
-    getOrCreate<T>(
-        name: string,
-        run: (signal: AbortSignal) => Promise<T>,
-        options: SharedStoreOptions<T>
-    ): Entry<T> {
+    getOrCreate<T>(name: string, run: (signal: AbortSignal) => Promise<T>, options: SharedStoreOptions<T>): Entry<T> {
         let entry = this.#entries.get(name) as Entry<T> | undefined;
         if (entry) {
             // Dev-mode warning for mismatched fetcher references
@@ -65,7 +54,7 @@ class StoreRegistry {
                     if (warn) {
                         warn(
                             `[SharedStoreProvider] Warning: "${name}" was registered with a different fetcher reference. ` +
-                            `The original fetcher will be used. Wrap your fetcher in useCallback or define it outside the component.`
+                                `The original fetcher will be used. Wrap your fetcher in useCallback or define it outside the component.`
                         );
                     }
                 }
@@ -75,9 +64,10 @@ class StoreRegistry {
 
         // Check if we have SSR initial data for this name
         const initialValue = this.#initialData[name];
-        const initialState: RemoteData<T, never> = initialValue !== undefined
-            ? RemoteData.Success(initialValue as T, new Date())
-            : RemoteData.Initial as RemoteData<T, never>;
+        const initialState: RemoteData<T, never> =
+            initialValue !== undefined
+                ? RemoteData.Success(initialValue as T, new Date())
+                : (RemoteData.Initial as RemoteData<T, never>);
 
         entry = {
             refCount: 0,
@@ -144,7 +134,8 @@ class StoreRegistry {
 
         this.broadcast(name, entry, RemoteData.pendingStateFor(entry.state));
 
-        entry.run(controller.signal)
+        entry
+            .run(controller.signal)
             .then((value) => {
                 if (controller.signal.aborted) return;
                 if (entry.requestVersion !== version) return;
@@ -153,10 +144,7 @@ class StoreRegistry {
                 let next: RemoteData<T, never> = RemoteData.Success(value, now);
 
                 // check immediate staleness
-                if (
-                    entry.options.refresh &&
-                    !Staleness.isFresh(entry.options.refresh.decide(value, now, now))
-                ) {
+                if (entry.options.refresh && !Staleness.isFresh(entry.options.refresh.decide(value, now, now))) {
                     next = RemoteData.StaleImmediate(next as RemoteData.Success<T>);
                 }
 
@@ -170,10 +158,9 @@ class StoreRegistry {
                 this.broadcast(
                     name,
                     entry,
-                    RemoteData.Failed<never>(
-                        [Failure.unexpected(error)],
-                        async () => { this.fetch(name, entry); }
-                    )
+                    RemoteData.Failed<never>([Failure.unexpected(error)], async () => {
+                        this.fetch(name, entry);
+                    })
                 );
             });
     }
@@ -190,11 +177,7 @@ class StoreRegistry {
         if (state.type !== 'success' && state.type !== 'stale-immediate') return;
 
         const success = state.type === 'success' ? state : state.stale;
-        const staleness = entry.options.refresh.decide(
-            success.value,
-            success.updatedAt,
-            new Date()
-        );
+        const staleness = entry.options.refresh.decide(success.value, success.updatedAt, new Date());
 
         switch (staleness.type) {
             case 'stale':
@@ -243,11 +226,7 @@ export function SharedStoreProvider({ children, initialData }: SharedStoreProvid
         registryRef.current = new StoreRegistry(initialData ?? {});
     }
 
-    return (
-        <SharedStoreContext.Provider value={registryRef.current}>
-            {children}
-        </SharedStoreContext.Provider>
-    );
+    return <SharedStoreContext.Provider value={registryRef.current}>{children}</SharedStoreContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------
@@ -272,9 +251,7 @@ export function useSharedRemoteData<T>(
 ): RemoteDataStore<T> {
     const registry = useContext(SharedStoreContext);
     if (!registry) {
-        throw new Error(
-            'useSharedRemoteData must be used inside <SharedStoreProvider>'
-        );
+        throw new Error('useSharedRemoteData must be used inside <SharedStoreProvider>');
     }
 
     const resolvedOptions: SharedStoreOptions<T> = options ?? {};
@@ -349,7 +326,9 @@ export function useSharedRemoteData<T>(
     // Re-create the getter each render to capture the new `state`.
     const store = storeRef.current;
     Object.defineProperty(store, 'current', {
-        get() { return state; },
+        get() {
+            return state;
+        },
         configurable: true,
     });
 

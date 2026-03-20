@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { Result, ErrorProps, useRemoteDataResult, Await } from 'use-remote-data';
+import {
+    Result,
+    ErrorProps,
+    useRemoteDataResult,
+    Await,
+} from 'use-remote-data';
 
 // Define the shape you expect from the API
 const UserSchema = z.object({
@@ -44,16 +49,20 @@ function UserError({ errors, retry }: ErrorProps<z.ZodError>) {
                         <ul>
                             {failure.value.issues.map((issue, j) => (
                                 <li key={j}>
-                                    <code>{issue.path.join('.')}</code>: {issue.message}
+                                    <code>{issue.path.join('.')}</code>:{' '}
+                                    {issue.message}
                                 </li>
                             ))}
                         </ul>
                     </div>
                 ) : (
                     <div key={i}>
-                        Unexpected error: {failure.value instanceof Error ? failure.value.message : 'unknown'}
+                        Unexpected error:{' '}
+                        {failure.value instanceof Error
+                            ? failure.value.message
+                            : 'unknown'}
                     </div>
-                ),
+                )
             )}
             <button onClick={retry}>Retry</button>
         </div>
