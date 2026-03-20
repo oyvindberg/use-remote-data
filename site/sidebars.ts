@@ -23,7 +23,6 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Mutations', id: 'mutations' },
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
-        { type: 'doc', label: 'Typed errors', id: 'typed-errors' },
         {
             type: 'category',
             collapsible: false,
@@ -33,6 +32,12 @@ const sidebars: SidebarsConfig = {
                 { type: 'doc', label: 'Data Lifetime', id: 'lifetime' },
                 { type: 'doc', label: 'Parallel vs. Sequential Fetching', id: 'parallel' },
             ],
+        },
+        {
+            type: 'category',
+            collapsible: true,
+            label: 'Advanced',
+            items: [{ type: 'doc', label: 'Typed Errors', id: 'typed-errors' }],
         },
     ],
 };

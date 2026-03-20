@@ -2,12 +2,91 @@ import { Snippet } from '../src/components/Snippet';
 
 # Failures and Retries
 
-Handling and retrying transient failures can be tricky to implement.
+When a request fails, `use-remote-data` doesn't throw the error away or bury it in a boolean.
+It moves the store to the **`No`** state — which holds the error _and_ a `retry` callback that re-runs the exact same request.
 
-`use-remote-data` offers robust error handling and retry logic out of the box, making it easy to do things right.
+## How it works
 
-This example creates a `Promise` which fails every tenth time it is called.
-The sometimes-failing store is combined with another store which never fails,
-and you should hit _retry_ a few times to see the interaction.
+When your `Promise` rejects (or throws), the store transitions to:
+
+```ts
+{
+  type: 'no',
+  errors: [...],      // what went wrong
+  retry: () => void   // call this to try again
+}
+```
+
+The `<Await>` component renders an error view automatically. The default one shows the error details and a **retry** button.
+When the user clicks retry, the store goes back to `Pending` and re-fires the request. If it succeeds this time, you get `Yes`. If it fails again, you're back to `No` with a fresh `retry`.
+
+No `useState` for tracking error state. No `try/catch` boilerplate. No manual "retry" logic.
+
+## No try/catch. No error boundaries.
+
+With `use-remote-data`, **there is never a reason to write `try/catch` for data fetching**.
+Errors don't throw. They don't propagate up the tree. They don't crash your app.
+A failed request is just data — the `No` state — handled in the same place you render your success state.
+
+This also means you don't need React error boundaries for data fetching errors.
+Error boundaries catch _thrown_ errors during rendering. Since `use-remote-data` never throws,
+the `<Await>` component always renders cleanly — either your data callback, the pending view, or the error view.
+There's nothing to catch.
+
+## Retries with combined stores
+
+This is where it gets powerful. When you combine multiple stores with `RemoteDataStore.all()`,
+and _one_ of them fails:
+
+- The combined store moves to `No`.
+- The combined `retry` **only re-fetches the stores that failed**. The successful ones keep their data.
+- Once the failing store succeeds, the combined store moves to `Yes` with the full tuple.
+
+Try it — this example has a store that fails every 10th call, combined with a store that always succeeds.
+Hit retry a few times to see how only the broken request re-fires.
 
 <Snippet snippet="handling_failure" />
+
+## Customizing the error UI
+
+The built-in error component is deliberately minimal — it's meant to be replaced.
+Pass your own `ErrorComponent` prop to `<Await>`:
+
+```tsx
+function MyErrorView({ errors, retry, storeName }: ErrorProps<never>) {
+    return (
+        <div className="error-banner">
+            <p>Something went wrong{storeName ? ` loading ${storeName}` : ''}.</p>
+            <button onClick={retry}>Try again</button>
+        </div>
+    );
+}
+
+<Await store={store} ErrorComponent={MyErrorView}>
+    {(data) => <Display data={data} />}
+</Await>
+```
+
+The `ErrorProps` type gives you:
+
+| Prop | Type | What it is |
+|---|---|---|
+| `errors` | `Either<WeakError, E>[]` | The errors that caused the failure |
+| `retry` | `() => Promise<void>` | Re-runs the failed request |
+| `storeName` | `string \| undefined` | The `storeName` you passed to the hook (useful for debugging) |
+
+For most apps, you only need `retry` — the `errors` array is there when you want to show specifics.
+
+## Mutations fail the same way
+
+`useRemoteUpdate` uses the same error model.
+If a mutation fails, the store moves to `No`, and the default `<AwaitUpdate>` error view shows a retry button that re-runs with the **same parameters** that were originally passed.
+
+```tsx
+const saveStore = useRemoteUpdate((name: string) => api.save(name));
+
+// If save("Alice") fails, retry() calls save("Alice") again
+saveStore.run("Alice");
+```
+
+You can also call `reset()` to go back to `Initial` instead of retrying — useful when you'd rather let the user fix their input and try again.

@@ -1,38 +1,35 @@
 import { Snippet } from '../src/components/Snippet';
 
-# Typed errors
+# Typed Errors
 
-An interesting feature of `use-remote-data` is its ability to handle **typed errors**,
-letting you differentiate domain-level failures (like `PersonNotFound` or `PersonDeleted`)
-from unexpected ones (network failed).
+:::info
+This is an advanced feature. Most apps don't need it — the default error handling described
+in [Failures and Retries](failures-retries) covers the common case. Read on if your API returns
+structured, domain-level error objects that you want to handle differently from unexpected crashes.
+:::
 
-By default, all error situations are unexpected — caused by a failed promise or a thrown exception.
+Some APIs — especially GraphQL — return **typed error objects** as part of their normal response.
+A `fetchPerson` call might return a `Person`, a `PersonNotFound`, or a `PersonDeleted`.
+These aren't crashes. They're expected outcomes with structured data.
 
-However, if consume an API, say a GraphQL schema that returns various error objects,
-you can choose to use `useRemoteDataEither` (or `useRemoteDataMapEither` for [dynamic data](dynamic-data))
-instead to capture these domain-level errors.
+By default, `use-remote-data` treats all failures the same: a rejected promise means something went wrong.
+But with `useRemoteDataEither` (or `useRemoteDataMapEither` for [dynamic data](dynamic-data)),
+you can separate **domain errors** (like "not found") from **unexpected errors** (like "network failed").
 
-This returns a `RemoteDataStore<T, E>`, where `E` represents your custom error type.
+This gives you `RemoteDataStore<T, E>`, where `E` is your custom error type.
 
----
+## How it works
 
-## Why Use Typed Errors?
+Instead of returning a plain value, your fetch function returns an `Either`:
+- `Either.right(value)` — success
+- `Either.left(error)` — domain-level failure
 
-- **Clarity:** Preserve the exact structure of your GraphQL or REST error responses instead of flattening everything into a generic `Error`.
-- **Precise rendering:** Make decisions in your React components about each error variant, offering more relevant messages or fallback flows.
+When the store is in the `No` state, its `errors` array contains `Either<WeakError, E>` items.
+`WeakError` (left) represents unexpected crashes. `E` (right) represents your typed domain errors.
+This lets your error component render each case differently.
 
----
+## Custom error component
 
-## Render typed errors
-
-You'll need to prove a custom error component to `Await`.
-Typically, you can also create a specialized wrapper component around `Await` that uses your custom error-handling component.
-
-By doing so, your UI can leverage the fully typed nature of these errors,
-presenting tailored messages or fallback flows for each distinct error variant.
-
-Meanwhile, any genuinely unexpected runtime error still appears as `WeakError`.
-
-This is a reasonably long example with a fake GraphQL schema that can return a `PersonNotFoundError` or `PersonDeletedError`.
+Provide a typed `ErrorComponent` to `<Await>` that handles both unexpected and domain errors.
 
 <Snippet snippet="typed-errors" />
