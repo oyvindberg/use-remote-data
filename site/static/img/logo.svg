@@ -1,19 +1,19 @@
 <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
   <!-- Antenna stick -->
-  <line x1="100" y1="28" x2="100" y2="48" stroke="#2563eb" stroke-width="5" stroke-linecap="round" />
+  <line x1="100" y1="28" x2="100" y2="48" stroke="#0d9488" stroke-width="5" stroke-linecap="round" />
   <!-- Antenna tip -->
-  <circle cx="100" cy="22" r="7" fill="#60a5fa" />
+  <circle cx="100" cy="22" r="7" fill="#2dd4bf" />
 
   <!-- Signal waves (left) -->
-  <path d="M78 18 Q72 22 78 26" stroke="#93c5fd" stroke-width="3" stroke-linecap="round" fill="none" />
-  <path d="M68 13 Q58 22 68 31" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6" />
+  <path d="M78 18 Q72 22 78 26" stroke="#5eead4" stroke-width="3" stroke-linecap="round" fill="none" />
+  <path d="M68 13 Q58 22 68 31" stroke="#5eead4" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6" />
 
   <!-- Signal waves (right) -->
-  <path d="M122 18 Q128 22 122 26" stroke="#93c5fd" stroke-width="3" stroke-linecap="round" fill="none" />
-  <path d="M132 13 Q142 22 132 31" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6" />
+  <path d="M122 18 Q128 22 122 26" stroke="#5eead4" stroke-width="3" stroke-linecap="round" fill="none" />
+  <path d="M132 13 Q142 22 132 31" stroke="#5eead4" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6" />
 
   <!-- Body (rounded rectangle) -->
-  <rect x="32" y="48" width="136" height="130" rx="28" ry="28" fill="#2563eb" />
+  <rect x="32" y="48" width="136" height="130" rx="28" ry="28" fill="#0d9488" />
 
   <!-- Eyes -->
   <circle cx="74" cy="96" r="10" fill="#fff" />
@@ -28,10 +28,10 @@
   <path d="M80 120 Q100 140 120 120" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" />
 
   <!-- Cheek blush -->
-  <ellipse cx="58" cy="118" rx="10" ry="7" fill="#93c5fd" opacity="0.5" />
-  <ellipse cx="142" cy="118" rx="10" ry="7" fill="#93c5fd" opacity="0.5" />
+  <ellipse cx="58" cy="118" rx="10" ry="7" fill="#5eead4" opacity="0.5" />
+  <ellipse cx="142" cy="118" rx="10" ry="7" fill="#5eead4" opacity="0.5" />
 
   <!-- Little feet -->
-  <ellipse cx="72" cy="182" rx="16" ry="8" fill="#1d4ed8" />
-  <ellipse cx="128" cy="182" rx="16" ry="8" fill="#1d4ed8" />
+  <ellipse cx="72" cy="182" rx="16" ry="8" fill="#0f766e" />
+  <ellipse cx="128" cy="182" rx="16" ry="8" fill="#0f766e" />
 </svg>

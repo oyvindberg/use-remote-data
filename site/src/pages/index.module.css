@@ -1,12 +1,17 @@
-/* Hero */
+/* Hero — light mode: clean white with teal accents */
 
 .hero {
-    background: #09090b;
-    color: #f9fafb;
+    background: linear-gradient(170deg, #ffffff 0%, #f0fdfa 50%, #ccfbf1 100%);
+    color: #111827;
     padding: 6rem 2rem 5rem;
     min-height: 80vh;
     display: flex;
     align-items: center;
+}
+
+:global(html[data-theme='dark']) .hero {
+    background: #09090b;
+    color: #f9fafb;
 }
 
 .heroInner {
@@ -24,18 +29,26 @@
 }
 
 .heroHeadline code {
-    color: #60a5fa;
+    color: #0d9488;
     background: none;
     font-size: inherit;
     padding: 0;
 }
 
+:global(html[data-theme='dark']) .heroHeadline code {
+    color: #2dd4bf;
+}
+
 .heroSubtitle {
     font-size: 1.25rem;
-    color: #9ca3af;
+    color: #4b5563;
     max-width: 600px;
     margin: 0 0 2.5rem;
     line-height: 1.6;
+}
+
+:global(html[data-theme='dark']) .heroSubtitle {
+    color: #9ca3af;
 }
 
 .heroCta {
@@ -47,7 +60,7 @@
 
 .ctaButton {
     display: inline-block;
-    background: #2563eb;
+    background: #0d9488;
     color: #fff;
     padding: 0.75rem 2rem;
     border-radius: 8px;
@@ -58,20 +71,28 @@
 }
 
 .ctaButton:hover {
-    background: #1d4ed8;
+    background: #0f766e;
     color: #fff;
     text-decoration: none;
 }
 
 .githubLink {
-    color: #9ca3af;
+    color: #6b7280;
     text-decoration: none;
     font-size: 0.95rem;
 }
 
 .githubLink:hover {
-    color: #f9fafb;
+    color: #0d9488;
     text-decoration: underline;
+}
+
+:global(html[data-theme='dark']) .githubLink {
+    color: #9ca3af;
+}
+
+:global(html[data-theme='dark']) .githubLink:hover {
+    color: #2dd4bf;
 }
 
 /* Hero comparison */
@@ -100,7 +121,7 @@
 }
 
 .labelAfter {
-    color: #22c55e;
+    color: var(--landing-after-color);
 }
 
 /* Sections */
@@ -212,10 +233,14 @@
 /* Bottom CTA */
 
 .bottomCta {
-    background: #09090b;
+    background: linear-gradient(170deg, #0f766e 0%, #134e4a 100%);
     color: #f9fafb;
     padding: 5rem 2rem;
     text-align: center;
+}
+
+:global(html[data-theme='dark']) .bottomCta {
+    background: #09090b;
 }
 
 .bottomCtaHeadline {
@@ -232,13 +257,38 @@
     flex-wrap: wrap;
 }
 
+.bottomCta .ctaButton {
+    background: #fff;
+    color: #134e4a;
+}
+
+.bottomCta .ctaButton:hover {
+    background: #f0fdfa;
+    color: #134e4a;
+}
+
+:global(html[data-theme='dark']) .bottomCta .ctaButton {
+    background: #2dd4bf;
+    color: #09090b;
+}
+
+:global(html[data-theme='dark']) .bottomCta .ctaButton:hover {
+    background: #14b8a6;
+    color: #09090b;
+}
+
 .installCmd {
     font-family: var(--ifm-font-family-monospace);
     font-size: 0.95rem;
-    color: #9ca3af;
-    background: #1a1a1f;
+    color: #ccfbf1;
+    background: rgba(255, 255, 255, 0.15);
     padding: 0.6rem 1.25rem;
     border-radius: 8px;
+}
+
+:global(html[data-theme='dark']) .installCmd {
+    color: #9ca3af;
+    background: #1a1a1f;
 }
 
 /* Responsive */
