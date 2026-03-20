@@ -35,6 +35,15 @@ and you rely on convention — not types — to check before accessing it.
 it gives you a single state that is _always_ one of: not yet loaded, loading, failed (with retry), or succeeded.
 You literally cannot access the data without first proving it exists.
 
+This isn't just ergonomics. A forgotten null check is a bug that compiles. In domains where runtime errors are
+expensive — fintech, healthcare, critical infrastructure — the difference between `T | undefined` and `T`
+is the difference between a bug you ship and a bug the compiler catches.
+
+If you use [zod](https://zod.dev/) for validation, [ts-pattern](https://github.com/gvergnaud/ts-pattern)
+for exhaustive matching, or [neverthrow](https://github.com/supermacro/neverthrow) for typed errors,
+you already think this way: make illegal states unrepresentable.
+`use-remote-data` applies the same principle to async data.
+
 ---
 
 ## Installation
@@ -85,17 +94,17 @@ You'll want to provide your own rendering. There are two ways:
 
 Both libraries fetch data. The difference is what happens after.
 
-|                                      | react-query             | use-remote-data                           |
-| ------------------------------------ | ----------------------- | ----------------------------------------- |
-| Data type                            | `T \| undefined`        | `T` (inside `<Await>`)                    |
-| "Did I forget to check loading?"     | Possible                | Structurally impossible                   |
-| Invalidation with stale data visible | Background refetch flag | First-class `isInvalidated` state         |
-| Retry on error                       | Config option           | Built into the state, one click           |
-| Combining requests                   | Manual                  | `RemoteDataStore.all()` with typed tuples |
-| Global cache/context                 | Required                | None — data lives with the component      |
-| Dependencies                         | Several                 | Zero (just React)                         |
+|                                      | react-query                              | use-remote-data                           |
+| ------------------------------------ | ---------------------------------------- | ----------------------------------------- |
+| Data type                            | `T \| undefined`                         | `T` (inside `<Await>`)                    |
+| "Did I forget to check loading?"     | Possible                                 | Structurally impossible                   |
+| Stale data during refetch            | Yes (`isFetching` flag)                  | Yes (`isInvalidated` flag)                |
+| Retry on error                       | Automatic + manual `refetch()`           | `retry()` callback in Failed state        |
+| Combining requests                   | `useQueries` (typed arrays)              | `RemoteDataStore.all()` (typed tuples)    |
+| Global cache                         | Yes — deduplication across components    | None — data lives with the component      |
+| Runtime dependencies                 | One (`@tanstack/query-core`)             | Zero                                      |
 
-`react-query` is a great library with a huge ecosystem. If you need SSR, devtools, or infinite queries, use it.
+`react-query` is a great library with a huge ecosystem. If you need devtools, infinite queries, or automatic deduplication across components, use it.
 
 `use-remote-data` is for when you want **airtight types** and a **simpler mental model**.
 No global cache to configure. No context providers. No optional data.

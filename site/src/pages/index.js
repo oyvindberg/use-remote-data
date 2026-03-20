@@ -77,7 +77,7 @@ import { useRemoteData, Await } from "use-remote-data";
 function UserProfile({ id }) {
   const store = useRemoteData(
     () => fetch(\`/api/users/\${id}\`).then(r => r.json()),
-    [id]
+    { dependencies: [id] }
   );
 
   return (
@@ -192,12 +192,12 @@ function UserPage({ id }) {
 }`;
 
 const quickHits = [
-    { title: 'Zero dependencies', text: 'Just React. No runtime dependencies, no context providers.' },
+    { title: 'Zero dependencies, ~3.5kB gzipped', text: 'Just React. No runtime dependencies, no context providers, no bloat.' },
     { title: 'SSR ready', text: 'Pass server data as initial. No hydration boundaries.' },
     { title: 'Background refresh', text: 'Stale data stays visible while fresh data loads.' },
     { title: 'Lazy by default', text: 'Stores only fetch when rendered.' },
     { title: 'Mutations', text: 'First-class writes with useRemoteUpdate.' },
-    { title: 'Tiny', text: 'No bloat. No transitive dependencies.' },
+    { title: 'Discriminated unions', text: 'Same principle as zod, ts-pattern, and neverthrow. Illegal states are unrepresentable.' },
 ];
 
 function Section({ title, text, code, alt, reverse }) {

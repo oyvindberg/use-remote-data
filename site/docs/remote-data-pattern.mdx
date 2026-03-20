@@ -42,3 +42,50 @@ The second argument — `isInvalidated` — tells you everything:
 ```
 
 Data stays on screen. Users see something useful instead of a spinner. One boolean to style it.
+
+## Exhaustive matching
+
+Most of the time you'll use `<Await>` and never touch these states directly.
+But when you need custom control flow — logging, analytics, conditional rendering — the
+full discriminated union is there, and TypeScript enforces exhaustive handling:
+
+```ts
+function describe<T>(rd: RemoteData<T>): string {
+  switch (rd.type) {
+    case 'initial':               return 'Not started';
+    case 'pending':               return 'Loading...';
+    case 'failed':                return `${rd.errors.length} error(s)`;
+    case 'yes':                   return `Got: ${rd.value}`;
+    case 'invalidated-immediate': return `Stale (just arrived): ${rd.invalidated.value}`;
+    case 'invalidated-initial':   return `Stale (waiting): ${rd.invalidated.value}`;
+    case 'invalidated-pending':   return `Refreshing: ${rd.invalidated.value}`;
+    // No default — TypeScript errors if you miss a case.
+  }
+}
+```
+
+If you use [ts-pattern](https://github.com/gvergnaud/ts-pattern), it works as you'd expect:
+
+```ts
+import { match } from 'ts-pattern';
+
+const label = match(store.current)
+  .with({ type: 'initial' }, () => 'Idle')
+  .with({ type: 'pending' }, () => 'Loading...')
+  .with({ type: 'failed' },  ({ errors }) => `${errors.length} error(s)`)
+  .with({ type: 'yes' },     ({ value }) => `Hello, ${value.name}`)
+  .with({ type: 'invalidated-immediate' }, ({ invalidated }) => `Stale: ${invalidated.value.name}`)
+  .with({ type: 'invalidated-initial' },   ({ invalidated }) => `Stale: ${invalidated.value.name}`)
+  .with({ type: 'invalidated-pending' },   ({ invalidated }) => `Refreshing: ${invalidated.value.name}`)
+  .exhaustive();
+```
+
+## Prior art
+
+The `RemoteData` pattern originates in [Elm](https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/)
+and has been adopted across typed functional languages.
+The core idea — model async state as a sum type instead of a bag of booleans — is the same
+principle behind [zod](https://zod.dev/) (parse, don't validate),
+[neverthrow](https://github.com/supermacro/neverthrow) (errors as values),
+and [ts-pattern](https://github.com/gvergnaud/ts-pattern) (exhaustive matching).
+If you already think in discriminated unions, `RemoteData` is the natural way to model async data.
