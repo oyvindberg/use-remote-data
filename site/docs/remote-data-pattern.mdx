@@ -1,96 +1,44 @@
-# The RemoteData type
+# The RemoteData Type
 
-## The idea
+Every async request is in exactly one state: it hasn't started, it's in flight, it failed, or it succeeded.
+Most code models this with a bag of booleans and optional values — `isLoading`, `data?`, `error?` — and nothing stops you from having `isLoading: true` and `data: someValue` at the same time.
 
-Every async request goes through a lifecycle: it hasn't started, it's in progress, it failed, or it succeeded.
-Most code models this with a bag of booleans and optional values (`isLoading`, `data?`, `error?`).
-The problem: nothing stops you from having `isLoading: true` and `data: someValue` at the same time.
-Impossible states are representable.
-
-`RemoteData` makes impossible states impossible. It's a **union type** — the request is in exactly one state at a time,
-and TypeScript knows which one:
+`RemoteData` is a union type. One state at a time. TypeScript knows which one.
 
 ```ts
 type RemoteData<T> =
-    | { type: 'initial' } // haven't started yet
-    | { type: 'pending' } // request in flight
-    | { type: 'failed'; errors; retry } // failed — with errors and a retry function
-    | { type: 'yes'; value: T }; // succeeded — here's your data
+    | { type: 'initial' }                // haven't started yet
+    | { type: 'pending' }                // request in flight
+    | { type: 'failed'; errors; retry }  // failed — with errors and a retry function
+    | { type: 'yes'; value: T };         // succeeded — here's your data
 ```
 
 When you're in the `'yes'` branch, `value` is `T`. Not `T | undefined`. Not `T | null`. Just `T`.
-TypeScript narrows it for you automatically.
+No narrowing gymnastics. TypeScript does it for you.
 
-## Invalidation states
+## Stale data is still data
 
-This library extends the classic pattern with three additional states for **stale data**.
-When data is invalidated (e.g., it's older than your refresh interval), you don't lose it —
-you keep the old value while the refresh happens:
+Most libraries throw your data away when they re-fetch. You had a dashboard full of numbers — now you have a spinner.
 
-| State                   | What it means                                      | You have data? |
-| ----------------------- | -------------------------------------------------- | -------------- |
-| `invalidated-immediate` | Data arrived but was already stale (e.g., polling) | Yes (stale)    |
-| `invalidated-initial`   | Data was marked stale, re-fetch hasn't started yet | Yes (stale)    |
-| `invalidated-pending`   | Re-fetch is in progress                            | Yes (stale)    |
+`use-remote-data` keeps the old value visible while the refresh happens. Three additional states handle this:
 
-This is what makes the `isInvalidated` flag in `<Await>` work.
-Your callback still gets the value — it's just stale. You can grey it out, show a subtle spinner, or ignore staleness entirely. Your choice.
+| State                   | What's happening                     | You have data? |
+| ----------------------- | ------------------------------------ | -------------- |
+| `invalidated-immediate` | Data arrived but was already stale   | Yes            |
+| `invalidated-initial`   | Marked stale, re-fetch hasn't started | Yes            |
+| `invalidated-pending`   | Re-fetch is in progress              | Yes            |
 
-## The full type
+Inside `<Await>`, you don't need to think about these states individually.
+The second argument — `isInvalidated` — tells you everything:
 
-For reference, here's the complete type definition:
-
-```ts
-import { Either } from './Either';
-import { WeakError } from './WeakError';
-
-export type RemoteData<T, E = never> =
-    | RemoteData.Initial
-    | RemoteData.Pending
-    | RemoteData.Failed<E>
-    | RemoteData.Yes<T>
-    | RemoteData.InvalidatedImmediate<T>
-    | RemoteData.InvalidatedInitial<T>
-    | RemoteData.InvalidatedPending<T>;
-
-export namespace RemoteData {
-    // We haven't started fetching yet (lazy load)
-    export interface Initial {
-        type: 'initial';
-    }
-    // A request is ongoing (fetch in progress).
-    export interface Pending {
-        type: 'pending';
-    }
-    // The request failed (includes errors and a retry callback).
-    export interface Failed<E> {
-        type: 'failed';
-        errors: Either<WeakError, E>[];
-        retry: () => Promise<void>;
-    }
-    // The request succeeded (includes the fetched value).
-    export interface Yes<T> {
-        type: 'yes';
-        value: T;
-        updatedAt: Date;
-    }
-    // We have stale data, and it was never considered valid (used for polling)
-    export interface InvalidatedImmediate<T> {
-        type: 'invalidated-immediate';
-        invalidated: RemoteData.Yes<T>;
-    }
-    // We have stale data but haven't started re-fetching.
-    export interface InvalidatedInitial<T> {
-        type: 'invalidated-initial';
-        invalidated: RemoteData.Yes<T>;
-    }
-    // We have stale data and are re-fetching
-    export interface InvalidatedPending<T> {
-        type: 'invalidated-pending';
-        invalidated: RemoteData.Yes<T>;
-    }
-}
+```tsx
+<Await store={store}>
+  {(data, isInvalidated) => (
+    <div style={{ opacity: isInvalidated ? 0.6 : 1 }}>
+      <Dashboard data={data} />
+    </div>
+  )}
+</Await>
 ```
 
-The `E` type parameter is for **typed errors** — domain-level failures like "user not found" that are different from unexpected crashes.
-It defaults to `never`, so you can ignore it entirely until you need it. See [typed errors](typed-errors) for more.
+Data stays on screen. Users see something useful instead of a spinner. One boolean to style it.

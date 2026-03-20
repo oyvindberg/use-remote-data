@@ -24,6 +24,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
         { type: 'doc', label: 'Server-Side Rendering', id: 'ssr' },
+        { type: 'doc', label: 'Testing', id: 'testing' },
         {
             type: 'category',
             collapsible: false,

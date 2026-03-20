@@ -48,7 +48,7 @@ function UserProfile({ id }) {
 const codeAfter = `
 function UserProfile({ id }) {
   const userStore = useRemoteData(
-    () => fetchUser(id), [id]
+    () => fetchUser(id), { dependencies: [id] }
   );
 
   return (
@@ -156,9 +156,9 @@ const addTodo = useRemoteUpdate(
 // → Await re-renders with fresh data`;
 
 const codeCombine = `
-const userStore = useRemoteData(() => fetchUser(id), [id]);
-const postsStore = useRemoteData(() => fetchPosts(id), [id]);
-const statsStore = useRemoteData(() => fetchStats(id), [id]);
+const userStore = useRemoteData(() => fetchUser(id), { dependencies: [id] });
+const postsStore = useRemoteData(() => fetchPosts(id), { dependencies: [id] });
+const statsStore = useRemoteData(() => fetchStats(id), { dependencies: [id] });
 
 const allStore = RemoteDataStore.all(
   userStore, postsStore, statsStore
@@ -178,7 +178,7 @@ function UserPage({ id }) {
   // Fetches on first render. Caches while mounted.
   // Unmount UserPage → store is gone. No stale cache.
   const userStore = useRemoteData(
-    () => fetchUser(id), [id]
+    () => fetchUser(id), { dependencies: [id] }
   );
 
   // Pass the store down — child components
