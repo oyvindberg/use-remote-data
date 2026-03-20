@@ -40,6 +40,9 @@ export namespace RemoteData {
 
     export const Yes = <T>(value: T, updatedAt: Date): Yes<T> => ({ type: 'yes', value, updatedAt });
 
+    /** Convenience: creates a `Yes` with the current timestamp. */
+    export const yes = <T>(value: T): Yes<T> => Yes(value, new Date());
+
     export interface Yes<T> {
         readonly type: 'yes';
         readonly value: T;

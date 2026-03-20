@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Mutations', id: 'mutations' },
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
+        { type: 'doc', label: 'Server-Side Rendering', id: 'ssr' },
         {
             type: 'category',
             collapsible: false,

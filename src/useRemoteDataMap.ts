@@ -19,7 +19,14 @@ export const useRemoteDataMapEither = <K, V, E>(
     run: (key: K) => Promise<Either<E, V>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> => {
-    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V, E>>>(new Map());
+    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V, E>>>(() => {
+        if (options.initial !== undefined) {
+            const map = new Map<JsonKey<K>, RemoteData<V, E>>();
+            map.set(JsonKey.of(undefined as K), options.initial as RemoteData<V, E>);
+            return map;
+        }
+        return new Map();
+    });
     const [deps, setDeps] = useState(JsonKey.of(options.dependencies));
 
     const storeName = (key: JsonKey<K> | undefined) => {
