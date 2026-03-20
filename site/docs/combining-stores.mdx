@@ -13,7 +13,7 @@ Under the hood, the combined store uses the `RemoteData.all(...)` function, whic
 - Returns `Failed` if _any_ store fails. A single “retry” will only re-fetch the failing requests.
 - Returns `Pending` if _any_ constituent store is `Pending`.
 - Returns `Success` with a tuple of all combined values if _all_ succeed.
-- Manages invalidation states if any store becomes invalidated.
+- Manages stale states if any store becomes stale.
 
 In a render prop, you can
 [destructure](https://levelup.gitconnected.com/crazy-powerful-typescript-tuple-types-9b121e0a690c)

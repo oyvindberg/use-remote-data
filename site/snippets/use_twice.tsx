@@ -1,5 +1,5 @@
 import {
-    InvalidationStrategy,
+    RefreshStrategy,
     RemoteDataStore,
     useRemoteData,
     Await,
@@ -14,7 +14,7 @@ const freshData = (): Promise<number> =>
 
 export function Component() {
     const store = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(2000),
+        refresh: RefreshStrategy.afterMillis(2000),
     });
 
     return (
@@ -28,9 +28,9 @@ export function Component() {
 export function Child({ store }: { store: RemoteDataStore<number> }) {
     return (
         <Await store={store}>
-            {(num, isInvalidated) => (
+            {(num, isStale) => (
                 <p>
-                    <span style={{ color: isInvalidated ? 'darkgray' : 'black' }}>
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
                         {num}
                     </span>
                 </p>

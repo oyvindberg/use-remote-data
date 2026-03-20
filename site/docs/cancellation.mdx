@@ -32,7 +32,7 @@ Forwarding the signal is optional but recommended: it saves bandwidth and frees 
 |---|---|
 | `dependencies` change | Previous request for that store |
 | Component unmounts | All in-flight requests for that store |
-| `store.invalidate()` called | Current in-flight request (before re-fetch) |
+| `store.refresh()` called | Current in-flight request (before re-fetch) |
 | `useRemoteUpdate`: `run()` called again | Previous mutation |
 | `useRemoteUpdate`: `reset()` called | Current mutation |
 

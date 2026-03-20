@@ -3,6 +3,7 @@ import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteUpdateOptions } from './RemoteUpdateOptions';
 import { RemoteUpdateStore } from './RemoteUpdateStore';
+import { Result } from './Result';
 import { WeakError } from './WeakError';
 import { useCallback, useEffect, useRef, useState, version } from 'react';
 
@@ -11,10 +12,10 @@ const reactMajor = Number(version.split('.')[0]);
 export const useRemoteUpdate = <T, P = void, E = never>(
     run: (params: P, signal: AbortSignal) => Promise<T>,
     options?: RemoteUpdateOptions<T, E>
-): RemoteUpdateStore<T, P, E> => useRemoteUpdateEither<T, P, E>((params, signal) => run(params, signal).then(Failure.expected), options);
+): RemoteUpdateStore<T, P, E> => useRemoteUpdateResult<T, P, E>((params, signal) => run(params, signal).then(Result.ok), options);
 
-export const useRemoteUpdateEither = <T, P = void, E = never>(
-    run: (params: P, signal: AbortSignal) => Promise<Failure<E, T>>,
+export const useRemoteUpdateResult = <T, P = void, E = never>(
+    run: (params: P, signal: AbortSignal) => Promise<Result<T, E>>,
     options?: RemoteUpdateOptions<T, E>
 ): RemoteUpdateStore<T, P, E> => {
     const [state, setState] = useState<RemoteData<T, E>>(RemoteData.Initial);
@@ -72,18 +73,18 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                     if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
                     const opts = optionsRef.current;
                     switch (result.tag) {
-                        case 'unexpected': {
+                        case 'err': {
                             const errors: readonly Failure<WeakError, E>[] = [Failure.expected(result.value)];
                             debugLog('domain error =>', result.value);
                             setState(RemoteData.Failed(errors, () => runFn(params)));
                             opts?.onError?.(errors);
                             break;
                         }
-                        case 'expected': {
+                        case 'ok': {
                             const value = result.value;
                             debugLog('success =>', value);
                             setState(RemoteData.Success(value, new Date()));
-                            opts?.invalidates?.forEach((s) => s.invalidate());
+                            opts?.refreshes?.forEach((s) => s.refresh());
                             opts?.onSuccess?.(value);
                             break;
                         }
@@ -118,7 +119,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
         run: runFn,
         reset,
         triggerUpdate: () => undefined,
-        invalidate: reset,
+        refresh: reset,
         get current() {
             return state;
         },

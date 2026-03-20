@@ -120,33 +120,32 @@ const allStore = RemoteDataStore.all(
   {([user, posts, stats]) => <Dashboard ... />}
 </Await>`;
 
-const codeInvalidation = `
+const codeRefresh = `
 const store = useRemoteData(
   () => fetchPrices(), {
     // Re-fetch every 30 seconds
-    invalidation:
-      InvalidationStrategy.refetchAfterMillis(30_000),
+    refresh: RefreshStrategy.afterMillis(30_000),
   }
 );
 
-// isInvalidated is true while background
+// isStale is true while background
 // refresh is in progress — old data stays visible
 <Await store={store}>
-  {(prices, isInvalidated) => (
-    <div style={{ opacity: isInvalidated ? 0.6 : 1 }}>
+  {(prices, isStale) => (
+    <div style={{ opacity: isStale ? 0.6 : 1 }}>
       <PriceTable prices={prices} />
     </div>
   )}
 </Await>`;
 
-const codeMutationInvalidation = `
+const codeMutationRefresh = `
 const todosStore = useRemoteData(() => fetchTodos());
 
 const addTodo = useRemoteUpdate(
   (text) => api.addTodo(text), {
     // After a successful mutation,
     // automatically re-fetch the todo list
-    invalidates: [todosStore],
+    refreshes: [todosStore],
   }
 );
 
@@ -173,7 +172,7 @@ return (
 );`;
 
 const codeTesting = `
-import { RemoteData, RemoteDataStore } from "use-remote-data";
+import { RemoteData, RemoteDataStore, Failure } from "use-remote-data";
 
 // A store that's already loaded — no fetch, no mock
 const store = RemoteDataStore.always(
@@ -216,7 +215,7 @@ const quickHits = [
     { title: 'SSR ready', text: 'Pass server data as initial. No hydration boundaries.' },
     { title: 'Automatic cancellation', text: 'When deps change or a component unmounts, in-flight requests are aborted. Stale responses are always discarded.' },
     { title: 'Lazy by default', text: 'Stores only fetch when rendered. Define data dependencies upfront — only what mounts hits the network.' },
-    { title: 'Mutations that invalidate', text: 'First-class writes with useRemoteUpdate. After a successful mutation, dependent stores re-fetch automatically.' },
+    { title: 'Mutations that refresh', text: 'First-class writes with useRemoteUpdate. After a successful mutation, dependent stores re-fetch automatically.' },
     { title: 'Typed errors', text: 'Separate domain errors from crashes. Validate with Zod, handle GraphQL unions — TypeScript knows which error you have.' },
 ];
 
@@ -322,16 +321,16 @@ export default function Home() {
                 <Section
                     title="Data stays fresh automatically."
                     text="Tell the store how long data should live. It re-fetches in the background when data goes stale — your users keep seeing the old data while the new data loads. No spinners, no flicker."
-                    code={codeInvalidation}
+                    code={codeRefresh}
                     alt
                     reverse
                 />
 
                 {/* Mutation invalidation */}
                 <Section
-                    title="Mutations invalidate reads."
+                    title="Mutations refresh reads."
                     text="After a successful write, the stores you depend on re-fetch automatically. No manual cache busting. No imperative refetch calls. Just declare what should refresh and it happens."
-                    code={codeMutationInvalidation}
+                    code={codeMutationRefresh}
                 />
 
                 {/* Testing */}

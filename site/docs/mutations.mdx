@@ -26,14 +26,14 @@ Pass them to `run()` at call-time — no `dependencies` array needed.
 This is a key difference from `useRemoteData`:
 form values are passed when the user clicks submit, not captured in a closure that re-creates on every keystroke.
 
-## Automatic invalidation
+## Automatic refresh
 
 After a successful mutation, you usually need to refresh some read stores.
-The `invalidates` option does this for you — just pass the stores that should refresh:
+The `refreshes` option does this for you — just pass the stores that should refresh:
 
 <Snippet snippet="mutation_invalidation" />
 
-After success, each store in the array has its `invalidate()` called automatically.
+After success, each store in the array has its `refresh()` called automatically.
 Any `Await` rendering those stores will re-fetch.
 
 ## Success and error callbacks
@@ -43,13 +43,13 @@ like closing a dialog — without putting imperative code in your render functio
 
 ```tsx
 const store = useRemoteUpdate((params) => saveItem(params), {
-    invalidates: [itemsStore],
+    refreshes: [itemsStore],
     onSuccess: () => dialog.close(),
     onError: (errors) => toast.error('Save failed'),
 });
 ```
 
-The callback runs once, after invalidation completes.
+The callback runs once, after the refresh completes.
 
 ## Resetting
 

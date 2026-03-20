@@ -1,5 +1,5 @@
 import {
-    InvalidationStrategy,
+    RefreshStrategy,
     RemoteDataStore,
     useRemoteData,
     Await,
@@ -22,10 +22,10 @@ const failSometimes = (): Promise<number> =>
 
 export function Component() {
     const one = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(1000),
+        refresh: RefreshStrategy.afterMillis(1000),
     });
     const two = useRemoteData(failSometimes, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(100),
+        refresh: RefreshStrategy.afterMillis(100),
     });
     return (
         <Await store={RemoteDataStore.all(one, two)}>

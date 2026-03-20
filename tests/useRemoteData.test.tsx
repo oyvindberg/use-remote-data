@@ -1,4 +1,4 @@
-import { Await, InvalidationStrategy, RemoteDataStore, useRemoteData, useRemoteUpdate } from '../src';
+import { Await, RefreshStrategy, RemoteDataStore, useRemoteData, useRemoteUpdate } from '../src';
 import { AwaitUpdate } from '../src/AwaitUpdate';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
@@ -83,15 +83,15 @@ test('should handle failure and retries', async () => {
     await waitFor(() => screen.getByText('char: a'));
 });
 
-test('invalidation: refetchAfterMillis should work', async () => {
+test('refresh: afterMillis should work', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
-        const store = useRemoteData(testPromise.next, { invalidation: InvalidationStrategy.refetchAfterMillis(10) });
+        const store = useRemoteData(testPromise.next, { refresh: RefreshStrategy.afterMillis(10) });
         return (
             <Await store={store}>
-                {(num, isInvalidated) => (
+                {(num, isStale) => (
                     <span>
-                        num: {num}, isInvalidated: {isInvalidated.toString()}
+                        num: {num}, isStale: {isStale.toString()}
                     </span>
                 )}
             </Await>
@@ -100,22 +100,22 @@ test('invalidation: refetchAfterMillis should work', async () => {
     render(<Test />);
 
     await waitFor(() => screen.getByText('...'));
-    await waitFor(() => screen.getByText('num: 1, isInvalidated: false'));
-    await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
-    await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
+    await waitFor(() => screen.getByText('num: 1, isStale: false'));
+    await waitFor(() => screen.getByText('num: 1, isStale: true'));
+    await waitFor(() => screen.getByText('num: 2, isStale: false'));
 });
 
-test('invalidation: polling should work', async () => {
+test('refresh: polling should work', async () => {
     const testPromise = new TestPromise();
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise.next, {
-            invalidation: InvalidationStrategy.pollUntil((x) => x >= 2, 10),
+            refresh: RefreshStrategy.pollUntil((x: number) => x >= 2, 10),
         });
         return (
             <Await store={store}>
-                {(num, isInvalidated) => (
+                {(num, isStale) => (
                     <span>
-                        num: {num}, isInvalidated: {isInvalidated.toString()}
+                        num: {num}, isStale: {isStale.toString()}
                     </span>
                 )}
             </Await>
@@ -124,11 +124,11 @@ test('invalidation: polling should work', async () => {
     render(<Test />);
 
     await waitFor(() => screen.getByText('...'));
-    await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
-    await waitFor(() => screen.getByText('num: 2, isInvalidated: false'));
+    await waitFor(() => screen.getByText('num: 1, isStale: true'));
+    await waitFor(() => screen.getByText('num: 2, isStale: false'));
 });
 
-test('invalidation: polling should stop on unmount', async () => {
+test('refresh: polling should stop on unmount', async () => {
     class FailAtTwo {
         i = 0;
         next = (): Promise<number> => {
@@ -144,14 +144,14 @@ test('invalidation: polling should stop on unmount', async () => {
     const testPromise = new FailAtTwo();
     const Test: React.FC = () => {
         const store = useRemoteData(testPromise.next, {
-            invalidation: InvalidationStrategy.pollUntil(() => false, 10),
+            refresh: RefreshStrategy.pollUntil(() => false, 10),
             debug: (str) => messages.push(str),
         });
         return (
             <Await store={store}>
-                {(num, isInvalidated) => (
+                {(num, isStale) => (
                     <span>
-                        num: {num}, isInvalidated: {isInvalidated.toString()}
+                        num: {num}, isStale: {isStale.toString()}
                     </span>
                 )}
             </Await>
@@ -160,10 +160,10 @@ test('invalidation: polling should stop on unmount', async () => {
     const rendered = render(<Test />);
 
     await waitFor(() => screen.getByText('...'));
-    await waitFor(() => screen.getByText('num: 1, isInvalidated: true'));
+    await waitFor(() => screen.getByText('num: 1, isStale: true'));
     rendered.unmount();
     if (testPromise.i == 2) throw 'polling did not stop';
-    expect(messages).toContain(`undefined: cancelled invalidation on unmount`);
+    expect(messages).toContain(`undefined: cancelled refresh on unmount`);
 });
 
 test('should pass AbortSignal to fetch function', async () => {
@@ -253,7 +253,7 @@ test('should abort previous request and discard stale response on dependency cha
     expect(screen.queryByText('value: stale')).toBeNull();
 });
 
-test('should abort in-flight request when invalidate() is called via mutation', async () => {
+test('should abort in-flight request when refresh() is called via mutation', async () => {
     let readSignal: AbortSignal | undefined;
     let fetchCount = 0;
     const fetchData = (signal: AbortSignal): Promise<string> => {
@@ -265,7 +265,7 @@ test('should abort in-flight request when invalidate() is called via mutation', 
     const Test: React.FC = () => {
         const readStore = useRemoteData(fetchData);
         const mutateStore = useRemoteUpdate(() => Promise.resolve('mutated'), {
-            invalidates: [readStore],
+            refreshes: [readStore],
         });
         return (
             <div>
@@ -284,7 +284,7 @@ test('should abort in-flight request when invalidate() is called via mutation', 
     fireEvent.click(screen.getByText('Mutate'));
     await waitFor(() => screen.getByText('write: mutated'));
 
-    // the signal from the first fetch should have been aborted when invalidate() was called
+    // the signal from the first fetch should have been aborted when refresh() was called
     expect(signalBeforeMutation!.aborted).toBe(true);
 
     // a new fetch should have started

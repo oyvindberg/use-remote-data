@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InvalidationStrategy, useRemoteData, Await } from 'use-remote-data';
+import { RefreshStrategy, useRemoteData, Await } from 'use-remote-data';
 
 let i = 0;
 const freshData = (): Promise<number> =>
@@ -11,8 +11,8 @@ const freshData = (): Promise<number> =>
 export function Component() {
     const [autoRefresh, setAutoRefresh] = useState(true);
     const store = useRemoteData(freshData, {
-        invalidation: autoRefresh
-            ? InvalidationStrategy.refetchAfterMillis(1000)
+        refresh: autoRefresh
+            ? RefreshStrategy.afterMillis(1000)
             : undefined,
     });
 
@@ -28,9 +28,9 @@ export function Component() {
             </label>
             <br />
             <Await store={store}>
-                {(num, isInvalidated) => (
+                {(num, isStale) => (
                     <span
-                        style={{ color: isInvalidated ? 'darkgray' : 'black' }}
+                        style={{ color: isStale ? 'darkgray' : 'black' }}
                     >
                         {num}
                     </span>

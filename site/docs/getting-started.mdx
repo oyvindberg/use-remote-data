@@ -99,7 +99,7 @@ This is the key idea: you cannot accidentally render without data.
 TypeScript enforces it. The component structure enforces it.
 Loading and error states are handled for you by default.
 
-The `isInvalidated` boolean (second argument) tells you if the data is stale and a background refresh is in progress.
+The `isStale` boolean (second argument) tells you if the data is stale and a background refresh is in progress.
 This lets you grey out stale data instead of showing a spinner — much better UX.
 
 ### Customize the loading and error UI
@@ -121,7 +121,7 @@ Both react-query and SWR fetch data well. The difference is what happens after.
 | ------------------------------------ | ---------------------------------------- | ----------------------------------------- |
 | Data type                            | `T \| undefined`                         | `T` (inside `<Await>`)                    |
 | "Did I forget to check loading?"     | Possible                                 | Structurally impossible                   |
-| Stale data during refetch            | Yes (`isFetching` / `isValidating`)      | Yes (`isInvalidated` flag)                |
+| Stale data during refetch            | Yes (`isFetching` / `isValidating`)      | Yes (`isStale` flag)                |
 | Retry on error                       | Automatic + manual `refetch()`           | `retry()` callback in Failed state        |
 | Combining requests                   | `useQueries` (typed arrays)              | `RemoteDataStore.all()` (typed tuples)    |
 | Global cache                         | Yes — deduplication across components    | None — data lives with the component      |
@@ -138,4 +138,4 @@ Just a store, a component, and data that's always in an honest state.
 
 React 19 introduced the `use()` hook for consuming promises during render. It integrates with Suspense boundaries for loading states and error boundaries for failures.
 
-`use-remote-data` takes a different approach: instead of Suspense and error boundaries (which propagate up the tree), it handles loading and error states locally with `<Await>`. This gives you explicit control — you decide exactly what renders for each state, in the same component where you fetch. The two approaches can coexist: use `use()` for simple server-driven data, and `use-remote-data` when you want typed state machines, retry logic, invalidation, and composable stores.
+`use-remote-data` takes a different approach: instead of Suspense and error boundaries (which propagate up the tree), it handles loading and error states locally with `<Await>`. This gives you explicit control — you decide exactly what renders for each state, in the same component where you fetch. The two approaches can coexist: use `use()` for simple server-driven data, and `use-remote-data` when you want typed state machines, retry logic, refreshing, and composable stores.

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Failure, ErrorProps, useRemoteDataEither, Await } from 'use-remote-data';
+import { Result, ErrorProps, useRemoteDataResult, Await } from 'use-remote-data';
 
 // Define the shape you expect from the API
 const UserSchema = z.object({
@@ -27,11 +27,11 @@ function fetchUser(): Promise<unknown> {
 
 // Validate the response — if it doesn't match, return
 // the ZodError as a typed domain error
-async function fetchAndValidateUser(): Promise<Failure<z.ZodError, User>> {
+async function fetchAndValidateUser(): Promise<Result<User, z.ZodError>> {
     const raw = await fetchUser();
     const result = UserSchema.safeParse(raw);
-    if (result.success) return Failure.expected(result.data);
-    return Failure.unexpected(result.error);
+    if (result.success) return Result.ok(result.data);
+    return Result.err(result.error);
 }
 
 function UserError({ errors, retry }: ErrorProps<z.ZodError>) {
@@ -61,7 +61,7 @@ function UserError({ errors, retry }: ErrorProps<z.ZodError>) {
 }
 
 export function Component() {
-    const store = useRemoteDataEither(fetchAndValidateUser);
+    const store = useRemoteDataResult(fetchAndValidateUser);
 
     return (
         <Await store={store} error={(props) => <UserError {...props} />}>

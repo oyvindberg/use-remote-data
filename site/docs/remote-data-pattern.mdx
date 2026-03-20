@@ -24,16 +24,16 @@ Most libraries throw your data away when they re-fetch. You had a dashboard full
 
 | State                   | What's happening                     | You have data? |
 | ----------------------- | ------------------------------------ | -------------- |
-| `invalidated-immediate` | Data just arrived but the invalidation strategy already considers it stale (e.g. a very short TTL, or `pollUntil` rejected it) | Yes |
-| `invalidated-initial`   | Previously-fresh data was marked stale, re-fetch hasn't started yet | Yes |
-| `invalidated-pending`   | Re-fetch is in progress, old data still visible | Yes |
+| `stale-immediate` | Data just arrived but the refresh strategy already considers it stale (e.g. a very short TTL, or `pollUntil` rejected it) | Yes |
+| `stale-initial`   | Previously-fresh data was marked stale, re-fetch hasn't started yet | Yes |
+| `stale-pending`   | Re-fetch is in progress, old data still visible | Yes |
 
-**You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean — `isInvalidated` — which tells you everything:
+**You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean — `isStale` — which tells you everything:
 
 ```tsx
 <Await store={store}>
-  {(data, isInvalidated) => (
-    <div style={{ opacity: isInvalidated ? 0.6 : 1 }}>
+  {(data, isStale) => (
+    <div style={{ opacity: isStale ? 0.6 : 1 }}>
       <Dashboard data={data} />
     </div>
   )}
@@ -55,9 +55,9 @@ function describe<T>(rd: RemoteData<T>): string {
     case 'pending':               return 'Loading...';
     case 'failed':                return `${rd.errors.length} error(s)`;
     case 'success':               return `Got: ${rd.value}`;
-    case 'invalidated-immediate': return `Stale (just arrived): ${rd.invalidated.value}`;
-    case 'invalidated-initial':   return `Stale (waiting): ${rd.invalidated.value}`;
-    case 'invalidated-pending':   return `Refreshing: ${rd.invalidated.value}`;
+    case 'stale-immediate': return `Stale (just arrived): ${rd.stale.value}`;
+    case 'stale-initial':   return `Stale (waiting): ${rd.stale.value}`;
+    case 'stale-pending':   return `Refreshing: ${rd.stale.value}`;
     // No default — TypeScript errors if you miss a case.
   }
 }
@@ -73,9 +73,9 @@ const label = match(store.current)
   .with({ type: 'pending' }, () => 'Loading...')
   .with({ type: 'failed' },  ({ errors }) => `${errors.length} error(s)`)
   .with({ type: 'success' }, ({ value }) => `Hello, ${value.name}`)
-  .with({ type: 'invalidated-immediate' }, ({ invalidated }) => `Stale: ${invalidated.value.name}`)
-  .with({ type: 'invalidated-initial' },   ({ invalidated }) => `Stale: ${invalidated.value.name}`)
-  .with({ type: 'invalidated-pending' },   ({ invalidated }) => `Refreshing: ${invalidated.value.name}`)
+  .with({ type: 'stale-immediate' }, ({ stale }) => `Stale: ${stale.value.name}`)
+  .with({ type: 'stale-initial' },   ({ stale }) => `Stale: ${stale.value.name}`)
+  .with({ type: 'stale-pending' },   ({ stale }) => `Refreshing: ${stale.value.name}`)
   .exhaustive();
 ```
 

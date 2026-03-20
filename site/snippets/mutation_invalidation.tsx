@@ -18,14 +18,14 @@ const increment = (): Promise<string> =>
 export function Component() {
     const countStore = useRemoteData(fetchCount);
     const incrementStore = useRemoteUpdate(() => increment(), {
-        invalidates: [countStore],
+        refreshes: [countStore],
     });
 
     return (
         <div>
             <Await store={countStore}>
-                {(count, isInvalidated) => (
-                    <span style={{ color: isInvalidated ? 'gray' : 'black' }}>
+                {(count, isStale) => (
+                    <span style={{ color: isStale ? 'gray' : 'black' }}>
                         Count: {count}
                     </span>
                 )}

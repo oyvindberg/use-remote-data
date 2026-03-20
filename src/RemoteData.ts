@@ -7,9 +7,9 @@ export type RemoteData<T, E = never> =
     | RemoteData.Pending
     | RemoteData.Failed<E>
     | RemoteData.Success<T>
-    | RemoteData.InvalidatedImmediate<T>
-    | RemoteData.InvalidatedInitial<T>
-    | RemoteData.InvalidatedPending<T>;
+    | RemoteData.StaleImmediate<T>
+    | RemoteData.StaleInitial<T>
+    | RemoteData.StalePending<T>;
 
 export namespace RemoteData {
     export const Epoch = new Date(0);
@@ -49,34 +49,34 @@ export namespace RemoteData {
         readonly updatedAt: Date;
     }
 
-    export const InvalidatedImmediate = <T>(invalidated: RemoteData.Success<T>): InvalidatedImmediate<T> => ({
-        type: 'invalidated-immediate',
-        invalidated,
+    export const StaleImmediate = <T>(stale: RemoteData.Success<T>): StaleImmediate<T> => ({
+        type: 'stale-immediate',
+        stale,
     });
 
-    export interface InvalidatedImmediate<T> {
-        readonly type: 'invalidated-immediate';
-        readonly invalidated: RemoteData.Success<T>;
+    export interface StaleImmediate<T> {
+        readonly type: 'stale-immediate';
+        readonly stale: RemoteData.Success<T>;
     }
 
-    export const InvalidatedInitial = <T>(invalidated: RemoteData.Success<T>): InvalidatedInitial<T> => ({
-        type: 'invalidated-initial',
-        invalidated,
+    export const StaleInitial = <T>(stale: RemoteData.Success<T>): StaleInitial<T> => ({
+        type: 'stale-initial',
+        stale,
     });
 
-    export interface InvalidatedInitial<T> {
-        readonly type: 'invalidated-initial';
-        readonly invalidated: RemoteData.Success<T>;
+    export interface StaleInitial<T> {
+        readonly type: 'stale-initial';
+        readonly stale: RemoteData.Success<T>;
     }
 
-    export const InvalidatedPending = <T>(invalidated: RemoteData.Success<T>): InvalidatedPending<T> => ({
-        type: 'invalidated-pending',
-        invalidated,
+    export const StalePending = <T>(stale: RemoteData.Success<T>): StalePending<T> => ({
+        type: 'stale-pending',
+        stale,
     });
 
-    export interface InvalidatedPending<T> {
-        readonly type: 'invalidated-pending';
-        readonly invalidated: RemoteData.Success<T>;
+    export interface StalePending<T> {
+        readonly type: 'stale-pending';
+        readonly stale: RemoteData.Success<T>;
     }
 
     export type ValuesFrom<Datas extends RemoteData<unknown, unknown>[]> = {
@@ -97,7 +97,7 @@ export namespace RemoteData {
         // state-of-the-art typescript: typed on the outside, untyped on the inside
         const ret: unknown[] = [];
         let updatedAt: Date = Epoch;
-        let isInvalidated = false;
+        let isStale = false;
         let foundFailed: RemoteData.Failed<unknown>[] = [];
         let foundPending: RemoteData.Pending | undefined = undefined;
         let foundInitial: RemoteData.Initial | undefined = undefined;
@@ -110,13 +110,13 @@ export namespace RemoteData {
                     }
                     ret.push(remoteData.value);
                     break;
-                case 'invalidated-initial':
-                case 'invalidated-pending':
-                    isInvalidated = true;
-                    if (remoteData.invalidated.updatedAt > updatedAt) {
-                        updatedAt = remoteData.invalidated.updatedAt;
+                case 'stale-initial':
+                case 'stale-pending':
+                    isStale = true;
+                    if (remoteData.stale.updatedAt > updatedAt) {
+                        updatedAt = remoteData.stale.updatedAt;
                     }
-                    ret.push(remoteData.invalidated.value);
+                    ret.push(remoteData.stale.value);
                     break;
                 case 'initial':
                     foundInitial = remoteData;
@@ -145,7 +145,7 @@ export namespace RemoteData {
 
         const combined = RemoteData.Success(ret as ValuesFrom<RemoteDatas>, updatedAt);
 
-        if (isInvalidated) return RemoteData.InvalidatedPending(combined);
+        if (isStale) return RemoteData.StalePending(combined);
         else return combined;
     };
 
@@ -162,7 +162,7 @@ export namespace RemoteData {
     export const fold =
         <T, E>(remoteData: RemoteData<T, E>) =>
         <Out>(
-            onData: (value: T, isInvalidated: boolean, updatedAt: Date) => Out,
+            onData: (value: T, isStale: boolean, updatedAt: Date) => Out,
             onEmpty: () => Out,
             onFailed: (err: readonly Failure<WeakError, E>[], retry: () => Promise<void>) => Out
         ): Out => {
@@ -177,19 +177,19 @@ export namespace RemoteData {
                 case 'failed':
                     return onFailed(remoteData.errors, remoteData.retry);
 
-                case 'invalidated-immediate':
-                case 'invalidated-initial':
-                case 'invalidated-pending':
-                    return onData(remoteData.invalidated.value, true, remoteData.invalidated.updatedAt);
+                case 'stale-immediate':
+                case 'stale-initial':
+                case 'stale-pending':
+                    return onData(remoteData.stale.value, true, remoteData.stale.updatedAt);
             }
         };
 
     export const pendingStateFor = <T, E>(remoteData: RemoteData<T, E>): RemoteData<T, E> => {
         switch (remoteData.type) {
-            case 'invalidated-initial':
-                return RemoteData.InvalidatedPending(remoteData.invalidated);
+            case 'stale-initial':
+                return RemoteData.StalePending(remoteData.stale);
             case 'success':
-                return RemoteData.InvalidatedPending(remoteData);
+                return RemoteData.StalePending(remoteData);
             default:
                 return RemoteData.Pending;
         }
@@ -198,7 +198,7 @@ export namespace RemoteData {
     export const initialStateFor = <T, E>(remoteData: RemoteData<T, E>): RemoteData<T, E> => {
         switch (remoteData.type) {
             case 'success':
-                return RemoteData.InvalidatedInitial(remoteData);
+                return RemoteData.StaleInitial(remoteData);
             default:
                 return RemoteData.Initial;
         }
@@ -214,17 +214,17 @@ export namespace RemoteData {
                 return RemoteData.Failed(remoteData.errors, remoteData.retry);
             case 'success':
                 return RemoteData.Success(f(remoteData.value), remoteData.updatedAt);
-            case 'invalidated-immediate': {
-                const success = RemoteData.Success(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
-                return RemoteData.InvalidatedImmediate(success);
+            case 'stale-immediate': {
+                const success = RemoteData.Success(f(remoteData.stale.value), remoteData.stale.updatedAt);
+                return RemoteData.StaleImmediate(success);
             }
-            case 'invalidated-initial': {
-                const success = RemoteData.Success(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
-                return RemoteData.InvalidatedInitial(success);
+            case 'stale-initial': {
+                const success = RemoteData.Success(f(remoteData.stale.value), remoteData.stale.updatedAt);
+                return RemoteData.StaleInitial(success);
             }
-            case 'invalidated-pending': {
-                const success = RemoteData.Success(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
-                return RemoteData.InvalidatedPending(success);
+            case 'stale-pending': {
+                const success = RemoteData.Success(f(remoteData.stale.value), remoteData.stale.updatedAt);
+                return RemoteData.StalePending(success);
             }
         }
     };

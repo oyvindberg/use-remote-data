@@ -37,15 +37,15 @@ export function AwaitUpdate<T, P, E>({
             return <>{children(current.value, store.run, store.reset)}</>;
         case 'failed':
             return <>{renderError({ errors: current.errors, retry: current.retry, storeName: store.storeName })}</>;
-        case 'invalidated-pending':
+        case 'stale-pending':
             return (
                 <>
-                    {children(current.invalidated.value, store.run, store.reset)}
+                    {children(current.stale.value, store.run, store.reset)}
                     {renderLoading()}
                 </>
             );
-        case 'invalidated-initial':
-        case 'invalidated-immediate':
-            return <>{children(current.invalidated.value, store.run, store.reset)}</>;
+        case 'stale-initial':
+        case 'stale-immediate':
+            return <>{children(current.stale.value, store.run, store.reset)}</>;
     }
 }

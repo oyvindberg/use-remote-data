@@ -1,4 +1,4 @@
-import { Failure, ErrorProps, useRemoteDataEither, Await } from 'use-remote-data';
+import { Result, ErrorProps, useRemoteDataResult, Await } from 'use-remote-data';
 
 // GraphQL APIs often return union types for errors
 type Person = { __typename: 'Person'; name: string; age: number };
@@ -45,10 +45,10 @@ function PersonErrorView({ errors, retry }: ErrorProps<PersonError>) {
 }
 
 export function Component() {
-    const store = useRemoteDataEither(async () => {
+    const store = useRemoteDataResult(async () => {
         const result = await fetchPerson();
-        if (result.__typename === 'Person') return Failure.expected(result);
-        return Failure.unexpected(result);
+        if (result.__typename === 'Person') return Result.ok(result);
+        return Result.err(result);
     });
 
     return (

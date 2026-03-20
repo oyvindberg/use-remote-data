@@ -120,14 +120,14 @@ test('dashboard shows error when one request fails', () => {
 
 The combined store computes its state from the constituent stores immediately — no async coordination.
 
-## Testing invalidation states
+## Testing stale states
 
 You can test how your component looks when data is stale:
 
 ```tsx
 test('shows dimmed text during background refresh', () => {
   const staleStore = RemoteDataStore.always(
-    RemoteData.InvalidatedPending(
+    RemoteData.StalePending(
       RemoteData.Success({ name: 'Alice' }, new Date())
     )
   );
@@ -135,7 +135,7 @@ test('shows dimmed text during background refresh', () => {
 
   // The data is still visible (it's stale, not gone)
   expect(screen.getByText('Alice')).toBeInTheDocument();
-  // Your component can use isInvalidated to style it differently
+  // Your component can use isStale to style it differently
 });
 ```
 
@@ -167,7 +167,7 @@ export const Failed = () => (
 
 export const Refreshing = () => (
   <UserCard store={RemoteDataStore.always(
-    RemoteData.InvalidatedPending(
+    RemoteData.StalePending(
       RemoteData.Success({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
     )
   )} />

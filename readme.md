@@ -13,7 +13,7 @@ const store = useRemoteData(() => fetchUser(id));
 
 Inside the callback, `user` is `User`. Not `User | undefined`. TypeScript enforces it.
 
-On top of this, you get invalidation, retry, composing multiple requests, mutations, lazy loading, and typed errors — all with zero dependencies beyond React.
+On top of this, you get automatic refresh, retry, composing multiple requests, mutations, lazy loading, and typed errors — all with zero dependencies beyond React.
 
 **[Read the docs](https://oyvindberg.github.io/use-remote-data/)**
 

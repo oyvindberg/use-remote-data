@@ -83,14 +83,14 @@ test('should reset to initial state', async () => {
     expect(screen.queryByText('done')).toBeNull();
 });
 
-test('should call invalidate on dependent stores after success', async () => {
-    const invalidated: string[] = [];
-    const fakeStore1 = { invalidate: () => invalidated.push('store1') };
-    const fakeStore2 = { invalidate: () => invalidated.push('store2') };
+test('should call refresh on dependent stores after success', async () => {
+    const refreshed: string[] = [];
+    const fakeStore1 = { refresh: () => refreshed.push('store1') };
+    const fakeStore2 = { refresh: () => refreshed.push('store2') };
 
     const Test: React.FC = () => {
         const store = useRemoteUpdate(() => Promise.resolve('ok'), {
-            invalidates: [fakeStore1, fakeStore2],
+            refreshes: [fakeStore1, fakeStore2],
         });
         return (
             <div>
@@ -103,7 +103,7 @@ test('should call invalidate on dependent stores after success', async () => {
     render(<Test />);
     fireEvent.click(screen.getByText('Run'));
     await waitFor(() => screen.getByText('ok'));
-    expect(invalidated).toEqual(['store1', 'store2']);
+    expect(refreshed).toEqual(['store1', 'store2']);
 });
 
 test('should call onSuccess callback after success', async () => {
@@ -152,7 +152,7 @@ test('should discard stale responses on rapid re-submission', async () => {
     expect(screen.queryByText('result 1')).toBeNull();
 });
 
-test('should transition to invalidated-pending when re-running after success', async () => {
+test('should transition to stale-pending when re-running after success', async () => {
     let callCount = 0;
 
     const Test: React.FC = () => {
@@ -173,7 +173,7 @@ test('should transition to invalidated-pending when re-running after success', a
     fireEvent.click(screen.getByText('Run'));
     await waitFor(() => screen.getByText('value: result 1'));
     fireEvent.click(screen.getByText('Run'));
-    await waitFor(() => screen.getByText('state: invalidated-pending'));
+    await waitFor(() => screen.getByText('state: stale-pending'));
     await waitFor(() => screen.getByText('value: result 2'));
 });
 
@@ -363,7 +363,7 @@ test('should abort in-flight mutation on reset', async () => {
     expect(receivedSignal!.aborted).toBe(true);
 });
 
-test('should invalidate read stores after mutation success', async () => {
+test('should refresh read stores after mutation success', async () => {
     let fetchCount = 0;
     const fetchData = (): Promise<string> => {
         fetchCount++;
@@ -373,7 +373,7 @@ test('should invalidate read stores after mutation success', async () => {
     const Test: React.FC = () => {
         const readStore = useRemoteData(fetchData);
         const mutateStore = useRemoteUpdate(() => Promise.resolve('mutated'), {
-            invalidates: [readStore],
+            refreshes: [readStore],
         });
         return (
             <div>

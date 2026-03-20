@@ -1,4 +1,4 @@
-import { InvalidationStrategy, useRemoteData, Await } from 'use-remote-data';
+import { RefreshStrategy, useRemoteData, Await } from 'use-remote-data';
 
 let i = 0;
 const freshData = (): Promise<number> =>
@@ -9,14 +9,14 @@ const freshData = (): Promise<number> =>
 
 export function Component() {
     const store = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.pollUntil((x) => x > 2, 1000),
+        refresh: RefreshStrategy.pollUntil((x) => x > 2, 1000),
         storeName: 'polling-store',
     });
 
     return (
         <Await store={store}>
-            {(num, notValid) =>
-                notValid ? <span>invalid data {num}</span> : <span>{num}</span>
+            {(num, isStale) =>
+                isStale ? <span>stale data {num}</span> : <span>{num}</span>
             }
         </Await>
     );

@@ -11,18 +11,18 @@ Two common cases:
 - **Validation** — you parse the API response with [Zod](https://zod.dev/) and get field-level errors.
 - **GraphQL unions** — the API returns `Person | PersonNotFound | PersonDeleted` and each case needs its own UI.
 
-`useRemoteDataEither` (and `useRemoteDataMapEither` for [dynamic data](dynamic-data)) lets you separate
+`useRemoteDataResult` (and `useRemoteDataMapResult` for [dynamic data](dynamic-data)) lets you separate
 **expected domain errors** from **unexpected crashes** — and TypeScript knows which is which.
 
 ## The idea
 
-Your fetch function returns a `Failure` instead of a plain value:
+Your fetch function returns a `Result` instead of a plain value:
 
-- `Failure.expected(value)` — success (the expected outcome)
-- `Failure.unexpected(error)` — a domain error (not the outcome you wanted)
+- `Result.ok(value)` — success
+- `Result.err(error)` — a domain error
 
 If the promise *rejects* (network failure, thrown exception), that's an unexpected error handled automatically.
-If it *resolves* with `Failure.unexpected(...)`, that's a typed domain error you handle explicitly.
+If it *resolves* with `Result.err(...)`, that's a typed domain error you handle explicitly.
 
 Both end up in the `Failed` state, but your error component can tell them apart:
 
@@ -47,7 +47,7 @@ with field-level details you can render.
 
 ```tsx
 import { z } from 'zod';
-import { Failure, useRemoteDataEither, Await } from 'use-remote-data';
+import { Result, useRemoteDataResult, Await } from 'use-remote-data';
 
 const UserSchema = z.object({
     name: z.string().min(1, 'Name is required'),
@@ -57,13 +57,13 @@ const UserSchema = z.object({
 
 type User = z.infer<typeof UserSchema>;
 
-function fetchAndValidateUser(): Promise<Failure<z.ZodError, User>> {
+function fetchAndValidateUser(): Promise<Result<User, z.ZodError>> {
     return fetch('/api/user')
         .then((r) => r.json())
         .then((raw) => {
             const result = UserSchema.safeParse(raw);
-            if (result.success) return Failure.expected(result.data);
-            return Failure.unexpected(result.error);
+            if (result.success) return Result.ok(result.data);
+            return Result.err(result.error);
         });
 }
 ```
@@ -105,12 +105,12 @@ These aren't crashes — they're expected outcomes with structured data.
 You decide which variants are successes and which are domain errors:
 
 ```tsx
-import { Failure, useRemoteDataEither, Await } from 'use-remote-data';
+import { Result, useRemoteDataResult, Await } from 'use-remote-data';
 
-const store = useRemoteDataEither(async () => {
+const store = useRemoteDataResult(async () => {
     const result = await graphql<PersonResult>(PERSON_QUERY);
-    if (result.__typename === 'Person') return Failure.expected(result);
-    return Failure.unexpected(result); // PersonNotFound | PersonDeleted
+    if (result.__typename === 'Person') return Result.ok(result);
+    return Result.err(result); // PersonNotFound | PersonDeleted
 });
 ```
 

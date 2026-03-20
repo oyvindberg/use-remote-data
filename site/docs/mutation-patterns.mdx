@@ -4,12 +4,12 @@ Here are some common patterns that come up when working with `useRemoteUpdate`.
 
 ## Fire-and-forget (dialogs)
 
-The most common pattern: submit, invalidate dependent data, close the dialog.
+The most common pattern: submit, refresh dependent data, close the dialog.
 The mutation result itself is never rendered.
 
 ```tsx
 const saveStore = useRemoteUpdate((params: { name: string }) => api.createUser(params), {
-    invalidates: [usersStore],
+    refreshes: [usersStore],
     onSuccess: () => {
         form.reset();
         dialog.close();
@@ -44,7 +44,7 @@ const previewStore = useRemoteUpdate(
 </AwaitUpdate>
 ```
 
-Re-running while showing the previous result gives you the `InvalidatedPending` state automatically —
+Re-running while showing the previous result gives you the `StalePending` state automatically —
 old data stays visible while the new request is in flight.
 
 ## Interplay with read stores
@@ -53,9 +53,9 @@ Since `RemoteUpdateStore` extends `RemoteDataStore`, you can combine them with r
 
 ```tsx
 const userStore = useRemoteData(() => fetchUser(id));
-const saveStore = useRemoteUpdate((data) => updateUser(id, data), { invalidates: [userStore] });
+const saveStore = useRemoteUpdate((data) => updateUser(id, data), { refreshes: [userStore] });
 
 // After save succeeds, userStore automatically re-fetches
 ```
 
-This creates a clean unidirectional flow: **read → display → mutate → invalidate → re-read**.
+This creates a clean unidirectional flow: **read → display → mutate → refresh → re-read**.

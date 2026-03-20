@@ -37,8 +37,8 @@ export function Component() {
                 Aborted requests: {abortCount}
             </p>
             <Await store={store}>
-                {(results, isInvalidated) => (
-                    <ul style={{ opacity: isInvalidated ? 0.6 : 1 }}>
+                {(results, isStale) => (
+                    <ul style={{ opacity: isStale ? 0.6 : 1 }}>
                         {results.map((r, i) => (
                             <li key={i}>{r}</li>
                         ))}

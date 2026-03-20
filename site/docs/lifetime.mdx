@@ -6,7 +6,7 @@ Each store is created by a hook inside a component. When that component unmounts
 Data exists exactly as long as the component that owns it.
 
 This is simpler than a global cache — you never have stale entries haunting your app, you never need to manually
-invalidate cache keys, and you never need to worry about data leaking between unrelated parts of your UI.
+manage cache keys, and you never need to worry about data leaking between unrelated parts of your UI.
 
 The tradeoff: if two sibling components need the same data, you should create the store in their
 shared parent and pass it down (see [Sharing Data with Children](sharing-data-with-children)).

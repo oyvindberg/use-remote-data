@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    InvalidationStrategy,
+    RefreshStrategy,
     RemoteDataStore,
     RemoteDataMap,
     useRemoteDataMap,
@@ -19,7 +19,7 @@ const freshData = (key: string): Promise<string> =>
 export function Component() {
     // provide `freshData` function
     const stores: RemoteDataMap<string, string> = useRemoteDataMap(freshData, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(1000),
+        refresh: RefreshStrategy.afterMillis(1000),
     });
 
     const [wanted, setWanted] = useState('a, b,d');
@@ -50,10 +50,10 @@ export function Component() {
 export function Column({ rows }: { rows: readonly RemoteDataStore<string>[] }) {
     const renderedRows = rows.map((store, idx) => (
         <Await store={store} key={idx}>
-            {(value, isInvalidated) => (
+            {(value, isStale) => (
                 <p>
                     <span
-                        style={{ color: isInvalidated ? 'darkgray' : 'black' }}
+                        style={{ color: isStale ? 'darkgray' : 'black' }}
                     >
                         {value}
                     </span>

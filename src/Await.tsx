@@ -6,7 +6,7 @@ import { ReactElement, ReactNode, useEffect } from 'react';
 
 interface Props<T, E> {
     store: RemoteDataStore<T, E>;
-    children: (value: T, isInvalidated: boolean) => ReactNode;
+    children: (value: T, isStale: boolean) => ReactNode;
     loading?: () => ReactNode;
     error?: (props: ErrorProps<E>) => ReactNode;
 }
@@ -34,7 +34,7 @@ export function Await<T, E>({
     const renderLoading = loading ?? (() => <DefaultPendingComponent />);
 
     return RemoteData.fold(store.current)<ReactElement>(
-        (value, isInvalidated) => <div>{children(value, isInvalidated)}</div>,
+        (value, isStale) => <div>{children(value, isStale)}</div>,
         () => <>{renderLoading()}</>,
         (errors, retry) => <>{renderError({ errors, retry, storeName: store.storeName })}</>
     );

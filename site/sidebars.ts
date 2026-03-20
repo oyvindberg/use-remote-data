@@ -16,7 +16,7 @@ const sidebars: SidebarsConfig = {
     tutorialSidebar: [
         { type: 'doc', label: 'Getting started', id: 'getting-started' },
         { type: 'doc', label: 'Remote Data pattern', id: 'remote-data-pattern' },
-        { type: 'doc', label: 'Invalidation / Refresh data', id: 'invalidation' },
+        { type: 'doc', label: 'Refreshing Data', id: 'invalidation' },
         { type: 'doc', label: 'Combining stores', id: 'combining-stores' },
         { type: 'doc', label: 'Failures and Retries', id: 'failures-retries' },
         { type: 'doc', label: 'Sharing Data with Child Components', id: 'sharing-data-with-children' },

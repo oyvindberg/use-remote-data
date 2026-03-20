@@ -15,8 +15,8 @@ test('Failed takes precedence over everything', async () => {
         RemoteData.Initial,
         RemoteData.Pending,
         RemoteData.Success(1, RemoteData.Epoch),
-        RemoteData.InvalidatedPending(RemoteData.Success(1, RemoteData.Epoch)),
-        RemoteData.InvalidatedInitial(RemoteData.Success(1, RemoteData.Epoch)),
+        RemoteData.StalePending(RemoteData.Success(1, RemoteData.Epoch)),
+        RemoteData.StaleInitial(RemoteData.Success(1, RemoteData.Epoch)),
         RemoteData.Failed([Failure.expected('error' as const)], () => Promise.reject())
     );
     expect(all.type).toStrictEqual('failed');
@@ -28,16 +28,16 @@ test('Can combine multiple Success', async () => {
     );
 });
 
-test('Can combine invalidated data', async () => {
+test('Can combine stale data', async () => {
     expect(
-        RemoteData.all(RemoteData.Success(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Success(2, new Date(2))))
-    ).toStrictEqual(RemoteData.InvalidatedPending(RemoteData.Success([1, 2], new Date(2))));
+        RemoteData.all(RemoteData.Success(1, new Date(1)), RemoteData.StaleInitial(RemoteData.Success(2, new Date(2))))
+    ).toStrictEqual(RemoteData.StalePending(RemoteData.Success([1, 2], new Date(2))));
 });
 
-test('can combine invalidated data (2)', async () => {
+test('can combine stale data (2)', async () => {
     expect(
-        RemoteData.all(RemoteData.Success(1, new Date(1)), RemoteData.InvalidatedInitial(RemoteData.Success(2, new Date(2))))
-    ).toStrictEqual(RemoteData.InvalidatedPending(RemoteData.Success([1, 2], new Date(2))));
+        RemoteData.all(RemoteData.Success(1, new Date(1)), RemoteData.StaleInitial(RemoteData.Success(2, new Date(2))))
+    ).toStrictEqual(RemoteData.StalePending(RemoteData.Success([1, 2], new Date(2))));
 });
 
 test('properly combine retries', async () => {

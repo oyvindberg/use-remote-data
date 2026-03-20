@@ -1,10 +1,11 @@
 import { CancelTimeout } from './CancelTimeout';
 import { Failure } from './Failure';
-import { IsInvalidated } from './IsInvalidated';
+import { Staleness } from './Staleness';
 import { Options } from './Options';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataMap } from './RemoteDataMap';
+import { Result } from './Result';
 import { WeakError } from './WeakError';
 import { depsChanged } from './internal/depsChanged';
 import { isDefined } from './internal/isDefined';
@@ -13,17 +14,17 @@ import { DependencyList, useEffect, useRef, useState, version } from 'react';
 const reactMajor = Number(version.split('.')[0]);
 
 export const useRemoteDataMap = <K extends string | number, V>(run: (key: K, signal: AbortSignal) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
-    useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Failure.expected), options);
+    useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Result.ok), options);
 
-export const useRemoteDataMapEither = <K extends string | number, V, E>(
-    run: (key: K, signal: AbortSignal) => Promise<Failure<E, V>>,
+export const useRemoteDataMapResult = <K extends string | number, V, E>(
+    run: (key: K, signal: AbortSignal) => Promise<Result<V, E>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> =>
     useRemoteDataMapCore(run, options);
 
 /** Internal core — also accepts undefined as K (used by useRemoteData). Not exported from the package. */
 export const useRemoteDataMapCore = <K extends string | number | undefined, V, E>(
-    run: (key: K, signal: AbortSignal) => Promise<Failure<E, V>>,
+    run: (key: K, signal: AbortSignal) => Promise<Result<V, E>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> => {
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<K, RemoteData<V, E>>>(() => {
@@ -106,22 +107,22 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
                     if (controller.signal.aborted) return;
                     if (requestVersionsRef.current.get(key) !== requestVersion) return;
                     switch (result.tag) {
-                        case 'unexpected': {
+                        case 'err': {
                             const no = RemoteData.Failed([Failure.expected(result.value)], () =>
                                 runAndUpdate(key, RemoteData.Pending)
                             );
                             set(key, no);
                             break;
                         }
-                        case 'expected': {
+                        case 'ok': {
                             const value: V = result.value;
                             const now = new Date();
                             let res: RemoteData<V, E> = RemoteData.Success(value, now);
                             if (
-                                options.invalidation &&
-                                !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
+                                options.refresh &&
+                                !Staleness.isFresh(options.refresh.decide(res.value, res.updatedAt, now))
                             ) {
-                                res = RemoteData.InvalidatedImmediate(res);
+                                res = RemoteData.StaleImmediate(res);
                             }
 
                             set(key, res);
@@ -160,10 +161,10 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
     const triggerUpdate = (key: K): CancelTimeout => {
-        /** step one: if dependencies have changed, abort in-flight requests and invalidate all data */
+        /** step one: if dependencies have changed, abort in-flight requests and refresh all data */
         if (depsChanged(depsRef.current, options.dependencies)) {
             if (options.debug) {
-                options.debug(`${storeName(key)} invalidating due to deps, from/to:`, depsRef.current, options.dependencies);
+                options.debug(`${storeName(key)} refreshing due to deps, from/to:`, depsRef.current, options.dependencies);
             }
 
             // abort all in-flight requests and bump their versions so stale responses are discarded
@@ -175,11 +176,11 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
 
             depsRef.current = options.dependencies;
 
-            const invalidatedRemoteDatas = new Map<K, RemoteData<V, E>>();
+            const refreshedRemoteDatas = new Map<K, RemoteData<V, E>>();
             remoteDatas.forEach((remoteData, key) =>
-                invalidatedRemoteDatas.set(key, RemoteData.initialStateFor(remoteData))
+                refreshedRemoteDatas.set(key, RemoteData.initialStateFor(remoteData))
             );
-            setRemoteDatas(invalidatedRemoteDatas);
+            setRemoteDatas(refreshedRemoteDatas);
 
             return;
         }
@@ -193,37 +194,37 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
         /** step three: if we're in an initial state, start data fetching in the background */
         const remoteData = remoteDatas.get(key) || RemoteData.Initial;
 
-        if (remoteData.type === 'initial' || remoteData.type === 'invalidated-initial') {
+        if (remoteData.type === 'initial' || remoteData.type === 'stale-initial') {
             runAndUpdate(key, RemoteData.pendingStateFor(remoteData));
             return;
         }
 
-        /** step four: invalidation logic (if enabled in `options.invalidation`) */
+        /** step four: refresh logic (if enabled in `options.refresh`) */
         if (
-            isDefined(options.invalidation) &&
-            (remoteData.type === 'success' || remoteData.type === 'invalidated-immediate')
+            isDefined(options.refresh) &&
+            (remoteData.type === 'success' || remoteData.type === 'stale-immediate')
         ) {
-            const success = remoteData.type === 'success' ? remoteData : remoteData.invalidated;
-            const isInvalidated = options.invalidation.decide(success.value, success.updatedAt, new Date());
+            const success = remoteData.type === 'success' ? remoteData : remoteData.stale;
+            const staleness = options.refresh.decide(success.value, success.updatedAt, new Date());
 
-            switch (isInvalidated.type) {
-                case 'invalid':
-                    set(key, RemoteData.InvalidatedInitial(success));
+            switch (staleness.type) {
+                case 'stale':
+                    set(key, RemoteData.StaleInitial(success));
                     return;
-                case 'valid':
+                case 'fresh':
                     return;
-                case 'retry-in':
+                case 'check-after':
                     if (options.debug) {
-                        options.debug(`${storeName(key)}: will invalidate in ${isInvalidated.millis}`);
+                        options.debug(`${storeName(key)}: will refresh in ${staleness.millis}`);
                     }
 
                     const handle = setTimeout(
-                        () => set(key, RemoteData.InvalidatedInitial(success)),
-                        isInvalidated.millis
+                        () => set(key, RemoteData.StaleInitial(success)),
+                        staleness.millis
                     );
                     return () => {
                         if (options.debug) {
-                            options.debug(`${storeName(key)}: cancelled invalidation on unmount`);
+                            options.debug(`${storeName(key)}: cancelled refresh on unmount`);
                         }
                         clearTimeout(handle);
                     };
@@ -237,7 +238,7 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
             get current() {
                 return remoteDatas.get(key) || RemoteData.Initial;
             },
-            invalidate: () => {
+            refresh: () => {
                 abortControllersRef.current.get(key)?.abort();
                 const currentVersion = requestVersionsRef.current.get(key) ?? 0;
                 requestVersionsRef.current.set(key, currentVersion + 1);

@@ -17,9 +17,9 @@ export function Component() {
             <button onClick={() => setDep(dep + 1)}>Bump dep</button>
             <br />
             <Await store={store}>
-                {(num, isInvalidated) => (
+                {(num, isStale) => (
                     <span
-                        style={{ color: isInvalidated ? 'darkgray' : 'black' }}
+                        style={{ color: isStale ? 'darkgray' : 'black' }}
                     >
                         {num}
                     </span>
