@@ -1,0 +1,126 @@
+# Debugging
+
+## `storeName` — label your stores
+
+Every hook accepts an optional `storeName` string. It does two things:
+
+1. **Error UI** — the default error component includes the name, so you can tell _which_ request failed.
+2. **Debug logs** — when `debug` is enabled, every log line is prefixed with the store name.
+
+```tsx
+const userStore = useRemoteData(() => fetchUser(id), {
+    storeName: 'user',
+    dependencies: [id],
+});
+```
+
+If the request fails, the default error component renders **"Failed request for store user"** instead of the generic **"Failed request"**.
+
+### Combined stores
+
+When you combine stores with `RemoteDataStore.all()`, the combined store's name is the comma-separated list of its constituents:
+
+```tsx
+const userStore = useRemoteData(() => fetchUser(id), { storeName: 'user' });
+const postsStore = useRemoteData(() => fetchPosts(id), { storeName: 'posts' });
+
+const allStore = RemoteDataStore.all(userStore, postsStore);
+// allStore.storeName → "user, posts"
+```
+
+### Dynamic data
+
+For `useRemoteDataMap`, the key is appended to the name:
+
+```tsx
+const itemsStore = useRemoteDataMap(
+    (page: number) => fetchItems(page),
+    { storeName: 'items' },
+);
+
+itemsStore.get(3);
+// store.storeName → "items(3)"
+```
+
+### Custom error component
+
+The `storeName` is passed to your error render prop via `ErrorProps`:
+
+```tsx
+<Await
+    store={userStore}
+    error={({ errors, retry, storeName }) => (
+        <div>
+            <p>Failed{storeName ? ` loading ${storeName}` : ''}.</p>
+            <button onClick={retry}>Retry</button>
+        </div>
+    )}
+>
+    {(user) => <h1>{user.name}</h1>}
+</Await>
+```
+
+## `debug` — trace state transitions
+
+Pass `debug: console.warn` (or any function with the same signature) to see every state change in your console:
+
+```tsx
+const store = useRemoteData(() => fetchUser(id), {
+    storeName: 'user',
+    debug: console.warn,
+    dependencies: [id],
+});
+```
+
+This logs:
+
+| When | Message |
+|---|---|
+| Store state changes | `user => { type: 'pending' }` |
+| Data arrives | `user => { type: 'success', value: {...}, updatedAt: ... }` |
+| Dependency change | `user invalidating due to deps, from/to: [1] [2]` |
+| Invalidation scheduled | `user: will invalidate in 30000` |
+| Unmount cancels timer | `user: cancelled invalidation on unmount` |
+| Component unmounted (React 17) | `user unmounting` |
+| Update after unmount (React 17) | `user dropped update because component has been unmounted` |
+
+Every message is prefixed with `storeName` when set, so you can filter your console by store name.
+
+### Scoping debug to development
+
+You probably don't want debug logs in production:
+
+```tsx
+const store = useRemoteData(() => fetchUser(id), {
+    storeName: 'user',
+    debug: process.env.NODE_ENV === 'development' ? console.warn : undefined,
+});
+```
+
+### Mutations
+
+`useRemoteUpdate` accepts `debug` and `storeName` in its options too:
+
+```tsx
+const saveStore = useRemoteUpdate(
+    (params: { name: string }) => api.createUser(params),
+    {
+        storeName: 'createUser',
+        debug: console.warn,
+        invalidates: [usersStore],
+    },
+);
+```
+
+## Inspecting state directly
+
+Every store exposes its current state via `store.current`. You can log it anywhere:
+
+```tsx
+console.log(store.current);
+// { type: 'success', value: { name: 'Alice' }, updatedAt: 2024-01-15T... }
+```
+
+This is a plain object — you can `JSON.stringify` it, pass it to a logger, or inspect it in React DevTools.
+The `type` field tells you exactly which state the store is in: `'initial'`, `'pending'`, `'failed'`, `'success'`,
+`'invalidated-immediate'`, `'invalidated-initial'`, or `'invalidated-pending'`.

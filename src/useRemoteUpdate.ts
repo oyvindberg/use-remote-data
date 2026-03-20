@@ -45,6 +45,14 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
         []
     );
 
+    const debugLog = (msg: string, ...args: unknown[]) => {
+        const opts = optionsRef.current;
+        if (opts?.debug) {
+            const prefix = opts.storeName ?? 'useRemoteUpdate';
+            opts.debug(`${prefix} ${msg}`, ...args);
+        }
+    };
+
     const runFn = useCallback((params: P): Promise<void> => {
         const requestId = ++requestIdRef.current;
 
@@ -53,6 +61,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
+        debugLog('run() called, transitioning to pending');
         setState((prev) => RemoteData.pendingStateFor(prev));
 
         try {
@@ -65,12 +74,14 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                     switch (either.tag) {
                         case 'left': {
                             const errors: readonly Either<WeakError, E>[] = [Either.right(either.value)];
+                            debugLog('domain error =>', either.value);
                             setState(RemoteData.Failed(errors, () => runFn(params)));
                             opts?.onError?.(errors);
                             break;
                         }
                         case 'right': {
                             const value = either.value;
+                            debugLog('success =>', value);
                             setState(RemoteData.Success(value, new Date()));
                             opts?.invalidates?.forEach((s) => s.invalidate());
                             opts?.onSuccess?.(value);
@@ -82,11 +93,13 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                     if (controller.signal.aborted) return;
                     if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
                     const opts = optionsRef.current;
+                    debugLog('unexpected error =>', error);
                     const errors: readonly Either<WeakError, E>[] = [Either.left(error)];
                     setState(RemoteData.Failed(errors, () => runFn(params)));
                     opts?.onError?.(errors);
                 });
         } catch (error: WeakError) {
+            debugLog('synchronous error =>', error);
             const errors: readonly Either<WeakError, E>[] = [Either.left(error)];
             setState(RemoteData.Failed(errors, () => runFn(params)));
             optionsRef.current?.onError?.(errors);
@@ -95,6 +108,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
     }, []);
 
     const reset = useCallback(() => {
+        debugLog('reset() called, transitioning to initial');
         abortControllerRef.current?.abort();
         requestIdRef.current++;
         setState(RemoteData.Initial);
