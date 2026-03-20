@@ -1,13 +1,13 @@
-import * as React from 'react';
+import { useState } from 'react';
 import {
-    InvalidationStrategy,
+    RefreshStrategy,
     RemoteDataStore,
-    RemoteDataStores,
-    useRemoteDatas,
-    WithRemoteData,
+    RemoteDataMap,
+    useRemoteDataMap,
+    Await,
 } from 'use-remote-data';
 
-let is = new Map<string, number>();
+const is = new Map<string, number>();
 
 const freshData = (key: string): Promise<string> =>
     new Promise((resolve) => {
@@ -16,13 +16,13 @@ const freshData = (key: string): Promise<string> =>
         setTimeout(() => resolve(`${key}: ${num}`), 500);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     // provide `freshData` function
-    const stores: RemoteDataStores<string, string> = useRemoteDatas(freshData, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(1000),
+    const stores: RemoteDataMap<string, string> = useRemoteDataMap(freshData, {
+        refresh: RefreshStrategy.afterMillis(1000),
     });
 
-    const [wanted, setWanted] = React.useState('a, b,d');
+    const [wanted, setWanted] = useState('a, b,d');
 
     const parsedWanted: readonly string[] = wanted
         .split(',')
@@ -45,23 +45,19 @@ export const Component: React.FC = () => {
             </div>
         </div>
     );
-};
+}
 
-export const Column: React.FC<{ rows: readonly RemoteDataStore<string>[] }> = ({
-    rows,
-}) => {
+export function Column({ rows }: { rows: readonly RemoteDataStore<string>[] }) {
     const renderedRows = rows.map((store, idx) => (
-        <WithRemoteData store={store} key={idx}>
-            {(value, isInvalidated) => (
+        <Await store={store} key={idx}>
+            {(value, isStale) => (
                 <p>
-                    <span
-                        style={{ color: isInvalidated ? 'darkgray' : 'black' }}
-                    >
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
                         {value}
                     </span>
                 </p>
             )}
-        </WithRemoteData>
+        </Await>
     ));
     return <div>{renderedRows}</div>;
-};
+}

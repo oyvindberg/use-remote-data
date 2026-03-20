@@ -1,12 +1,12 @@
+import { CancelTimeout } from './CancelTimeout';
 import { RemoteData } from './RemoteData';
 import { isDefined } from './internal/isDefined';
-import { MaybeCancel } from './internal/MaybeCancel';
 
 export interface RemoteDataStore<T, E = never> {
-    // should always call this when the data inside is meant to be rendered, typically from `WithData`
-    readonly triggerUpdate: () => MaybeCancel;
+    // should always call this when the data inside is meant to be rendered, typically from `Await`
+    readonly triggerUpdate: () => CancelTimeout;
     // you can call this explicitly to force a re-fetch
-    readonly invalidate: () => void;
+    readonly refresh: () => void;
     // fetch current state. will not trigger any side effects
     readonly current: RemoteData<T, E>;
     // for debugging: you can supply this through the ` Options ` parameter to `useRemoteData`
@@ -34,21 +34,22 @@ export namespace RemoteDataStore {
         ...stores: Stores
     ): RemoteDataStore<ValuesFrom<Stores>, ErrorsFrom<Stores>> => new All(stores);
 
-    class All<Stores extends RemoteDataStore<unknown, unknown>[]>
-        implements RemoteDataStore<ValuesFrom<Stores>, ErrorsFrom<Stores>>
-    {
+    class All<Stores extends RemoteDataStore<unknown, unknown>[]> implements RemoteDataStore<
+        ValuesFrom<Stores>,
+        ErrorsFrom<Stores>
+    > {
         readonly #stores: Stores;
 
         constructor(stores: Stores) {
             this.#stores = stores;
         }
 
-        triggerUpdate = (): MaybeCancel => {
-            // if the product of all stores is a failure, dont invalidate any successful stores where we won't see the result
-            if (this.current.type === 'no') {
+        triggerUpdate = (): CancelTimeout => {
+            // if the product of all stores is a failure, dont refresh any successful stores where we won't see the result
+            if (this.current.type === 'failed') {
                 return undefined;
             }
-            return MaybeCancel.all(this.#stores.map((store) => store.triggerUpdate()));
+            return CancelTimeout.all(this.#stores.map((store) => store.triggerUpdate()));
         };
 
         get current() {
@@ -64,7 +65,7 @@ export namespace RemoteDataStore {
                 .join(', ');
         }
 
-        invalidate = () => this.#stores.forEach((store) => store.invalidate());
+        refresh = () => this.#stores.forEach((store) => store.refresh());
 
         get orNull(): RemoteDataStore<ValuesFrom<Stores> | null, ErrorsFrom<Stores>> {
             return RemoteDataStore.orNull(this);
@@ -82,21 +83,21 @@ export namespace RemoteDataStore {
 
     class OrNull<T, E> implements RemoteDataStore<T | null, E> {
         readonly #store: RemoteDataStore<T, E>;
-        readonly triggerUpdate: () => MaybeCancel;
-        readonly invalidate: () => void;
+        readonly triggerUpdate: () => CancelTimeout;
+        readonly refresh: () => void;
 
         constructor(store: RemoteDataStore<T, E>) {
             this.#store = store;
             this.triggerUpdate = this.#store.triggerUpdate;
-            this.invalidate = this.#store.invalidate;
+            this.refresh = this.#store.refresh;
         }
 
-        get current(): RemoteData.Yes<T | null> {
+        get current(): RemoteData.Success<T | null> {
             const orNulled: [T, Date] | null = RemoteData.orNull(this.#store.current);
             if (orNulled === null) {
-                return RemoteData.Yes(null, RemoteData.Epoch);
+                return RemoteData.Success(null, RemoteData.Epoch);
             } else {
-                return RemoteData.Yes(...orNulled);
+                return RemoteData.Success(...orNulled);
             }
         }
 
@@ -120,14 +121,14 @@ export namespace RemoteDataStore {
     class Mapped<T, U, E> implements RemoteDataStore<U, E> {
         readonly #store: RemoteDataStore<T, E>;
         readonly #fn: (value: T) => U;
-        readonly triggerUpdate: () => MaybeCancel;
-        readonly invalidate: () => void;
+        readonly triggerUpdate: () => CancelTimeout;
+        readonly refresh: () => void;
 
         constructor(store: RemoteDataStore<T, E>, fn: (value: T) => U) {
             this.#store = store;
             this.#fn = fn;
             this.triggerUpdate = this.#store.triggerUpdate;
-            this.invalidate = this.#store.invalidate;
+            this.refresh = this.#store.refresh;
         }
 
         get current() {
@@ -162,7 +163,7 @@ export namespace RemoteDataStore {
 
         triggerUpdate = () => undefined;
 
-        invalidate = () => {};
+        refresh = () => {};
 
         get orNull(): RemoteDataStore<T | null, E> {
             return RemoteDataStore.orNull(this);

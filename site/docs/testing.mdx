@@ -1,0 +1,172 @@
+# Testing
+
+## The advantage of values
+
+Most data-fetching libraries require mocking to test. You mock the HTTP layer, or wrap your component in a provider, or stub a global cache — and your test is more about the library's internals than your component's behavior.
+
+`use-remote-data` doesn't have this problem. A component that takes a `RemoteDataStore<T>` doesn't know or care where the data came from. It's just a value, passed as a parameter. You construct the value, pass it in, and assert what renders.
+
+No mocking. No providers. No test utilities. Just data.
+
+## `RemoteDataStore.always()` — a store in any state
+
+The key function for testing is `RemoteDataStore.always()`. It creates a store that's permanently in whatever state you give it:
+
+```tsx
+import { RemoteData, RemoteDataStore } from 'use-remote-data';
+
+// A store that has data
+const loaded = RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
+
+// A store that's loading
+const loading = RemoteDataStore.always(RemoteData.Pending);
+
+// A store that hasn't started
+const idle = RemoteDataStore.always(RemoteData.Initial);
+```
+
+That's it. These are real `RemoteDataStore` instances — your components can't tell the difference between these and a store created by `useRemoteData`. They render the same way, with the same types.
+
+## Testing a component
+
+Suppose you have a component that displays a user profile:
+
+```tsx
+function UserCard({ store }: { store: RemoteDataStore<User> }) {
+    return (
+        <Await store={store}>
+            {(user) => (
+                <div>
+                    <h1>{user.name}</h1>
+                    <p>{user.email}</p>
+                </div>
+            )}
+        </Await>
+    );
+}
+```
+
+Testing every state is straightforward:
+
+```tsx
+import { render, screen } from '@testing-library/react';
+import { Failure, RemoteData, RemoteDataStore } from 'use-remote-data';
+
+test('renders the user when data is available', () => {
+    const store = RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
+    render(<UserCard store={store} />);
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+});
+
+test('renders a spinner while loading', () => {
+    const store = RemoteDataStore.always(RemoteData.Pending);
+    render(<UserCard store={store} />);
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+});
+
+test('renders an error with retry', () => {
+    const retry = vi.fn().mockResolvedValue(undefined);
+    // Failure.unexpected() wraps a crash (like a network failure).
+    // The errors array is one element for a single store.
+    const store = RemoteDataStore.always(RemoteData.Failed([Failure.unexpected(new Error('Network error'))], retry));
+    render(<UserCard store={store} />);
+    expect(screen.getByText(/Network error/)).toBeInTheDocument();
+});
+```
+
+No `act()` wrappers. No `waitFor()`. No timers. The store is already in the state you want, so the component renders synchronously.
+
+## Testing combined stores
+
+`RemoteDataStore.all()` works with `always()` stores. You can test how your component behaves when one request succeeds and another fails:
+
+```tsx
+test('dashboard renders when all data is loaded', () => {
+    const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
+    const postsStore = RemoteDataStore.always(RemoteData.success([{ title: 'Hello world' }]));
+
+    const combined = RemoteDataStore.all(userStore, postsStore);
+    render(<Dashboard store={combined} />);
+
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Hello world')).toBeInTheDocument();
+});
+
+test('dashboard shows error when one request fails', () => {
+    const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
+    // Failure.unexpected() wraps a crash — see "Failures and Retries" for details
+    const postsStore = RemoteDataStore.always(
+        RemoteData.Failed([Failure.unexpected(new Error('timeout'))], async () => {})
+    );
+
+    const combined = RemoteDataStore.all(userStore, postsStore);
+    render(<Dashboard store={combined} />);
+
+    expect(screen.getByText(/timeout/)).toBeInTheDocument();
+});
+```
+
+The combined store computes its state from the constituent stores immediately — no async coordination.
+
+## Testing stale states
+
+You can test how your component looks when data is stale:
+
+```tsx
+test('shows dimmed text during background refresh', () => {
+    const staleStore = RemoteDataStore.always(
+        RemoteData.StalePending(RemoteData.Success({ name: 'Alice' }, new Date()))
+    );
+    render(<UserCard store={staleStore} />);
+
+    // The data is still visible (it's stale, not gone)
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    // Your component can use isStale to style it differently
+});
+```
+
+## Storybook
+
+The same approach works for Storybook. Each story is a different state:
+
+```tsx
+import { Failure, RemoteData, RemoteDataStore } from 'use-remote-data';
+
+export const Loaded = () => (
+    <UserCard store={RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }))} />
+);
+
+export const Loading = () => <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />;
+
+export const Failed = () => (
+    <UserCard
+        store={RemoteDataStore.always(
+            RemoteData.Failed([Failure.unexpected(new Error('Server returned 500'))], async () => {})
+        )}
+    />
+);
+
+export const Refreshing = () => (
+    <UserCard
+        store={RemoteDataStore.always(
+            RemoteData.StalePending(
+                RemoteData.Success({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
+            )
+        )}
+    />
+);
+```
+
+No mock servers. No interceptors. No delay hacks to catch the loading state. Just the state you want, rendered immediately.
+
+## Why this works
+
+The design choice that makes testing easy is the same one that makes the library work:
+**stores are values, and values are passed as parameters.**
+
+Your component doesn't call `useRemoteData` itself — it receives a `RemoteDataStore<T>` from its parent.
+This means the component has no idea whether the store came from a hook, from `RemoteDataStore.always()`, from a test, or from server-rendered data.
+
+This isn't a testing trick. It's the architecture. The same property that makes SSR simple (pass `initial` data), Storybook simple (pass a static store), and component sharing simple (pass a store as a prop) is what makes testing simple.
+
+When data is a value and dependencies are parameters, testing is just calling a function with the arguments you choose.

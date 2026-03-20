@@ -1,106 +1,71 @@
-import * as React from 'react';
 import {
-    Either,
+    Result,
     ErrorProps,
-    useRemoteDataEither,
-    WithRemoteData,
+    useRemoteDataResult,
+    Await,
 } from 'use-remote-data';
 
-// let's say we have a graphql schema like this:
-export namespace gql {
-    export interface Person {
-        __typename: 'Person';
-        name: string;
-        age: number;
-    }
+// GraphQL APIs often return union types for errors
+type Person = { __typename: 'Person'; name: string; age: number };
+type NotFound = { __typename: 'PersonNotFound'; reason: string };
+type Deleted = { __typename: 'PersonDeleted'; reason: string };
 
-    export interface PersonNotFound {
-        __typename: 'PersonNotFound';
-        reason: string;
-    }
+type PersonError = NotFound | Deleted;
+type PersonResult = Person | PersonError;
 
-    export interface PersonDeleted {
-        __typename: 'PersonDeleted';
-        reason: string;
-    }
+// Simulate a GraphQL endpoint that cycles through outcomes
+const results: PersonResult[] = [
+    { __typename: 'Person', name: 'Alice', age: 30 },
+    { __typename: 'PersonNotFound', reason: 'No person with that ID' },
+    { __typename: 'PersonDeleted', reason: 'Account removed on 2024-01-10' },
+];
+let i = -1;
 
-    export type PersonError = PersonNotFound | PersonDeleted;
-    export type PersonResult = PersonError | Person;
-
-    const values: readonly PersonResult[] = [
-        { __typename: 'Person', name: 'Alice', age: 30 },
-        { __typename: 'PersonNotFound', reason: 'Person not found' },
-        { __typename: 'PersonDeleted', reason: 'Person was deleted' },
-    ];
-    var i = 0;
-
-    export const fetch = (): Promise<PersonResult> =>
-        new Promise((resolve) => {
-            i += 1;
-            setTimeout(() => resolve(values[i % values.length]), 1000);
-        });
+function fetchPerson(): Promise<PersonResult> {
+    return new Promise((resolve) => {
+        i = (i + 1) % results.length;
+        setTimeout(() => resolve(results[i]), 800);
+    });
 }
 
-export function PersonErrorComponent({
-    storeName,
-    errors,
-    retry,
-}: ErrorProps<gql.PersonError>) {
-    const title = storeName ? (
-        <strong>Failed request for store {storeName}</strong>
-    ) : (
-        <strong>Failed request</strong>
-    );
-
-    const renderedErrors = errors.map((either, idx) => {
-        if (either.tag === 'right') {
-            switch (either.value.__typename) {
-                case 'PersonDeleted':
-                    return <div key={idx}>Person was deleted</div>;
-                case 'PersonNotFound':
-                    return <div key={idx}>Person not found</div>;
-            }
-        } else {
-            const error = either.value;
-            if (error instanceof Error) {
-                return <div key={idx}>{error.message}</div>;
-            } else {
-                return (
-                    <div key={idx}>
-                        <pre>
-                            <code>{JSON.stringify(error)}</code>
-                        </pre>
-                    </div>
-                );
-            }
-        }
-    });
-
+function PersonErrorView({ errors, retry }: ErrorProps<PersonError>) {
     return (
         <div>
-            {title}
-            {renderedErrors}
-            <button onClick={retry}>retry</button>
+            {errors.map((failure, i) =>
+                failure.tag === 'expected' ? (
+                    <div key={i}>
+                        {failure.value.__typename === 'PersonNotFound'
+                            ? `Not found: ${failure.value.reason}`
+                            : `Deleted: ${failure.value.reason}`}
+                    </div>
+                ) : (
+                    <div key={i}>
+                        Unexpected error:{' '}
+                        {failure.value instanceof Error
+                            ? failure.value.message
+                            : 'unknown'}
+                    </div>
+                )
+            )}
+            <button onClick={retry}>Retry</button>
         </div>
     );
 }
 
-export const Component: React.FC = () => {
-    const store = useRemoteDataEither(async () => {
-        const value = await gql.fetch();
-        // if you receive a union type like here, it'll be your responsibility
-        // to decide if it is a success (right) or an error (left)
-        if (value.__typename === 'Person') return Either.right(value);
-        else return Either.left(value);
+export function Component() {
+    const store = useRemoteDataResult(async () => {
+        const result = await fetchPerson();
+        if (result.__typename === 'Person') return Result.ok(result);
+        return Result.err(result);
     });
 
     return (
-        <WithRemoteData store={store} ErrorComponent={PersonErrorComponent}>
-            {(p) => (
+        <Await store={store} error={(props) => <PersonErrorView {...props} />}>
+            {(person) => (
                 <p>
-                    Name: {p.name}, age: {p.age}
+                    {person.name}, age {person.age}
                 </p>
             )}
-        </WithRemoteData>
+        </Await>
     );
-};
+}

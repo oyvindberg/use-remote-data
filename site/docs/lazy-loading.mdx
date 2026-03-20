@@ -1,6 +1,13 @@
 # Lazy Loading
 
-An interesting aspect of `useRemoteData` is no data is fetched when you call `useRemoteData`.
+Calling `useRemoteData` does **not** fetch data. It just creates a store.
 
-Only when the data is rendered with `WithRemoteData` is the request initiated.
-This is handy, because then you can initialize many `RemoteDataStore`s in a component high up in the hierarchy, and pass them down to children.
+The request only fires when that store is rendered with `<Await>`. This is a deliberate design choice:
+you can create many stores high up in your component tree and pass them down as props.
+Only the stores that are actually rendered will trigger a network request.
+
+This means:
+
+- **No wasted requests.** A store behind a collapsed panel or an unselected tab stays idle.
+- **No `enabled` flag.** You don't need to conditionally disable fetching — if the component isn't rendered, the fetch doesn't happen.
+- **Declare everything upfront, fetch on demand.** Define your data dependencies at the top of your component tree, and let the rendering tree decide what's needed.

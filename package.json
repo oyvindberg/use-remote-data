@@ -22,8 +22,8 @@
         "test": "jest",
         "prettier": "prettier --write .",
         "prettier-check": "prettier --check .",
-        "publish-lib": "yarn test && rm -Rf lib && yarn build && yarn publish",
-        "publish-site": "cd site && USE_SSH=true GIT_USER=oyvindberg node_modules/.bin/docusaurus deploy"
+        "publish-lib": "npm test && rm -Rf lib && npm run build && npm publish",
+        "publish-site": "cd site && USE_SSH=true GIT_USER=oyvindberg npx docusaurus deploy"
     },
     "peerDependencies": {
         "react": ">=17.0.2 <20.0.0"
@@ -32,6 +32,7 @@
         "@testing-library/dom": "^10.4.0",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
+        "@trivago/prettier-plugin-sort-imports": "^5.2.2",
         "@types/jest": "^29.5.14",
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",

@@ -1,0 +1,61 @@
+# Mutation patterns
+
+Here are some common patterns that come up when working with `useRemoteUpdate`.
+
+## Fire-and-forget (dialogs)
+
+The most common pattern: submit, refresh dependent data, close the dialog.
+The mutation result itself is never rendered.
+
+```tsx
+const saveStore = useRemoteUpdate((params: { name: string }) => api.createUser(params), {
+    refreshes: [usersStore],
+    onSuccess: () => {
+        form.reset();
+        dialog.close();
+    },
+});
+
+// In your JSX — just wire run() to the button:
+<button onClick={() => saveStore.run({ name })} disabled={saveStore.current.type === 'pending'}>
+    Save
+</button>;
+```
+
+No `useState`, no conditional mounting, no side effects in render callbacks.
+
+## Show the result
+
+Sometimes the mutation returns data you want to display — like a dry-run preview or a confirmation.
+
+```tsx
+const previewStore = useRemoteUpdate(
+  () => api.dryRun(config),
+);
+
+<button onClick={() => previewStore.run()}>Run preview</button>
+<AwaitUpdate store={previewStore}>
+  {(result, run) => (
+    <div>
+      <p>Found {result.count} items</p>
+      <button onClick={() => run()}>Run again</button>
+    </div>
+  )}
+</AwaitUpdate>
+```
+
+Re-running while showing the previous result gives you the `StalePending` state automatically —
+old data stays visible while the new request is in flight.
+
+## Interplay with read stores
+
+Since `RemoteUpdateStore` extends `RemoteDataStore`, you can combine them with read stores:
+
+```tsx
+const userStore = useRemoteData(() => fetchUser(id));
+const saveStore = useRemoteUpdate((data) => updateUser(id, data), { refreshes: [userStore] });
+
+// After save succeeds, userStore automatically re-fetches
+```
+
+This creates a clean unidirectional flow: **read → display → mutate → refresh → re-read**.

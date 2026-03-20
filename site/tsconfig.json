@@ -6,6 +6,10 @@
         "target": "ES6",
         "moduleResolution": "Node",
         "strict": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "baseUrl": ".",
+        "paths": {
+            "use-remote-data": ["../src"]
+        }
     }
 }

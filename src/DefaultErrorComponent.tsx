@@ -1,17 +1,17 @@
+import { Failure } from './Failure';
 import { WeakError } from './WeakError';
-import { Either } from './Either';
 
 export interface ErrorProps<E> {
     storeName?: string;
-    errors: readonly Either<WeakError, E>[];
+    errors: readonly Failure<WeakError, E>[];
     retry: () => Promise<void>;
 }
 
 export function DefaultErrorComponent<E>({ storeName, errors, retry }: ErrorProps<E>) {
     const title = storeName ? <strong>Failed request for store {storeName}</strong> : <strong>Failed request</strong>;
 
-    const renderedErrors = errors.map((either, idx) => {
-        const error = either.value;
+    const renderedErrors = errors.map((failure, idx) => {
+        const error = failure.value;
         if (error instanceof Error) {
             return (
                 <div key={idx}>

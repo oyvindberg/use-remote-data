@@ -1,21 +1,20 @@
-import * as React from 'react';
 import {
-    InvalidationStrategy,
+    RefreshStrategy,
     RemoteDataStore,
     useRemoteData,
-    WithRemoteData,
+    Await,
 } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     const store = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.refetchAfterMillis(2000),
+        refresh: RefreshStrategy.afterMillis(2000),
     });
 
     return (
@@ -24,18 +23,18 @@ export const Component: React.FC = () => {
             <Child store={store} />
         </div>
     );
-};
+}
 
-export const Child: React.FC<{ store: RemoteDataStore<number> }> = ({
-    store,
-}) => (
-    <WithRemoteData store={store}>
-        {(num, isInvalidated) => (
-            <p>
-                <span style={{ color: isInvalidated ? 'darkgray' : 'black' }}>
-                    {num}
-                </span>
-            </p>
-        )}
-    </WithRemoteData>
-);
+export function Child({ store }: { store: RemoteDataStore<number> }) {
+    return (
+        <Await store={store}>
+            {(num, isStale) => (
+                <p>
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
+                        {num}
+                    </span>
+                </p>
+            )}
+        </Await>
+    );
+}

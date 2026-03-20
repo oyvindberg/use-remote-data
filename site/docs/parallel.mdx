@@ -1,8 +1,17 @@
 # Parallel vs. Sequential Fetching
 
-When your app renders data from multiple `RemoteDataStore` instances, they will initiate their requests in parallel if the data is missing or old.
+When multiple `<Await>` components render at the same time, their stores fire requests **in parallel** automatically.
+No configuration needed — if two stores both need data, both requests go out at once.
 
-This parallel behavior ensures quicker overall loading times when you need multiple pieces of data at once.
+Need sequential fetching? Nest your `<Await>` components:
 
-If you need to fetch data in a specific order, you can achieve this by nesting `WithData` inside `WithData` in your JSX,
-meaning that the inner won't be rendered/requested until the outer has finished.
+```tsx
+<Await store={userStore}>
+    {(user) => <Await store={postsStore}>{(posts) => <Profile user={user} posts={posts} />}</Await>}
+</Await>
+```
+
+The inner `<Await>` won't render (or fetch) until the outer one has data.
+
+For the common case of "fetch both, wait for both," use `RemoteDataStore.all()` instead — it's
+parallel, type-safe, and gives you a single `<Await>` with a tuple of results. See [Combining Stores](combining-stores).

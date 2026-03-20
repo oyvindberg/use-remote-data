@@ -1,0 +1,81 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Cancellation
+
+When dependencies change or a component unmounts, `use-remote-data` automatically cancels in-flight requests.
+This prevents stale responses from overwriting fresh data and avoids wasted bandwidth.
+
+## How it works
+
+Every fetch function receives an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) as its last argument.
+Forward it to `fetch()` (or any API client that supports signals) to enable real cancellation:
+
+```tsx
+const store = useRemoteData((signal) => fetch(`/api/users/${id}`, { signal }).then((r) => r.json()), {
+    dependencies: [id],
+});
+```
+
+When `id` changes, the library:
+
+1. **Aborts** the previous request's signal
+2. **Discards** any response that arrives from the aborted request
+3. **Starts** a fresh request with a new signal
+
+If you don't use the signal, the HTTP request still completes in the background — but the response is discarded.
+Forwarding the signal is optional but recommended: it saves bandwidth and frees server resources.
+
+## When does cancellation happen?
+
+| Event                                   | What gets cancelled                         |
+| --------------------------------------- | ------------------------------------------- |
+| `dependencies` change                   | Previous request for that store             |
+| Component unmounts                      | All in-flight requests for that store       |
+| `store.refresh()` called                | Current in-flight request (before re-fetch) |
+| `useRemoteUpdate`: `run()` called again | Previous mutation                           |
+| `useRemoteUpdate`: `reset()` called     | Current mutation                            |
+
+## Works with any fetch library
+
+The signal is a standard `AbortSignal`. It works with anything that supports it:
+
+```tsx
+// fetch
+useRemoteData((signal) => fetch(url, { signal }).then((r) => r.json()));
+
+// axios
+useRemoteData((signal) => axios.get(url, { signal }).then((r) => r.data));
+```
+
+## Mutations too
+
+`useRemoteUpdate` also passes a signal. If a user clicks "Save" twice rapidly,
+the first request is aborted:
+
+```tsx
+const saveStore = useRemoteUpdate((params, signal) =>
+    fetch('/api/save', {
+        method: 'POST',
+        body: JSON.stringify(params),
+        signal,
+    }).then((r) => r.json())
+);
+```
+
+## Try it — type fast
+
+This example simulates a search API with an 800ms delay.
+Type quickly and watch the abort counter increase — only the final result renders.
+
+<Snippet snippet="cancellation" />
+
+## Backward compatible
+
+If your fetch function doesn't accept a signal, everything still works.
+The library discards stale responses internally via request versioning —
+the signal just lets you cancel the actual HTTP request too.
+
+```tsx
+// This still works — signal is ignored, stale responses are still discarded
+useRemoteData(() => fetchUser(id), { dependencies: [id] });
+```

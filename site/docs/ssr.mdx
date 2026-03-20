@@ -1,0 +1,87 @@
+# Server-Side Rendering
+
+## The component doesn't care
+
+A component that takes a `RemoteDataStore<T>` has no idea where the data came from.
+Client fetch, server fetch, hardcoded test data — it doesn't matter. It just renders:
+
+```tsx
+function ProjectCard({ store }: { store: RemoteDataStore<Project> }) {
+    return <Await store={store}>{(project) => <h2>{project.name}</h2>}</Await>;
+}
+```
+
+This is the same component whether you're doing SSR or not. The store is the abstraction.
+SSR is just: **someone filled the store before you got here.**
+
+## How to fill a store with server data
+
+A store is a state machine. It can start in any state — not just `Initial`.
+Pass the `initial` option to start it with data you already have:
+
+```tsx
+const store = useRemoteData(() => fetchProjects(), {
+    initial: RemoteData.success(serverData),
+});
+```
+
+`<Await>` sees `Success` on the very first render. No loading spinner. No hydration mismatch.
+After hydration, the store works as usual — refreshing, re-fetching, mutations, retries all kick in.
+
+## Next.js App Router example
+
+The server component fetches data and passes it as a plain prop.
+The client component initializes the store with it.
+
+```tsx title="app/dashboard/page.tsx — Server Component"
+import { ProjectList } from './ProjectList';
+
+export default async function DashboardPage() {
+    const projects = await db.projects.findMany();
+    return <ProjectList serverData={projects} />;
+}
+```
+
+```tsx title="app/dashboard/ProjectList.tsx — Client Component"
+'use client';
+
+import { Await, RefreshStrategy, RemoteData, useRemoteData } from 'use-remote-data';
+
+export function ProjectList({ serverData }: { serverData: Project[] }) {
+    const store = useRemoteData(() => fetch('/api/projects').then((r) => r.json()), {
+        initial: RemoteData.success(serverData),
+        refresh: RefreshStrategy.afterMillis(30_000),
+    });
+
+    return (
+        <Await store={store}>
+            {(projects, isRefreshing) => (
+                <ul style={{ opacity: isRefreshing ? 0.6 : 1 }}>
+                    {projects.map((p) => (
+                        <li key={p.id}>{p.name}</li>
+                    ))}
+                </ul>
+            )}
+        </Await>
+    );
+}
+```
+
+### What happens
+
+1. **Server** — `page.tsx` awaits the query, renders `<ProjectList serverData={[...]}>`
+2. **SSR** — `useState` initializes in `Success`. `<Await>` renders the list. `useEffect` is skipped (never runs during SSR). The HTML already contains the project list.
+3. **Hydration** — `useEffect(store.triggerUpdate)` fires. Store is `Success`, so the refresh strategy schedules a background re-fetch in 30 seconds.
+4. **After 30s** — store refreshes in the background, `isRefreshing` goes `true`, new data arrives.
+
+## Why no `<HydrationBoundary>`?
+
+Other libraries need providers, dehydration functions, and hydration boundaries because they have a global cache that must be serialized and restored across the server/client boundary.
+
+`use-remote-data` has no global cache. Stores live with their components.
+So SSR is just: **pass data as a prop, initialize the store.** No new concepts.
+
+## Without SSR
+
+If you don't need server-side data, nothing changes. Omit `initial` and the store
+starts empty, fetches on render, exactly as before.

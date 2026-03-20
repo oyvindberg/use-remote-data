@@ -1,28 +1,23 @@
-import * as React from 'react';
-import {
-    InvalidationStrategy,
-    useRemoteData,
-    WithRemoteData,
-} from 'use-remote-data';
+import { RefreshStrategy, useRemoteData, Await } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     const store = useRemoteData(freshData, {
-        invalidation: InvalidationStrategy.pollUntil((x) => x > 2, 1000),
+        refresh: RefreshStrategy.pollUntil((x) => x > 2, 1000),
         storeName: 'polling-store',
     });
 
     return (
-        <WithRemoteData store={store}>
-            {(num, notValid) =>
-                notValid ? <span>invalid data {num}</span> : <span>{num}</span>
+        <Await store={store}>
+            {(num, isStale) =>
+                isStale ? <span>stale data {num}</span> : <span>{num}</span>
             }
-        </WithRemoteData>
+        </Await>
     );
-};
+}

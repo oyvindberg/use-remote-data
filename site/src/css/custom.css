@@ -1,20 +1,33 @@
-/* stylelint-disable docusaurus/copyright-header */
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
-
-/* You can override the default Infima variables here. */
 :root {
-    --ifm-color-primary: #c27b25;
-    --ifm-color-primary-dark: rgb(33, 175, 144);
-    --ifm-color-primary-darker: rgb(31, 165, 136);
-    --ifm-color-primary-darkest: rgb(26, 136, 112);
-    --ifm-color-primary-light: rgb(70, 203, 174);
-    --ifm-color-primary-lighter: rgb(102, 212, 189);
-    --ifm-color-primary-lightest: rgb(146, 224, 208);
+    --ifm-color-primary: #0d9488;
+    --ifm-color-primary-dark: #0f766e;
+    --ifm-color-primary-darker: #115e59;
+    --ifm-color-primary-darkest: #134e4a;
+    --ifm-color-primary-light: #14b8a6;
+    --ifm-color-primary-lighter: #2dd4bf;
+    --ifm-color-primary-lightest: #5eead4;
     --ifm-code-font-size: 95%;
+
+    --landing-text-primary: #111827;
+    --landing-text-secondary: #4b5563;
+    --landing-alt-bg: #f0fdfa;
+    --landing-before-color: #ef4444;
+    --landing-after-color: #0d9488;
+}
+
+html[data-theme='dark'] {
+    --ifm-color-primary: #2dd4bf;
+    --ifm-color-primary-dark: #14b8a6;
+    --ifm-color-primary-darker: #0d9488;
+    --ifm-color-primary-darkest: #0f766e;
+    --ifm-color-primary-light: #5eead4;
+    --ifm-color-primary-lighter: #99f6e4;
+    --ifm-color-primary-lightest: #ccfbf1;
+
+    --landing-text-primary: #f9fafb;
+    --landing-text-secondary: #9ca3af;
+    --landing-alt-bg: #111113;
+    --landing-after-color: #2dd4bf;
 }
 
 .docusaurus-highlight-code-line {

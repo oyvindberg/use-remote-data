@@ -1,23 +1,17 @@
-import * as React from 'react';
-import {
-    InvalidationStrategy,
-    useRemoteData,
-    WithRemoteData,
-} from 'use-remote-data';
+import { useState } from 'react';
+import { RefreshStrategy, useRemoteData, Await } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-export const Component: React.FC = () => {
-    const [autoRefresh, setAutoRefresh] = React.useState(true);
+export function Component() {
+    const [autoRefresh, setAutoRefresh] = useState(true);
     const store = useRemoteData(freshData, {
-        invalidation: autoRefresh
-            ? InvalidationStrategy.refetchAfterMillis(1000)
-            : undefined,
+        refresh: autoRefresh ? RefreshStrategy.afterMillis(1000) : undefined,
     });
 
     return (
@@ -31,15 +25,13 @@ export const Component: React.FC = () => {
                 />
             </label>
             <br />
-            <WithRemoteData store={store}>
-                {(num, isInvalidated) => (
-                    <span
-                        style={{ color: isInvalidated ? 'darkgray' : 'black' }}
-                    >
+            <Await store={store}>
+                {(num, isStale) => (
+                    <span style={{ color: isStale ? 'darkgray' : 'black' }}>
                         {num}
                     </span>
                 )}
-            </WithRemoteData>
+            </Await>
         </div>
     );
-};
+}

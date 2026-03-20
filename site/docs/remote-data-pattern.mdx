@@ -1,66 +1,97 @@
-# Remote Data pattern
+# The RemoteData Type
 
-The Remote Data pattern is a popular way to model all possible states of asynchronous data requests in a single, explicit type.
-You’ll often find articles discussing it in the context of functional programming libraries,
-where a central “union type” (or “sum type”) encapsulates:
+Every async request is in exactly one state: it hasn't started, it's in flight, it failed, or it succeeded.
+Most code models this with a bag of booleans and optional values — `isLoading`, `data?`, `error?` — and nothing stops you from having `isLoading: true` and `data: someValue` at the same time.
 
-- No data yet (lazy initialization)
-- Data is being fetched (loading)
-- An error occurred (with retry information)
-- Data is available (success)
-
-This library extends the classic idea by adding [invalidation](invalidation) states for automatically re-fetching stale data.
+`RemoteData` is a union type. One state at a time. TypeScript knows which one.
 
 ```ts
-import { WeakError } from './WeakError';
-import { Either } from './Either';
+type RemoteData<T> =
+    | { type: 'initial' } // haven't started yet
+    | { type: 'pending' } // request in flight
+    | { type: 'failed'; errors; retry } // failed — with errors and a retry function
+    | { type: 'success'; value: T }; // succeeded — here's your data
+```
 
-export type RemoteData<T, E = never> =
-    | RemoteData.Initial
-    | RemoteData.Pending
-    | RemoteData.No<E>
-    | RemoteData.Yes<T>
-    | RemoteData.InvalidatedImmediate<T>
-    | RemoteData.InvalidatedInitial<T>
-    | RemoteData.InvalidatedPending<T>;
+When you're in the `'success'` branch, `value` is `T`. Not `T | undefined`. Not `T | null`. Just `T`.
+No narrowing gymnastics. TypeScript does it for you.
 
-export namespace RemoteData {
-    // We haven’t started fetching yet (lazy load)
-    export interface Initial {
-        type: 'initial';
-    }
-    // A request is ongoing (fetch in progress).
-    export interface Pending {
-        type: 'pending';
-    }
-    // The request failed (includes errors and a retry callback).
-    export interface No<E> {
-        type: 'no';
-        errors: Either<WeakError, E>[];
-        retry: () => Promise<void>;
-    }
-    // The request succeeded (includes the fetched value).
-    export interface Yes<T> {
-        type: 'yes';
-        value: T;
-        updatedAt: Date;
-    }
-    // We have stale data, and it was never considered valid (used for polling)
-    export interface InvalidatedImmediate<T> {
-        type: 'invalidated-immediate';
-        invalidated: RemoteData.Yes<T>;
-    }
-    // We have stale data but haven’t started re-fetching.
-    export interface InvalidatedInitial<T> {
-        type: 'invalidated-initial';
-        invalidated: RemoteData.Yes<T>;
-    }
-    // We have stale data and are re-fetching
-    export interface InvalidatedPending<T> {
-        type: 'invalidated-pending';
-        invalidated: RemoteData.Yes<T>;
+## Stale data is still data
+
+Most libraries throw your data away when they re-fetch. You had a dashboard full of numbers — now you have a spinner.
+
+`use-remote-data` keeps the old value visible while the refresh happens. Three additional states handle this:
+
+| State             | What's happening                                                                                                          | You have data? |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `stale-immediate` | Data just arrived but the refresh strategy already considers it stale (e.g. a very short TTL, or `pollUntil` rejected it) | Yes            |
+| `stale-initial`   | Previously-fresh data was marked stale, re-fetch hasn't started yet                                                       | Yes            |
+| `stale-pending`   | Re-fetch is in progress, old data still visible                                                                           | Yes            |
+
+**You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean — `isStale` — which tells you everything:
+
+```tsx
+<Await store={store}>
+    {(data, isStale) => (
+        <div style={{ opacity: isStale ? 0.6 : 1 }}>
+            <Dashboard data={data} />
+        </div>
+    )}
+</Await>
+```
+
+Data stays on screen. Users see something useful instead of a spinner. One boolean to style it.
+
+## Exhaustive matching
+
+Most of the time you'll use `<Await>` and never touch these states directly.
+But when you need custom control flow — logging, analytics, conditional rendering — you
+can switch on the `type` field, and TypeScript will enforce that you handle every case:
+
+```ts
+function describe<T>(rd: RemoteData<T>): string {
+    switch (rd.type) {
+        case 'initial':
+            return 'Not started';
+        case 'pending':
+            return 'Loading...';
+        case 'failed':
+            return `${rd.errors.length} error(s)`;
+        case 'success':
+            return `Got: ${rd.value}`;
+        case 'stale-immediate':
+            return `Stale (just arrived): ${rd.stale.value}`;
+        case 'stale-initial':
+            return `Stale (waiting): ${rd.stale.value}`;
+        case 'stale-pending':
+            return `Refreshing: ${rd.stale.value}`;
+        // No default — TypeScript errors if you miss a case.
     }
 }
 ```
 
-Note that the `E` type parameter for expected errors is optional, see [typed errors](typed-errors) for more information.
+If you use [ts-pattern](https://github.com/gvergnaud/ts-pattern), it works as you'd expect:
+
+```ts
+import { match } from 'ts-pattern';
+
+const label = match(store.current)
+    .with({ type: 'initial' }, () => 'Idle')
+    .with({ type: 'pending' }, () => 'Loading...')
+    .with({ type: 'failed' }, ({ errors }) => `${errors.length} error(s)`)
+    .with({ type: 'success' }, ({ value }) => `Hello, ${value.name}`)
+    .with({ type: 'stale-immediate' }, ({ stale }) => `Stale: ${stale.value.name}`)
+    .with({ type: 'stale-initial' }, ({ stale }) => `Stale: ${stale.value.name}`)
+    .with({ type: 'stale-pending' }, ({ stale }) => `Refreshing: ${stale.value.name}`)
+    .exhaustive();
+```
+
+## Prior art
+
+The `RemoteData` pattern originates in [Elm](https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/)
+and has been adopted across many typed languages.
+The core idea — represent async state as a union type with a `type` tag, instead of a bag of booleans — is the same
+principle behind [zod](https://zod.dev/) (parse, don't validate),
+[neverthrow](https://github.com/supermacro/neverthrow) (errors as values),
+and [ts-pattern](https://github.com/gvergnaud/ts-pattern) (exhaustive matching).
+If you like TypeScript's tagged unions (sometimes called "discriminated unions"), `RemoteData` is the natural way to model async data.
