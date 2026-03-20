@@ -42,6 +42,6 @@ useRemoteData(() => fetchData(), {
 ```
 
 When the dependency array changes, the store invalidates automatically, and `triggerUpdate()` will re-fetch if needed.
-Dependencies are compared by value using `JSON.stringify`, so they work best with primitives, plain objects, and arrays.
+Each element is compared using `Object.is` — the same semantics as React's `useEffect` dependencies.
 
 <Snippet snippet="invalidation_dependencies" />

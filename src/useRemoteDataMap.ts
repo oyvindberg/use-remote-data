@@ -6,30 +6,37 @@ import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
 import { RemoteDataMap } from './RemoteDataMap';
 import { WeakError } from './WeakError';
-import { JsonKey } from './internal/JsonKey';
+import { depsChanged } from './internal/depsChanged';
 import { isDefined } from './internal/isDefined';
-import { useEffect, useRef, useState, version } from 'react';
+import { DependencyList, useEffect, useRef, useState, version } from 'react';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDataMap = <K, V>(run: (key: K, signal: AbortSignal) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
-    useRemoteDataMapEither<K, V, never>((key, signal) => run(key, signal).then(Either.right), options);
+export const useRemoteDataMap = <K extends string | number, V>(run: (key: K, signal: AbortSignal) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
+    useRemoteDataMapCore<K, V, never>((key, signal) => run(key, signal).then(Either.right), options);
 
-export const useRemoteDataMapEither = <K, V, E>(
+export const useRemoteDataMapEither = <K extends string | number, V, E>(
+    run: (key: K, signal: AbortSignal) => Promise<Either<E, V>>,
+    options: Options<V> = {}
+): RemoteDataMap<K, V, E> =>
+    useRemoteDataMapCore(run, options);
+
+/** Internal core — also accepts undefined as K (used by useRemoteData). Not exported from the package. */
+export const useRemoteDataMapCore = <K extends string | number | undefined, V, E>(
     run: (key: K, signal: AbortSignal) => Promise<Either<E, V>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> => {
-    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V, E>>>(() => {
+    const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<K, RemoteData<V, E>>>(() => {
         if (options.initial !== undefined) {
-            const map = new Map<JsonKey<K>, RemoteData<V, E>>();
-            map.set(JsonKey.of(undefined as K), options.initial as RemoteData<V, E>);
+            const map = new Map<K, RemoteData<V, E>>();
+            map.set(undefined as K, options.initial as RemoteData<V, E>);
             return map;
         }
         return new Map();
     });
-    const [deps, setDeps] = useState(JsonKey.of(options.dependencies));
+    const depsRef = useRef<DependencyList | undefined>(options.dependencies);
 
-    const storeName = (key: JsonKey<K> | undefined) => {
+    const storeName = (key: K | undefined) => {
         if (isDefined(options.storeName)) {
             if (isDefined(key)) {
                 return `${options.storeName}(${key})`;
@@ -55,8 +62,8 @@ export const useRemoteDataMapEither = <K, V, E>(
     }
 
     // request versioning and abort controllers for cancellation
-    const requestVersionsRef = useRef(new Map<JsonKey<K>, number>());
-    const abortControllersRef = useRef(new Map<JsonKey<K>, AbortController>());
+    const requestVersionsRef = useRef(new Map<K, number>());
+    const abortControllersRef = useRef(new Map<K, AbortController>());
 
     // abort all in-flight requests on unmount
     useEffect(
@@ -66,7 +73,7 @@ export const useRemoteDataMapEither = <K, V, E>(
         []
     );
 
-    const set = (key: JsonKey<K>, data: RemoteData<V, E>): void => {
+    const set = (key: K, data: RemoteData<V, E>): void => {
         if (canUpdate) {
             if (options.debug) {
                 options.debug(`${storeName(key)} => `, data);
@@ -82,28 +89,28 @@ export const useRemoteDataMapEither = <K, V, E>(
         }
     };
 
-    const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V, E>): Promise<void> => {
+    const runAndUpdate = (key: K, pendingState: RemoteData<V, E>): Promise<void> => {
         // abort previous in-flight request for this key
-        abortControllersRef.current.get(jsonKey)?.abort();
+        abortControllersRef.current.get(key)?.abort();
 
         // create new controller and increment version
         const controller = new AbortController();
-        abortControllersRef.current.set(jsonKey, controller);
-        const requestVersion = (requestVersionsRef.current.get(jsonKey) ?? 0) + 1;
-        requestVersionsRef.current.set(jsonKey, requestVersion);
+        abortControllersRef.current.set(key, controller);
+        const requestVersion = (requestVersionsRef.current.get(key) ?? 0) + 1;
+        requestVersionsRef.current.set(key, requestVersion);
 
-        set(jsonKey, pendingState);
+        set(key, pendingState);
         try {
             return run(key, controller.signal)
                 .then((either) => {
                     if (controller.signal.aborted) return;
-                    if (requestVersionsRef.current.get(jsonKey) !== requestVersion) return;
+                    if (requestVersionsRef.current.get(key) !== requestVersion) return;
                     switch (either.tag) {
                         case 'left': {
                             const no = RemoteData.Failed([Either.right(either.value)], () =>
-                                runAndUpdate(key, jsonKey, RemoteData.Pending)
+                                runAndUpdate(key, RemoteData.Pending)
                             );
-                            set(jsonKey, no);
+                            set(key, no);
                             break;
                         }
                         case 'right': {
@@ -117,29 +124,29 @@ export const useRemoteDataMapEither = <K, V, E>(
                                 res = RemoteData.InvalidatedImmediate(res);
                             }
 
-                            set(jsonKey, res);
+                            set(key, res);
                         }
                     }
                 })
                 .catch((error: WeakError) => {
                     if (controller.signal.aborted) return;
-                    if (requestVersionsRef.current.get(jsonKey) !== requestVersion) return;
+                    if (requestVersionsRef.current.get(key) !== requestVersion) return;
                     set(
-                        jsonKey,
-                        RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+                        key,
+                        RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, RemoteData.Pending))
                     );
                 });
         } catch (error: WeakError) {
             set(
-                jsonKey,
-                RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+                key,
+                RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, RemoteData.Pending))
             );
             return Promise.resolve();
         }
     };
 
     // only allow first update each pass in case the store is shared
-    const isUpdating: Map<JsonKey<K>, boolean> = new Map();
+    const isUpdating: Map<K, boolean> = new Map();
 
     /**
      * This is where we trigger all progress. It is initiated by client components at render-time within a `setEffect`.
@@ -152,12 +159,11 @@ export const useRemoteDataMapEither = <K, V, E>(
      * A `MaybeCancel` data structure is returned with enough information to cancel timeouts on unmount,
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
-    const triggerUpdate = (key: K, jsonKey: JsonKey<K>): CancelTimeout => {
+    const triggerUpdate = (key: K): CancelTimeout => {
         /** step one: if dependencies have changed, abort in-flight requests and invalidate all data */
-        const currentDeps = JsonKey.of(options.dependencies);
-        if (deps !== currentDeps) {
+        if (depsChanged(depsRef.current, options.dependencies)) {
             if (options.debug) {
-                options.debug(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, currentDeps);
+                options.debug(`${storeName(key)} invalidating due to deps, from/to:`, depsRef.current, options.dependencies);
             }
 
             // abort all in-flight requests and bump their versions so stale responses are discarded
@@ -167,9 +173,9 @@ export const useRemoteDataMapEither = <K, V, E>(
                 requestVersionsRef.current.set(k, v + 1);
             });
 
-            setDeps(currentDeps);
+            depsRef.current = options.dependencies;
 
-            const invalidatedRemoteDatas = new Map<JsonKey<K>, RemoteData<V, E>>();
+            const invalidatedRemoteDatas = new Map<K, RemoteData<V, E>>();
             remoteDatas.forEach((remoteData, key) =>
                 invalidatedRemoteDatas.set(key, RemoteData.initialStateFor(remoteData))
             );
@@ -179,16 +185,16 @@ export const useRemoteDataMapEither = <K, V, E>(
         }
 
         /** step two: if we're already updating, do nothing */
-        if (isUpdating.get(jsonKey)) {
+        if (isUpdating.get(key)) {
             return;
         }
-        isUpdating.set(jsonKey, true);
+        isUpdating.set(key, true);
 
         /** step three: if we're in an initial state, start data fetching in the background */
-        const remoteData = remoteDatas.get(jsonKey) || RemoteData.Initial;
+        const remoteData = remoteDatas.get(key) || RemoteData.Initial;
 
         if (remoteData.type === 'initial' || remoteData.type === 'invalidated-initial') {
-            runAndUpdate(key, jsonKey, RemoteData.pendingStateFor(remoteData));
+            runAndUpdate(key, RemoteData.pendingStateFor(remoteData));
             return;
         }
 
@@ -202,22 +208,22 @@ export const useRemoteDataMapEither = <K, V, E>(
 
             switch (isInvalidated.type) {
                 case 'invalid':
-                    set(jsonKey, RemoteData.InvalidatedInitial(success));
+                    set(key, RemoteData.InvalidatedInitial(success));
                     return;
                 case 'valid':
                     return;
                 case 'retry-in':
                     if (options.debug) {
-                        options.debug(`${storeName(jsonKey)}: will invalidate in ${isInvalidated.millis}`);
+                        options.debug(`${storeName(key)}: will invalidate in ${isInvalidated.millis}`);
                     }
 
                     const handle = setTimeout(
-                        () => set(jsonKey, RemoteData.InvalidatedInitial(success)),
+                        () => set(key, RemoteData.InvalidatedInitial(success)),
                         isInvalidated.millis
                     );
                     return () => {
                         if (options.debug) {
-                            options.debug(`${storeName(jsonKey)}: cancelled invalidation on unmount`);
+                            options.debug(`${storeName(key)}: cancelled invalidation on unmount`);
                         }
                         clearTimeout(handle);
                     };
@@ -226,20 +232,18 @@ export const useRemoteDataMapEither = <K, V, E>(
     };
 
     const get = (key: K): RemoteDataStore<V, E> => {
-        const jsonKey = JsonKey.of(key);
-
         return {
-            storeName: storeName(jsonKey),
+            storeName: storeName(key),
             get current() {
-                return remoteDatas.get(jsonKey) || RemoteData.Initial;
+                return remoteDatas.get(key) || RemoteData.Initial;
             },
             invalidate: () => {
-                abortControllersRef.current.get(jsonKey)?.abort();
-                const currentVersion = requestVersionsRef.current.get(jsonKey) ?? 0;
-                requestVersionsRef.current.set(jsonKey, currentVersion + 1);
-                set(jsonKey, RemoteData.initialStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
+                abortControllersRef.current.get(key)?.abort();
+                const currentVersion = requestVersionsRef.current.get(key) ?? 0;
+                requestVersionsRef.current.set(key, currentVersion + 1);
+                set(key, RemoteData.initialStateFor(remoteDatas.get(key) || RemoteData.Initial));
             },
-            triggerUpdate: () => triggerUpdate(key, jsonKey),
+            triggerUpdate: () => triggerUpdate(key),
             get orNull(): RemoteDataStore<V | null, E> {
                 return RemoteDataStore.orNull(this);
             },
