@@ -1,14 +1,13 @@
-import * as React from 'react';
 import { InvalidationStrategy, useRemoteData, Await } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     const store = useRemoteData(freshData, {
         invalidation: InvalidationStrategy.pollUntil((x) => x > 2, 1000),
         storeName: 'polling-store',
@@ -21,4 +20,4 @@ export const Component: React.FC = () => {
             }
         </Await>
     );
-};
+}

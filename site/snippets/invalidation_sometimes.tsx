@@ -1,15 +1,15 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { InvalidationStrategy, useRemoteData, Await } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-export const Component: React.FC = () => {
-    const [autoRefresh, setAutoRefresh] = React.useState(true);
+export function Component() {
+    const [autoRefresh, setAutoRefresh] = useState(true);
     const store = useRemoteData(freshData, {
         invalidation: autoRefresh
             ? InvalidationStrategy.refetchAfterMillis(1000)
@@ -38,4 +38,4 @@ export const Component: React.FC = () => {
             </Await>
         </div>
     );
-};
+}

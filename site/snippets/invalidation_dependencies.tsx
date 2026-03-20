@@ -1,15 +1,15 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { useRemoteData, Await } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-export const Component: React.FC = () => {
-    const [dep, setDep] = React.useState(1);
+export function Component() {
+    const [dep, setDep] = useState(1);
     const store = useRemoteData(freshData, { dependencies: [dep] });
 
     return (
@@ -27,4 +27,4 @@ export const Component: React.FC = () => {
             </Await>
         </div>
     );
-};
+}

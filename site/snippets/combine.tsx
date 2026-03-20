@@ -1,11 +1,10 @@
-import * as React from 'react';
 import { RemoteDataStore, useRemoteData, Await } from 'use-remote-data';
 
 function produce<T>(value: T, delay: number = 1000): Promise<T> {
     return new Promise((resolve) => setTimeout(() => resolve(value), delay));
 }
 
-export const Component: React.FC = () => {
+export function Component() {
     const computeOne = useRemoteData(() => produce(1));
     const computeString = useRemoteData(() => produce('Hello'));
 
@@ -20,4 +19,4 @@ export const Component: React.FC = () => {
             )}
         </Await>
     );
-};
+}

@@ -1,4 +1,3 @@
-import * as React from 'react';
 import {
     InvalidationStrategy,
     RemoteDataStore,
@@ -6,14 +5,14 @@ import {
     Await,
 } from 'use-remote-data';
 
-var i = 0;
+let i = 0;
 const freshData = (): Promise<number> =>
     new Promise((resolve) => {
         i += 1;
         setTimeout(() => resolve(i), 1000);
     });
 
-var j = 0;
+let j = 0;
 const failSometimes = (): Promise<number> =>
     new Promise((resolve, reject) => {
         j += 1;
@@ -21,7 +20,7 @@ const failSometimes = (): Promise<number> =>
         else resolve(j);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     const one = useRemoteData(freshData, {
         invalidation: InvalidationStrategy.refetchAfterMillis(1000),
     });
@@ -37,4 +36,4 @@ export const Component: React.FC = () => {
             )}
         </Await>
     );
-};
+}

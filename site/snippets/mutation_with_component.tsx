@@ -1,7 +1,6 @@
-import * as React from 'react';
 import { useRemoteUpdate, AwaitUpdate } from 'use-remote-data';
 
-var attempts = 0;
+let attempts = 0;
 const riskyOperation = (): Promise<string> =>
     new Promise((resolve, reject) => {
         attempts++;
@@ -12,7 +11,7 @@ const riskyOperation = (): Promise<string> =>
         }, 800);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     const store = useRemoteUpdate(() => riskyOperation());
 
     return (
@@ -33,4 +32,4 @@ export const Component: React.FC = () => {
             </AwaitUpdate>
         </div>
     );
-};
+}

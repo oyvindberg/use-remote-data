@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import {
     InvalidationStrategy,
     RemoteDataStore,
@@ -7,7 +7,7 @@ import {
     Await,
 } from 'use-remote-data';
 
-let is = new Map<string, number>();
+const is = new Map<string, number>();
 
 const freshData = (key: string): Promise<string> =>
     new Promise((resolve) => {
@@ -16,13 +16,13 @@ const freshData = (key: string): Promise<string> =>
         setTimeout(() => resolve(`${key}: ${num}`), 500);
     });
 
-export const Component: React.FC = () => {
+export function Component() {
     // provide `freshData` function
     const stores: RemoteDataMap<string, string> = useRemoteDataMap(freshData, {
         invalidation: InvalidationStrategy.refetchAfterMillis(1000),
     });
 
-    const [wanted, setWanted] = React.useState('a, b,d');
+    const [wanted, setWanted] = useState('a, b,d');
 
     const parsedWanted: readonly string[] = wanted
         .split(',')
@@ -45,11 +45,9 @@ export const Component: React.FC = () => {
             </div>
         </div>
     );
-};
+}
 
-export const Column: React.FC<{ rows: readonly RemoteDataStore<string>[] }> = ({
-    rows,
-}) => {
+export function Column({ rows }: { rows: readonly RemoteDataStore<string>[] }) {
     const renderedRows = rows.map((store, idx) => (
         <Await store={store} key={idx}>
             {(value, isInvalidated) => (
@@ -64,4 +62,4 @@ export const Column: React.FC<{ rows: readonly RemoteDataStore<string>[] }> = ({
         </Await>
     ));
     return <div>{renderedRows}</div>;
-};
+}

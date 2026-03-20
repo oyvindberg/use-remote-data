@@ -1,4 +1,3 @@
-import * as React from 'react';
 import {
     Either,
     ErrorProps,
@@ -32,7 +31,7 @@ export namespace gql {
         { __typename: 'PersonNotFound', reason: 'Person not found' },
         { __typename: 'PersonDeleted', reason: 'Person was deleted' },
     ];
-    var i = 0;
+    let i = 0;
 
     export const fetch = (): Promise<PersonResult> =>
         new Promise((resolve) => {
@@ -85,7 +84,7 @@ export function PersonErrorComponent({
     );
 }
 
-export const Component: React.FC = () => {
+export function Component() {
     const store = useRemoteDataEither(async () => {
         const value = await gql.fetch();
         // if you receive a union type like here, it'll be your responsibility
@@ -103,4 +102,4 @@ export const Component: React.FC = () => {
             )}
         </Await>
     );
-};
+}

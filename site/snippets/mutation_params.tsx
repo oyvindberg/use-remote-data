@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { useRemoteUpdate, AwaitUpdate } from 'use-remote-data';
 
 type UserParams = { firstName: string; lastName: string };
@@ -11,9 +11,9 @@ const createUser = (params: UserParams): Promise<string> =>
         )
     );
 
-export const Component: React.FC = () => {
-    const [firstName, setFirstName] = React.useState('');
-    const [lastName, setLastName] = React.useState('');
+export function Component() {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const store = useRemoteUpdate((p: UserParams) => createUser(p));
 
     return (
@@ -49,4 +49,4 @@ export const Component: React.FC = () => {
             </AwaitUpdate>
         </div>
     );
-};
+}

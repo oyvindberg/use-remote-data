@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import { useRemoteUpdate, AwaitUpdate } from 'use-remote-data';
 
 const saveItem = (name: string): Promise<string> =>
@@ -12,8 +12,8 @@ const saveItem = (name: string): Promise<string> =>
         )
     );
 
-export const Component: React.FC = () => {
-    const [name, setName] = React.useState('');
+export function Component() {
+    const [name, setName] = useState('');
     const store = useRemoteUpdate((n: string) => saveItem(n), {
         storeName: 'Save item',
     });
@@ -36,4 +36,4 @@ export const Component: React.FC = () => {
             <AwaitUpdate store={store}>{(msg) => <p>✓ {msg}</p>}</AwaitUpdate>
         </div>
     );
-};
+}
