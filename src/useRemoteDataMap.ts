@@ -77,7 +77,7 @@ export const useRemoteDataMapEither = <K, V, E>(
                 .then((either) => {
                     switch (either.tag) {
                         case 'left': {
-                            const no = RemoteData.No([Either.right(either.value)], () =>
+                            const no = RemoteData.Failed([Either.right(either.value)], () =>
                                 runAndUpdate(key, jsonKey, RemoteData.Pending)
                             );
                             set(jsonKey, no);
@@ -101,13 +101,13 @@ export const useRemoteDataMapEither = <K, V, E>(
                 .catch((error: WeakError) =>
                     set(
                         jsonKey,
-                        RemoteData.No<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+                        RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
                     )
                 );
         } catch (error: WeakError) {
             set(
                 jsonKey,
-                RemoteData.No<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
+                RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
             );
             return Promise.resolve();
         }

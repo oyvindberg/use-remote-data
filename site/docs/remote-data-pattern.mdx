@@ -14,7 +14,7 @@ and TypeScript knows which one:
 type RemoteData<T> =
     | { type: 'initial' } // haven't started yet
     | { type: 'pending' } // request in flight
-    | { type: 'no'; errors; retry } // failed — with errors and a retry function
+    | { type: 'failed'; errors; retry } // failed — with errors and a retry function
     | { type: 'yes'; value: T }; // succeeded — here's your data
 ```
 
@@ -47,7 +47,7 @@ import { WeakError } from './WeakError';
 export type RemoteData<T, E = never> =
     | RemoteData.Initial
     | RemoteData.Pending
-    | RemoteData.No<E>
+    | RemoteData.Failed<E>
     | RemoteData.Yes<T>
     | RemoteData.InvalidatedImmediate<T>
     | RemoteData.InvalidatedInitial<T>
@@ -63,8 +63,8 @@ export namespace RemoteData {
         type: 'pending';
     }
     // The request failed (includes errors and a retry callback).
-    export interface No<E> {
-        type: 'no';
+    export interface Failed<E> {
+        type: 'failed';
         errors: Either<WeakError, E>[];
         retry: () => Promise<void>;
     }

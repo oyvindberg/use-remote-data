@@ -75,7 +75,7 @@ This lets you grey out stale data instead of showing a spinner — much better U
 Out of the box, `<Await>` renders a minimal loading spinner and `JSON.stringify`'d errors.
 You'll want to provide your own rendering. There are two ways:
 
-1. **Pass `PendingComponent` and `ErrorComponent` props** to `<Await>` directly.
+1. **Pass `loading` and `error` render props** to `<Await>` directly.
 2. **Create your own `<Await>` wrapper** — copy the component into your codebase and customize it.
    It's small (about 15 lines). The only important thing is to keep the `useEffect(store.triggerUpdate)` call.
 

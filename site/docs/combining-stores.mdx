@@ -10,7 +10,7 @@ This is done via `RemoteDataStore.all(...)`:
 
 Under the hood, the combined store uses the `RemoteData.all(...)` function, which:
 
-- Returns `No` if _any_ store fails. A single “retry” will only re-fetch the failing requests.
+- Returns `Failed` if _any_ store fails. A single “retry” will only re-fetch the failing requests.
 - Returns `Pending` if _any_ constituent store is `Pending`.
 - Returns `Yes` with a tuple of all combined values if _all_ succeed.
 - Manages invalidation states if any store becomes invalidated.

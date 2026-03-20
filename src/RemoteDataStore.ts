@@ -45,7 +45,7 @@ export namespace RemoteDataStore {
 
         triggerUpdate = (): CancelTimeout => {
             // if the product of all stores is a failure, dont invalidate any successful stores where we won't see the result
-            if (this.current.type === 'no') {
+            if (this.current.type === 'failed') {
                 return undefined;
             }
             return CancelTimeout.all(this.#stores.map((store) => store.triggerUpdate()));

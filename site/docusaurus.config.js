@@ -5,7 +5,7 @@ const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
     title: 'use-remote-data',
-    tagline: 'Async data for React, without the guesswork',
+    tagline: 'A React hook for async data. Loading, error, success — always one state, always type-safe.',
     url: 'https://oyvindberg.github.io',
     baseUrl: '/use-remote-data/',
     onBrokenLinks: 'throw',

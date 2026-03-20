@@ -95,7 +95,7 @@ export const Component: React.FC = () => {
     });
 
     return (
-        <Await store={store} ErrorComponent={PersonErrorComponent}>
+        <Await store={store} error={(props) => <PersonErrorComponent {...props} />}>
             {(p) => (
                 <p>
                     Name: {p.name}, age: {p.age}

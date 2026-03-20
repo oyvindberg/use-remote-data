@@ -1,14 +1,14 @@
 import { DefaultErrorComponent, ErrorProps } from './DefaultErrorComponent';
 import { DefaultPendingComponent } from './DefaultPendingComponent';
 import { RemoteUpdateStore } from './RemoteUpdateStore';
-import { ComponentType, ElementType, ReactElement, ReactNode } from 'react';
+import { ReactElement, ReactNode } from 'react';
 
 interface Props<T, P, E> {
     store: RemoteUpdateStore<T, P, E>;
     children: (value: T, run: (params: P) => Promise<void>, reset: () => void) => ReactNode;
     idle?: (run: (params: P) => Promise<void>) => ReactNode;
-    PendingComponent?: ElementType;
-    ErrorComponent?: ComponentType<ErrorProps<E>>;
+    loading?: () => ReactNode;
+    error?: (props: ErrorProps<E>) => ReactNode;
 }
 
 /**
@@ -18,10 +18,13 @@ export function AwaitUpdate<T, P, E>({
     store,
     children,
     idle,
-    ErrorComponent = DefaultErrorComponent,
-    PendingComponent = DefaultPendingComponent,
+    error,
+    loading,
 }: Props<T, P, E>): ReactElement | null {
     // No useEffect(store.triggerUpdate) — the defining difference from Await
+
+    const renderError = error ?? ((props: ErrorProps<E>) => <DefaultErrorComponent {...props} />);
+    const renderLoading = loading ?? (() => <DefaultPendingComponent />);
 
     const current = store.current;
 
@@ -29,16 +32,16 @@ export function AwaitUpdate<T, P, E>({
         case 'initial':
             return idle ? <>{idle(store.run)}</> : null;
         case 'pending':
-            return <PendingComponent />;
+            return <>{renderLoading()}</>;
         case 'yes':
             return <>{children(current.value, store.run, store.reset)}</>;
-        case 'no':
-            return <ErrorComponent errors={current.errors} retry={current.retry} storeName={store.storeName} />;
+        case 'failed':
+            return <>{renderError({ errors: current.errors, retry: current.retry, storeName: store.storeName })}</>;
         case 'invalidated-pending':
             return (
                 <>
                     {children(current.invalidated.value, store.run, store.reset)}
-                    <PendingComponent />
+                    {renderLoading()}
                 </>
             );
         case 'invalidated-initial':

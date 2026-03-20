@@ -3,7 +3,7 @@ import { Snippet } from '../src/components/Snippet';
 # Failures and Retries
 
 When a request fails, `use-remote-data` doesn't throw the error away or bury it in a boolean.
-It moves the store to the **`No`** state — which holds the error _and_ a `retry` callback that re-runs the exact same request.
+It moves the store to the **`Failed`** state — which holds the error _and_ a `retry` callback that re-runs the exact same request.
 
 ## How it works
 
@@ -11,14 +11,14 @@ When your `Promise` rejects (or throws), the store transitions to:
 
 ```ts
 {
-  type: 'no',
+  type: 'failed',
   errors: [...],      // what went wrong
   retry: () => void   // call this to try again
 }
 ```
 
 The `<Await>` component renders an error view automatically. The default one shows the error details and a **retry** button.
-When the user clicks retry, the store goes back to `Pending` and re-fires the request. If it succeeds this time, you get `Yes`. If it fails again, you're back to `No` with a fresh `retry`.
+When the user clicks retry, the store goes back to `Pending` and re-fires the request. If it succeeds this time, you get `Yes`. If it fails again, you're back to `Failed` with a fresh `retry`.
 
 No `useState` for tracking error state. No `try/catch` boilerplate. No manual "retry" logic.
 
@@ -26,7 +26,7 @@ No `useState` for tracking error state. No `try/catch` boilerplate. No manual "r
 
 With `use-remote-data`, **there is never a reason to write `try/catch` for data fetching**.
 Errors don't throw. They don't propagate up the tree. They don't crash your app.
-A failed request is just data — the `No` state — handled in the same place you render your success state.
+A failed request is just data — the `Failed` state — handled in the same place you render your success state.
 
 This also means you don't need React error boundaries for data fetching errors.
 Error boundaries catch _thrown_ errors during rendering. Since `use-remote-data` never throws,
@@ -38,7 +38,7 @@ There's nothing to catch.
 This is where it gets powerful. When you combine multiple stores with `RemoteDataStore.all()`,
 and _one_ of them fails:
 
-- The combined store moves to `No`.
+- The combined store moves to `Failed`.
 - The combined `retry` **only re-fetches the stores that failed**. The successful ones keep their data.
 - Once the failing store succeeds, the combined store moves to `Yes` with the full tuple.
 
@@ -50,19 +50,18 @@ Hit retry a few times to see how only the broken request re-fires.
 ## Customizing the error UI
 
 The built-in error component is deliberately minimal — it's meant to be replaced.
-Pass your own `ErrorComponent` prop to `<Await>`:
+Pass your own `error` render prop to `<Await>`:
 
 ```tsx
-function MyErrorView({ errors, retry, storeName }: ErrorProps<never>) {
-    return (
+<Await
+    store={store}
+    error={({ errors, retry, storeName }) => (
         <div className="error-banner">
             <p>Something went wrong{storeName ? ` loading ${storeName}` : ''}.</p>
             <button onClick={retry}>Try again</button>
         </div>
-    );
-}
-
-<Await store={store} ErrorComponent={MyErrorView}>
+    )}
+>
     {(data) => <Display data={data} />}
 </Await>
 ```
@@ -80,7 +79,7 @@ For most apps, you only need `retry` — the `errors` array is there when you wa
 ## Mutations fail the same way
 
 `useRemoteUpdate` uses the same error model.
-If a mutation fails, the store moves to `No`, and the default `<AwaitUpdate>` error view shows a retry button that re-runs with the **same parameters** that were originally passed.
+If a mutation fails, the store moves to `Failed`, and the default `<AwaitUpdate>` error view shows a retry button that re-runs with the **same parameters** that were originally passed.
 
 ```tsx
 const saveStore = useRemoteUpdate((name: string) => api.save(name));

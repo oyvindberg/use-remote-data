@@ -5,7 +5,7 @@ import { isDefined } from './internal/isDefined';
 export type RemoteData<T, E = never> =
     | RemoteData.Initial
     | RemoteData.Pending
-    | RemoteData.No<E>
+    | RemoteData.Failed<E>
     | RemoteData.Yes<T>
     | RemoteData.InvalidatedImmediate<T>
     | RemoteData.InvalidatedInitial<T>
@@ -26,14 +26,14 @@ export namespace RemoteData {
         readonly type: 'pending';
     }
 
-    export const No = <E>(errors: readonly Either<WeakError, E>[], retry: () => Promise<void>): No<E> => ({
-        type: 'no',
+    export const Failed = <E>(errors: readonly Either<WeakError, E>[], retry: () => Promise<void>): Failed<E> => ({
+        type: 'failed',
         errors,
         retry,
     });
 
-    export interface No<E> {
-        readonly type: 'no';
+    export interface Failed<E> {
+        readonly type: 'failed';
         readonly errors: readonly Either<WeakError, E>[];
         readonly retry: () => Promise<void>;
     }
@@ -84,7 +84,7 @@ export namespace RemoteData {
     };
 
     export type ErrorsFromArray<Datas extends RemoteData<unknown, unknown>[]> = {
-        [I in keyof Datas]: Datas[I] extends RemoteData.No<infer E> ? E : never;
+        [I in keyof Datas]: Datas[I] extends RemoteData.Failed<infer E> ? E : never;
     };
 
     export type ErrorsFrom<Datas extends RemoteData<unknown, unknown>[]> = ErrorsFromArray<Datas>[number];
@@ -98,7 +98,7 @@ export namespace RemoteData {
         const ret: unknown[] = [];
         let updatedAt: Date = Epoch;
         let isInvalidated = false;
-        let foundNo: RemoteData.No<unknown>[] = [];
+        let foundFailed: RemoteData.Failed<unknown>[] = [];
         let foundPending: RemoteData.Pending | undefined = undefined;
         let foundInitial: RemoteData.Initial | undefined = undefined;
 
@@ -121,8 +121,8 @@ export namespace RemoteData {
                 case 'initial':
                     foundInitial = remoteData;
                     break;
-                case 'no':
-                    foundNo.push(remoteData);
+                case 'failed':
+                    foundFailed.push(remoteData);
                     break;
                 case 'pending':
                     foundPending = remoteData;
@@ -130,13 +130,13 @@ export namespace RemoteData {
             }
         }
 
-        if (foundNo.length > 0) {
-            const retry = () => Promise.all(foundNo.map((no) => no.retry())).then(() => {});
-            const allErrors = foundNo.reduce<readonly Either<WeakError, unknown>[]>(
-                (acc, no) => [...acc, ...no.errors],
+        if (foundFailed.length > 0) {
+            const retry = () => Promise.all(foundFailed.map((f) => f.retry())).then(() => {});
+            const allErrors = foundFailed.reduce<readonly Either<WeakError, unknown>[]>(
+                (acc, f) => [...acc, ...f.errors],
                 []
             );
-            return RemoteData.No(allErrors as Either<WeakError, ErrorsFrom<RemoteDatas>>[], retry);
+            return RemoteData.Failed(allErrors as Either<WeakError, ErrorsFrom<RemoteDatas>>[], retry);
         } else if (isDefined(foundPending)) {
             return foundPending;
         } else if (isDefined(foundInitial)) {
@@ -174,7 +174,7 @@ export namespace RemoteData {
                 case 'yes':
                     return onData(remoteData.value, false, remoteData.updatedAt);
 
-                case 'no':
+                case 'failed':
                     return onFailed(remoteData.errors, remoteData.retry);
 
                 case 'invalidated-immediate':
@@ -210,8 +210,8 @@ export namespace RemoteData {
                 return RemoteData.Initial;
             case 'pending':
                 return RemoteData.Pending;
-            case 'no':
-                return RemoteData.No(remoteData.errors, remoteData.retry);
+            case 'failed':
+                return RemoteData.Failed(remoteData.errors, remoteData.retry);
             case 'yes':
                 return RemoteData.Yes(f(remoteData.value), remoteData.updatedAt);
             case 'invalidated-immediate': {

@@ -24,12 +24,12 @@ Instead of returning a plain value, your fetch function returns an `Either`:
 - `Either.right(value)` — success
 - `Either.left(error)` — domain-level failure
 
-When the store is in the `No` state, its `errors` array contains `Either<WeakError, E>` items.
+When the store is in the `Failed` state, its `errors` array contains `Either<WeakError, E>` items.
 `WeakError` (left) represents unexpected crashes. `E` (right) represents your typed domain errors.
 This lets your error component render each case differently.
 
 ## Custom error component
 
-Provide a typed `ErrorComponent` to `<Await>` that handles both unexpected and domain errors.
+Provide a typed `error` render prop to `<Await>` that handles both unexpected and domain errors.
 
 <Snippet snippet="typed-errors" />

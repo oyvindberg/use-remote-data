@@ -10,16 +10,16 @@ test('Initial takes precedence over Yes', async () => {
     expect(RemoteData.all(RemoteData.Initial, RemoteData.Yes(1, RemoteData.Epoch))).toStrictEqual(RemoteData.Initial);
 });
 
-test('No takes precedence over everything', async () => {
+test('Failed takes precedence over everything', async () => {
     const all: RemoteData<[unknown, unknown, number, number, number, unknown], 'error'> = RemoteData.all(
         RemoteData.Initial,
         RemoteData.Pending,
         RemoteData.Yes(1, RemoteData.Epoch),
         RemoteData.InvalidatedPending(RemoteData.Yes(1, RemoteData.Epoch)),
         RemoteData.InvalidatedInitial(RemoteData.Yes(1, RemoteData.Epoch)),
-        RemoteData.No([Either.right('error' as const)], () => Promise.reject())
+        RemoteData.Failed([Either.right('error' as const)], () => Promise.reject())
     );
-    expect(all.type).toStrictEqual('no');
+    expect(all.type).toStrictEqual('failed');
 });
 
 test('Can combine multiple Yes', async () => {
@@ -57,15 +57,15 @@ test('properly combine retries', async () => {
     const combined = RemoteData.all(
         RemoteData.Pending,
         RemoteData.Yes(1, RemoteData.Epoch),
-        RemoteData.No([Either.right('no1')], retry1),
-        RemoteData.No([Either.right('no2')], retry2)
+        RemoteData.Failed([Either.right('no1')], retry1),
+        RemoteData.Failed([Either.right('no2')], retry2)
     );
-    if (combined.type === 'no') {
+    if (combined.type === 'failed') {
         await combined.retry();
         expect(combined.errors).toStrictEqual([Either.right('no1'), Either.right('no2')]);
         expect(value1).toStrictEqual(1);
         expect(value2).toStrictEqual(1);
     } else {
-        expect(combined.type).toStrictEqual('no');
+        expect(combined.type).toStrictEqual('failed');
     }
 });

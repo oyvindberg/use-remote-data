@@ -14,7 +14,7 @@ Unlike `useRemoteData`, **nothing happens until you call `run()`** — the mutat
 <Snippet snippet="mutation_basic" />
 
 The store starts in an `Initial` state. When `run()` is called, it transitions to `Pending`, then to `Yes` (success)
-or `No` (failure). The entire `RemoteData` state machine you already know applies here too!
+or `Failed` (failure). The entire `RemoteData` state machine you already know applies here too!
 
 ## Parameters
 
@@ -79,5 +79,5 @@ The optional `idle` prop controls what renders before the mutation has ever been
 
 ## Retries
 
-If a mutation fails, the `ErrorComponent` automatically shows a retry button — just like read stores.
+If a mutation fails, the default error view automatically shows a retry button — just like read stores.
 Retry re-runs with the **same parameters** that were originally passed.

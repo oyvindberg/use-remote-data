@@ -49,7 +49,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                     switch (either.tag) {
                         case 'left': {
                             const errors: readonly Either<WeakError, E>[] = [Either.right(either.value)];
-                            setState(RemoteData.No(errors, () => runFn(params)));
+                            setState(RemoteData.Failed(errors, () => runFn(params)));
                             opts?.onError?.(errors);
                             break;
                         }
@@ -66,12 +66,12 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                     if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
                     const opts = optionsRef.current;
                     const errors: readonly Either<WeakError, E>[] = [Either.left(error)];
-                    setState(RemoteData.No(errors, () => runFn(params)));
+                    setState(RemoteData.Failed(errors, () => runFn(params)));
                     opts?.onError?.(errors);
                 });
         } catch (error: WeakError) {
             const errors: readonly Either<WeakError, E>[] = [Either.left(error)];
-            setState(RemoteData.No(errors, () => runFn(params)));
+            setState(RemoteData.Failed(errors, () => runFn(params)));
             optionsRef.current?.onError?.(errors);
             return Promise.resolve();
         }
