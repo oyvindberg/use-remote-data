@@ -8,15 +8,15 @@ import { RemoteDataMap } from './RemoteDataMap';
 import { WeakError } from './WeakError';
 import { JsonKey } from './internal/JsonKey';
 import { isDefined } from './internal/isDefined';
-import { useEffect, useState, version } from 'react';
+import { useEffect, useRef, useState, version } from 'react';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDataMap = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
-    useRemoteDataMapEither<K, V, never>((key) => run(key).then(Either.right), options);
+export const useRemoteDataMap = <K, V>(run: (key: K, signal: AbortSignal) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
+    useRemoteDataMapEither<K, V, never>((key, signal) => run(key, signal).then(Either.right), options);
 
 export const useRemoteDataMapEither = <K, V, E>(
-    run: (key: K) => Promise<Either<E, V>>,
+    run: (key: K, signal: AbortSignal) => Promise<Either<E, V>>,
     options: Options<V> = {}
 ): RemoteDataMap<K, V, E> => {
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V, E>>>(() => {
@@ -54,6 +54,18 @@ export const useRemoteDataMapEither = <K, V, E>(
         );
     }
 
+    // request versioning and abort controllers for cancellation
+    const requestVersionsRef = useRef(new Map<JsonKey<K>, number>());
+    const abortControllersRef = useRef(new Map<JsonKey<K>, AbortController>());
+
+    // abort all in-flight requests on unmount
+    useEffect(
+        () => () => {
+            abortControllersRef.current.forEach((c) => c.abort());
+        },
+        []
+    );
+
     const set = (key: JsonKey<K>, data: RemoteData<V, E>): void => {
         if (canUpdate) {
             if (options.debug) {
@@ -71,10 +83,21 @@ export const useRemoteDataMapEither = <K, V, E>(
     };
 
     const runAndUpdate = (key: K, jsonKey: JsonKey<K>, pendingState: RemoteData<V, E>): Promise<void> => {
+        // abort previous in-flight request for this key
+        abortControllersRef.current.get(jsonKey)?.abort();
+
+        // create new controller and increment version
+        const controller = new AbortController();
+        abortControllersRef.current.set(jsonKey, controller);
+        const requestVersion = (requestVersionsRef.current.get(jsonKey) ?? 0) + 1;
+        requestVersionsRef.current.set(jsonKey, requestVersion);
+
         set(jsonKey, pendingState);
         try {
-            return run(key)
+            return run(key, controller.signal)
                 .then((either) => {
+                    if (controller.signal.aborted) return;
+                    if (requestVersionsRef.current.get(jsonKey) !== requestVersion) return;
                     switch (either.tag) {
                         case 'left': {
                             const no = RemoteData.Failed([Either.right(either.value)], () =>
@@ -98,12 +121,14 @@ export const useRemoteDataMapEither = <K, V, E>(
                         }
                     }
                 })
-                .catch((error: WeakError) =>
+                .catch((error: WeakError) => {
+                    if (controller.signal.aborted) return;
+                    if (requestVersionsRef.current.get(jsonKey) !== requestVersion) return;
                     set(
                         jsonKey,
                         RemoteData.Failed<E>([Either.left(error)], () => runAndUpdate(key, jsonKey, RemoteData.Pending))
-                    )
-                );
+                    );
+                });
         } catch (error: WeakError) {
             set(
                 jsonKey,
@@ -128,12 +153,20 @@ export const useRemoteDataMapEither = <K, V, E>(
      *  and to wait to completion of `Promise` (for tests, for now at least)
      */
     const triggerUpdate = (key: K, jsonKey: JsonKey<K>): CancelTimeout => {
-        /** step one: if dependencies have changed, invalidate all data */
+        /** step one: if dependencies have changed, abort in-flight requests and invalidate all data */
         const currentDeps = JsonKey.of(options.dependencies);
         if (deps !== currentDeps) {
             if (options.debug) {
                 options.debug(`${storeName(jsonKey)} invalidating due to deps, from/to:`, deps, currentDeps);
             }
+
+            // abort all in-flight requests and bump their versions so stale responses are discarded
+            abortControllersRef.current.forEach((c) => c.abort());
+            abortControllersRef.current.clear();
+            requestVersionsRef.current.forEach((v, k) => {
+                requestVersionsRef.current.set(k, v + 1);
+            });
+
             setDeps(currentDeps);
 
             const invalidatedRemoteDatas = new Map<JsonKey<K>, RemoteData<V, E>>();
@@ -155,7 +188,6 @@ export const useRemoteDataMapEither = <K, V, E>(
         const remoteData = remoteDatas.get(jsonKey) || RemoteData.Initial;
 
         if (remoteData.type === 'initial' || remoteData.type === 'invalidated-initial') {
-            // note that we let the `Promise` fly here, we don't have a way of cancelling that.
             runAndUpdate(key, jsonKey, RemoteData.pendingStateFor(remoteData));
             return;
         }
@@ -202,6 +234,9 @@ export const useRemoteDataMapEither = <K, V, E>(
                 return remoteDatas.get(jsonKey) || RemoteData.Initial;
             },
             invalidate: () => {
+                abortControllersRef.current.get(jsonKey)?.abort();
+                const currentVersion = requestVersionsRef.current.get(jsonKey) ?? 0;
+                requestVersionsRef.current.set(jsonKey, currentVersion + 1);
                 set(jsonKey, RemoteData.initialStateFor(remoteDatas.get(jsonKey) || RemoteData.Initial));
             },
             triggerUpdate: () => triggerUpdate(key, jsonKey),

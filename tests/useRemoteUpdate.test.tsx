@@ -259,6 +259,110 @@ test('should not update state after unmount', async () => {
     await new Promise((r) => setTimeout(r, 10));
 });
 
+test('should pass AbortSignal to mutation function', async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const fetcher = (_params: void, signal: AbortSignal): Promise<string> => {
+        receivedSignal = signal;
+        return Promise.resolve('ok');
+    };
+
+    const Test: React.FC = () => {
+        const store = useRemoteUpdate(fetcher);
+        return (
+            <div>
+                <button onClick={() => store.run()}>Run</button>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
+            </div>
+        );
+    };
+
+    render(<Test />);
+    fireEvent.click(screen.getByText('Run'));
+    await waitFor(() => screen.getByText('ok'));
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    expect(receivedSignal!.aborted).toBe(false);
+});
+
+test('should abort previous request on rapid re-submission', async () => {
+    const signals: AbortSignal[] = [];
+    let callCount = 0;
+    const fetcher = (_params: void, signal: AbortSignal): Promise<string> => {
+        signals.push(signal);
+        callCount++;
+        const myCount = callCount;
+        return new Promise((resolve) => setTimeout(() => resolve(`result ${myCount}`), myCount === 1 ? 100 : 10));
+    };
+
+    const Test: React.FC = () => {
+        const store = useRemoteUpdate(fetcher);
+        return (
+            <div>
+                <button onClick={() => store.run()}>Run</button>
+                <AwaitUpdate store={store}>{(value) => <span>{value}</span>}</AwaitUpdate>
+            </div>
+        );
+    };
+
+    render(<Test />);
+    fireEvent.click(screen.getByText('Run'));
+    fireEvent.click(screen.getByText('Run'));
+    await waitFor(() => screen.getByText('result 2'));
+    expect(signals[0].aborted).toBe(true);
+    expect(signals[1].aborted).toBe(false);
+});
+
+test('should abort in-flight mutation on unmount', async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const fetcher = (_params: void, signal: AbortSignal): Promise<string> => {
+        receivedSignal = signal;
+        return new Promise(() => {}); // never resolves
+    };
+
+    const Test: React.FC = () => {
+        const store = useRemoteUpdate(fetcher);
+        return (
+            <div>
+                <button onClick={() => store.run()}>Run</button>
+                <span>state: {store.current.type}</span>
+            </div>
+        );
+    };
+
+    const rendered = render(<Test />);
+    fireEvent.click(screen.getByText('Run'));
+    await waitFor(() => screen.getByText('state: pending'));
+    expect(receivedSignal!.aborted).toBe(false);
+    rendered.unmount();
+    expect(receivedSignal!.aborted).toBe(true);
+});
+
+test('should abort in-flight mutation on reset', async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const fetcher = (_params: void, signal: AbortSignal): Promise<string> => {
+        receivedSignal = signal;
+        return new Promise(() => {}); // never resolves
+    };
+
+    const Test: React.FC = () => {
+        const store = useRemoteUpdate(fetcher);
+        return (
+            <div>
+                <button onClick={() => store.run()}>Run</button>
+                <button onClick={() => store.reset()}>Reset</button>
+                <span>state: {store.current.type}</span>
+            </div>
+        );
+    };
+
+    render(<Test />);
+    fireEvent.click(screen.getByText('Run'));
+    await waitFor(() => screen.getByText('state: pending'));
+    expect(receivedSignal!.aborted).toBe(false);
+    fireEvent.click(screen.getByText('Reset'));
+    await waitFor(() => screen.getByText('state: initial'));
+    expect(receivedSignal!.aborted).toBe(true);
+});
+
 test('should invalidate read stores after mutation success', async () => {
     let fetchCount = 0;
     const fetchData = (): Promise<string> => {

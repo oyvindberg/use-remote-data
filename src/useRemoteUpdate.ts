@@ -9,18 +9,19 @@ import { useCallback, useEffect, useRef, useState, version } from 'react';
 const reactMajor = Number(version.split('.')[0]);
 
 export const useRemoteUpdate = <T, P = void, E = never>(
-    run: (params: P) => Promise<T>,
+    run: (params: P, signal: AbortSignal) => Promise<T>,
     options?: RemoteUpdateOptions<T, E>
-): RemoteUpdateStore<T, P, E> => useRemoteUpdateEither<T, P, E>((params) => run(params).then(Either.right), options);
+): RemoteUpdateStore<T, P, E> => useRemoteUpdateEither<T, P, E>((params, signal) => run(params, signal).then(Either.right), options);
 
 export const useRemoteUpdateEither = <T, P = void, E = never>(
-    run: (params: P) => Promise<Either<E, T>>,
+    run: (params: P, signal: AbortSignal) => Promise<Either<E, T>>,
     options?: RemoteUpdateOptions<T, E>
 ): RemoteUpdateStore<T, P, E> => {
     const [state, setState] = useState<RemoteData<T, E>>(RemoteData.Initial);
     const fetcherRef = useRef(run);
     const optionsRef = useRef(options);
     const requestIdRef = useRef(0);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     fetcherRef.current = run;
     optionsRef.current = options;
@@ -36,14 +37,29 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
         );
     }
 
+    // abort in-flight request on unmount
+    useEffect(
+        () => () => {
+            abortControllerRef.current?.abort();
+        },
+        []
+    );
+
     const runFn = useCallback((params: P): Promise<void> => {
         const requestId = ++requestIdRef.current;
+
+        // abort previous in-flight request
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         setState((prev) => RemoteData.pendingStateFor(prev));
 
         try {
             return fetcherRef
-                .current(params)
+                .current(params, controller.signal)
                 .then((either) => {
+                    if (controller.signal.aborted) return;
                     if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
                     const opts = optionsRef.current;
                     switch (either.tag) {
@@ -63,6 +79,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                     }
                 })
                 .catch((error: WeakError) => {
+                    if (controller.signal.aborted) return;
                     if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
                     const opts = optionsRef.current;
                     const errors: readonly Either<WeakError, E>[] = [Either.left(error)];
@@ -78,6 +95,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
     }, []);
 
     const reset = useCallback(() => {
+        abortControllerRef.current?.abort();
         requestIdRef.current++;
         setState(RemoteData.Initial);
     }, []);

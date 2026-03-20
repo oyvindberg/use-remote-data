@@ -1,5 +1,7 @@
-import { Await, InvalidationStrategy, RemoteDataStore, useRemoteData } from '../src';
+import { Await, InvalidationStrategy, RemoteDataStore, useRemoteData, useRemoteUpdate } from '../src';
+import { AwaitUpdate } from '../src/AwaitUpdate';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 
 class TestPromise {
     i = 0;
@@ -162,4 +164,130 @@ test('invalidation: polling should stop on unmount', async () => {
     rendered.unmount();
     if (testPromise.i == 2) throw 'polling did not stop';
     expect(messages).toContain(`undefined: cancelled invalidation on unmount`);
+});
+
+test('should pass AbortSignal to fetch function', async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const fetcher = (signal: AbortSignal): Promise<string> => {
+        receivedSignal = signal;
+        return Promise.resolve('ok');
+    };
+
+    const Test: React.FC = () => {
+        const store = useRemoteData(fetcher);
+        return <Await store={store}>{(val) => <span>{val}</span>}</Await>;
+    };
+
+    render(<Test />);
+    await waitFor(() => screen.getByText('ok'));
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    expect(receivedSignal!.aborted).toBe(false);
+});
+
+test('should abort in-flight request on unmount', async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const fetcher = (signal: AbortSignal): Promise<string> => {
+        receivedSignal = signal;
+        return new Promise(() => {}); // never resolves
+    };
+
+    const Test: React.FC = () => {
+        const store = useRemoteData(fetcher);
+        return <Await store={store}>{(val) => <span>{val}</span>}</Await>;
+    };
+
+    const rendered = render(<Test />);
+    await waitFor(() => expect(receivedSignal).toBeInstanceOf(AbortSignal));
+    expect(receivedSignal!.aborted).toBe(false);
+    rendered.unmount();
+    expect(receivedSignal!.aborted).toBe(true);
+});
+
+test('should abort previous request and discard stale response on dependency change', async () => {
+    const signals: AbortSignal[] = [];
+    const resolvers: Array<(value: string) => void> = [];
+
+    const fetcher = (signal: AbortSignal): Promise<string> => {
+        signals.push(signal);
+        return new Promise((resolve) => {
+            resolvers.push(resolve);
+        });
+    };
+
+    const Test: React.FC<{ dep: number }> = ({ dep }) => {
+        const store = useRemoteData(fetcher, { dependencies: [dep] });
+        return <Await store={store}>{(val) => <span>value: {val}</span>}</Await>;
+    };
+
+    const Wrapper: React.FC = () => {
+        const [dep, setDep] = useState(1);
+        return (
+            <div>
+                <button onClick={() => setDep(2)}>change dep</button>
+                <Test dep={dep} />
+            </div>
+        );
+    };
+
+    render(<Wrapper />);
+
+    // wait for first fetch to start
+    await waitFor(() => expect(signals.length).toBe(1));
+    expect(signals[0].aborted).toBe(false);
+
+    // change dependency before first fetch completes
+    fireEvent.click(screen.getByText('change dep'));
+
+    // wait for second fetch to start
+    await waitFor(() => expect(signals.length).toBe(2));
+
+    // first signal should be aborted
+    expect(signals[0].aborted).toBe(true);
+    expect(signals[1].aborted).toBe(false);
+
+    // resolve both - only second should be used
+    resolvers[0]('stale');
+    resolvers[1]('fresh');
+
+    await waitFor(() => screen.getByText('value: fresh'));
+    expect(screen.queryByText('value: stale')).toBeNull();
+});
+
+test('should abort in-flight request when invalidate() is called via mutation', async () => {
+    let readSignal: AbortSignal | undefined;
+    let fetchCount = 0;
+    const fetchData = (signal: AbortSignal): Promise<string> => {
+        readSignal = signal;
+        fetchCount++;
+        return new Promise((resolve) => setTimeout(() => resolve(`fetch #${fetchCount}`), 50));
+    };
+
+    const Test: React.FC = () => {
+        const readStore = useRemoteData(fetchData);
+        const mutateStore = useRemoteUpdate(() => Promise.resolve('mutated'), {
+            invalidates: [readStore],
+        });
+        return (
+            <div>
+                <Await store={readStore}>{(value) => <span>read: {value}</span>}</Await>
+                <button onClick={() => mutateStore.run()}>Mutate</button>
+                <AwaitUpdate store={mutateStore}>{(value) => <span>write: {value}</span>}</AwaitUpdate>
+            </div>
+        );
+    };
+
+    render(<Test />);
+    await waitFor(() => screen.getByText('read: fetch #1'));
+    expect(readSignal!.aborted).toBe(false);
+
+    const signalBeforeMutation = readSignal;
+    fireEvent.click(screen.getByText('Mutate'));
+    await waitFor(() => screen.getByText('write: mutated'));
+
+    // the signal from the first fetch should have been aborted when invalidate() was called
+    expect(signalBeforeMutation!.aborted).toBe(true);
+
+    // a new fetch should have started
+    await waitFor(() => screen.getByText('read: fetch #2'));
+    expect(readSignal!.aborted).toBe(false);
 });

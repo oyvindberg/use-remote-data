@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Invalidation / Refresh data', id: 'invalidation' },
         { type: 'doc', label: 'Combining stores', id: 'combining-stores' },
         { type: 'doc', label: 'Failures and Retries', id: 'failures-retries' },
+        { type: 'doc', label: 'Cancellation', id: 'cancellation' },
         { type: 'doc', label: 'Sharing Data with Child Components', id: 'sharing-data-with-children' },
         { type: 'doc', label: 'Mutations', id: 'mutations' },
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
