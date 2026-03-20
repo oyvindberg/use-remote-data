@@ -4,7 +4,7 @@ import { IsInvalidated } from './IsInvalidated';
 import { Options } from './Options';
 import { RemoteData } from './RemoteData';
 import { RemoteDataStore } from './RemoteDataStore';
-import { RemoteDataStores } from './RemoteDataStores';
+import { RemoteDataMap } from './RemoteDataMap';
 import { WeakError } from './WeakError';
 import { JsonKey } from './internal/JsonKey';
 import { isDefined } from './internal/isDefined';
@@ -12,13 +12,13 @@ import { useEffect, useState, version } from 'react';
 
 const reactMajor = Number(version.split('.')[0]);
 
-export const useRemoteDatas = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataStores<K, V> =>
-    useRemoteDatasEither<K, V, never>((key) => run(key).then(Either.right), options);
+export const useRemoteDataMap = <K, V>(run: (key: K) => Promise<V>, options: Options<V> = {}): RemoteDataMap<K, V> =>
+    useRemoteDataMapEither<K, V, never>((key) => run(key).then(Either.right), options);
 
-export const useRemoteDatasEither = <K, V, E>(
+export const useRemoteDataMapEither = <K, V, E>(
     run: (key: K) => Promise<Either<E, V>>,
     options: Options<V> = {}
-): RemoteDataStores<K, V, E> => {
+): RemoteDataMap<K, V, E> => {
     const [remoteDatas, setRemoteDatas] = useState<ReadonlyMap<JsonKey<K>, RemoteData<V, E>>>(new Map());
     const [deps, setDeps] = useState(JsonKey.of(options.dependencies));
 

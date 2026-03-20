@@ -2,8 +2,8 @@ import * as React from 'react';
 import {
     InvalidationStrategy,
     RemoteDataStore,
-    RemoteDataStores,
-    useRemoteDatas,
+    RemoteDataMap,
+    useRemoteDataMap,
     Await,
 } from 'use-remote-data';
 
@@ -18,7 +18,7 @@ const freshData = (key: string): Promise<string> =>
 
 export const Component: React.FC = () => {
     // provide `freshData` function
-    const stores: RemoteDataStores<string, string> = useRemoteDatas(freshData, {
+    const stores: RemoteDataMap<string, string> = useRemoteDataMap(freshData, {
         invalidation: InvalidationStrategy.refetchAfterMillis(1000),
     });
 
