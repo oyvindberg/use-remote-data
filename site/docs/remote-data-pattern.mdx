@@ -28,8 +28,7 @@ Most libraries throw your data away when they re-fetch. You had a dashboard full
 | `invalidated-initial`   | Marked stale, re-fetch hasn't started | Yes            |
 | `invalidated-pending`   | Re-fetch is in progress              | Yes            |
 
-Inside `<Await>`, you don't need to think about these states individually.
-The second argument — `isInvalidated` — tells you everything:
+**You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean — `isInvalidated` — which tells you everything:
 
 ```tsx
 <Await store={store}>
@@ -46,8 +45,8 @@ Data stays on screen. Users see something useful instead of a spinner. One boole
 ## Exhaustive matching
 
 Most of the time you'll use `<Await>` and never touch these states directly.
-But when you need custom control flow — logging, analytics, conditional rendering — the
-full discriminated union is there, and TypeScript enforces exhaustive handling:
+But when you need custom control flow — logging, analytics, conditional rendering — you
+can switch on the `type` field, and TypeScript will enforce that you handle every case:
 
 ```ts
 function describe<T>(rd: RemoteData<T>): string {
@@ -83,9 +82,9 @@ const label = match(store.current)
 ## Prior art
 
 The `RemoteData` pattern originates in [Elm](https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/)
-and has been adopted across typed functional languages.
-The core idea — model async state as a sum type instead of a bag of booleans — is the same
+and has been adopted across many typed languages.
+The core idea — represent async state as a union type with a `type` tag, instead of a bag of booleans — is the same
 principle behind [zod](https://zod.dev/) (parse, don't validate),
 [neverthrow](https://github.com/supermacro/neverthrow) (errors as values),
 and [ts-pattern](https://github.com/gvergnaud/ts-pattern) (exhaustive matching).
-If you already think in discriminated unions, `RemoteData` is the natural way to model async data.
+If you like TypeScript's tagged unions (sometimes called "discriminated unions"), `RemoteData` is the natural way to model async data.

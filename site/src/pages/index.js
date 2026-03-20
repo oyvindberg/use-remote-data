@@ -197,7 +197,7 @@ const quickHits = [
     { title: 'Background refresh', text: 'Stale data stays visible while fresh data loads.' },
     { title: 'Lazy by default', text: 'Stores only fetch when rendered.' },
     { title: 'Mutations', text: 'First-class writes with useRemoteUpdate.' },
-    { title: 'Discriminated unions', text: 'Same principle as zod, ts-pattern, and neverthrow. Illegal states are unrepresentable.' },
+    { title: 'One state at a time', text: 'Your store is loading, failed, or has data — never an impossible combination. TypeScript enforces it.' },
 ];
 
 function Section({ title, text, code, alt, reverse }) {
@@ -226,10 +226,11 @@ export default function Home() {
             <header className={styles.hero}>
                 <div className={styles.heroInner}>
                     <h1 className={styles.heroHeadline}>
-                        Your data is <code>T</code>, not <code>T&nbsp;|&nbsp;undefined</code>.
+                        Fetch data in React without the boilerplate.
                     </h1>
                     <p className={styles.heroSubtitle}>
-                        A React hook for async data. Loading, error, success — always one state, always type-safe.
+                        One hook. One component. Your data is <code>T</code>, not <code>T&nbsp;|&nbsp;undefined</code>.<br />
+                        Loading, error, success — always one state, always type-safe.
                     </p>
                     <div className={styles.heroCta}>
                         <Link className={styles.ctaButton} to="/docs/getting-started">

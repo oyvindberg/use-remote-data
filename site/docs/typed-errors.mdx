@@ -20,12 +20,19 @@ This gives you `RemoteDataStore<T, E>`, where `E` is your custom error type.
 
 ## How it works
 
-Instead of returning a plain value, your fetch function returns an `Either`:
-- `Either.right(value)` — success
-- `Either.left(error)` — domain-level failure
+Instead of returning a plain value, your fetch function returns an `Either` — a simple tagged object
+that represents one of two outcomes:
 
-When the store is in the `Failed` state, its `errors` array contains `Either<WeakError, E>` items.
-`WeakError` (left) represents unexpected crashes. `E` (right) represents your typed domain errors.
+- `Either.right(value)` — the happy path (success)
+- `Either.left(error)` — a domain-level failure (e.g. "not found", "deleted")
+
+Think of it like returning `{ tag: 'right', value: person }` or `{ tag: 'left', value: notFoundError }`.
+The `Either.right()` and `Either.left()` helpers just create these objects for you.
+
+When the store is in the `Failed` state, its `errors` array contains `Either<WeakError, E>` items:
+- **Left** (`WeakError`) — unexpected errors like network failures or thrown exceptions. `WeakError` is just `Error | unknown`, because JavaScript lets you `throw` anything.
+- **Right** (`E`) — your typed domain errors.
+
 This lets your error component render each case differently.
 
 ## Custom error component

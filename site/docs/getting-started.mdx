@@ -35,14 +35,14 @@ and you rely on convention — not types — to check before accessing it.
 it gives you a single state that is _always_ one of: not yet loaded, loading, failed (with retry), or success.
 You literally cannot access the data without first proving it exists.
 
-This isn't just ergonomics. A forgotten null check is a bug that compiles. In domains where runtime errors are
-expensive — fintech, healthcare, critical infrastructure — the difference between `T | undefined` and `T`
+This isn't just ergonomics. A forgotten null check is a bug that compiles. The difference between `T | undefined` and `T`
 is the difference between a bug you ship and a bug the compiler catches.
 
+The idea is simple: your store is always in _one_ state — loading, failed, or success — and TypeScript
+won't let you access the data unless you're in the success state.
 If you use [zod](https://zod.dev/) for validation, [ts-pattern](https://github.com/gvergnaud/ts-pattern)
-for exhaustive matching, or [neverthrow](https://github.com/supermacro/neverthrow) for typed errors,
-you already think this way: make illegal states unrepresentable.
-`use-remote-data` applies the same principle to async data.
+for pattern matching, or [neverthrow](https://github.com/supermacro/neverthrow) for typed errors,
+you already think this way. `use-remote-data` applies the same principle to async data.
 
 ---
 
@@ -64,6 +64,25 @@ The primary entry point is the **`useRemoteData`** hook.
 Give it a function that returns a `Promise`, and you get back a store:
 
 <Snippet snippet="basic_usage" />
+
+With a real API call, it looks like this:
+
+```tsx
+import { useRemoteData, Await } from 'use-remote-data';
+
+function UserProfile({ id }: { id: string }) {
+  const store = useRemoteData(
+    () => fetch(`/api/users/${id}`).then(r => r.json()),
+    { dependencies: [id] }
+  );
+
+  return (
+    <Await store={store}>
+      {(user) => <h1>{user.name}</h1>}
+    </Await>
+  );
+}
+```
 
 That's it. The store handles fetching, caching, error states, and retries.
 

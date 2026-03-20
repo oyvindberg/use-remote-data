@@ -52,7 +52,7 @@ Testing every state is straightforward:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
-import { RemoteData, RemoteDataStore } from 'use-remote-data';
+import { RemoteData, RemoteDataStore, Either } from 'use-remote-data';
 
 test('renders the user when data is available', () => {
   const store = RemoteDataStore.always(
@@ -70,6 +70,8 @@ test('renders a spinner while loading', () => {
 
 test('renders an error with retry', () => {
   const retry = vi.fn().mockResolvedValue(undefined);
+  // Either.left() wraps an unexpected error (like a network failure).
+  // The errors array is one element for a single store.
   const store = RemoteDataStore.always(
     RemoteData.Failed([Either.left(new Error('Network error'))], retry)
   );
@@ -104,6 +106,7 @@ test('dashboard shows error when one request fails', () => {
   const userStore = RemoteDataStore.always(
     RemoteData.success({ name: 'Alice' })
   );
+  // Either.left() wraps an unexpected error — see "Failures and Retries" for details
   const postsStore = RemoteDataStore.always(
     RemoteData.Failed([Either.left(new Error('timeout'))], async () => {})
   );
