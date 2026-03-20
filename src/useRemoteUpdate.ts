@@ -71,7 +71,7 @@ export const useRemoteUpdateEither = <T, P = void, E = never>(
                         }
                         case 'right': {
                             const value = either.value;
-                            setState(RemoteData.Yes(value, new Date()));
+                            setState(RemoteData.Success(value, new Date()));
                             opts?.invalidates?.forEach((s) => s.invalidate());
                             opts?.onSuccess?.(value);
                             break;

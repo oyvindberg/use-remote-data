@@ -25,11 +25,11 @@ Pass the `initial` option to start it with data you already have:
 
 ```tsx
 const store = useRemoteData(() => fetchProjects(), {
-    initial: RemoteData.yes(serverData),
+    initial: RemoteData.success(serverData),
 });
 ```
 
-`<Await>` sees `Yes` on the very first render. No loading spinner. No hydration mismatch.
+`<Await>` sees `Success` on the very first render. No loading spinner. No hydration mismatch.
 After hydration, the store works as usual — invalidation, re-fetching, mutations, retries all kick in.
 
 ## Next.js App Router example
@@ -57,7 +57,7 @@ export function ProjectList({ serverData }: { serverData: Project[] }) {
     const store = useRemoteData(
         () => fetch('/api/projects').then((r) => r.json()),
         {
-            initial: RemoteData.yes(serverData),
+            initial: RemoteData.success(serverData),
             invalidation: InvalidationStrategy.refetchAfterMillis(30_000),
         },
     );
@@ -77,8 +77,8 @@ export function ProjectList({ serverData }: { serverData: Project[] }) {
 ### What happens
 
 1. **Server** — `page.tsx` awaits the query, renders `<ProjectList serverData={[...]}>`
-2. **SSR** — `useState` initializes in `Yes`. `<Await>` renders the list. `useEffect` is skipped (never runs during SSR). The HTML already contains the project list.
-3. **Hydration** — `useEffect(store.triggerUpdate)` fires. Store is `Yes`, so invalidation schedules a background re-fetch in 30 seconds.
+2. **SSR** — `useState` initializes in `Success`. `<Await>` renders the list. `useEffect` is skipped (never runs during SSR). The HTML already contains the project list.
+3. **Hydration** — `useEffect(store.triggerUpdate)` fires. Store is `Success`, so invalidation schedules a background re-fetch in 30 seconds.
 4. **After 30s** — store invalidates, re-fetches in the background, `isRefreshing` goes `true`, new data arrives.
 
 ## Why no `<HydrationBoundary>`?

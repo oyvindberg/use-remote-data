@@ -17,7 +17,7 @@ import { RemoteData, RemoteDataStore } from 'use-remote-data';
 
 // A store that has data
 const loaded = RemoteDataStore.always(
-  RemoteData.yes({ name: 'Alice', email: 'alice@example.com' })
+  RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
 );
 
 // A store that's loading
@@ -56,7 +56,7 @@ import { RemoteData, RemoteDataStore } from 'use-remote-data';
 
 test('renders the user when data is available', () => {
   const store = RemoteDataStore.always(
-    RemoteData.yes({ name: 'Alice', email: 'alice@example.com' })
+    RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
   );
   render(<UserCard store={store} />);
   expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -87,10 +87,10 @@ No `act()` wrappers. No `waitFor()`. No timers. The store is already in the stat
 ```tsx
 test('dashboard renders when all data is loaded', () => {
   const userStore = RemoteDataStore.always(
-    RemoteData.yes({ name: 'Alice' })
+    RemoteData.success({ name: 'Alice' })
   );
   const postsStore = RemoteDataStore.always(
-    RemoteData.yes([{ title: 'Hello world' }])
+    RemoteData.success([{ title: 'Hello world' }])
   );
 
   const combined = RemoteDataStore.all(userStore, postsStore);
@@ -102,7 +102,7 @@ test('dashboard renders when all data is loaded', () => {
 
 test('dashboard shows error when one request fails', () => {
   const userStore = RemoteDataStore.always(
-    RemoteData.yes({ name: 'Alice' })
+    RemoteData.success({ name: 'Alice' })
   );
   const postsStore = RemoteDataStore.always(
     RemoteData.Failed([Either.left(new Error('timeout'))], async () => {})
@@ -125,7 +125,7 @@ You can test how your component looks when data is stale:
 test('shows dimmed text during background refresh', () => {
   const staleStore = RemoteDataStore.always(
     RemoteData.InvalidatedPending(
-      RemoteData.Yes({ name: 'Alice' }, new Date())
+      RemoteData.Success({ name: 'Alice' }, new Date())
     )
   );
   render(<UserCard store={staleStore} />);
@@ -145,7 +145,7 @@ import { RemoteData, RemoteDataStore, Either } from 'use-remote-data';
 
 export const Loaded = () => (
   <UserCard store={RemoteDataStore.always(
-    RemoteData.yes({ name: 'Alice', email: 'alice@example.com' })
+    RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
   )} />
 );
 
@@ -165,7 +165,7 @@ export const Failed = () => (
 export const Refreshing = () => (
   <UserCard store={RemoteDataStore.always(
     RemoteData.InvalidatedPending(
-      RemoteData.Yes({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
+      RemoteData.Success({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
     )
   )} />
 );

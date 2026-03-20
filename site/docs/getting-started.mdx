@@ -32,7 +32,7 @@ Libraries like `react-query` improve on this, but the core shape is the same: `d
 and you rely on convention — not types — to check before accessing it.
 
 **`use-remote-data` takes a different approach.** Instead of giving you optional data and boolean flags,
-it gives you a single state that is _always_ one of: not yet loaded, loading, failed (with retry), or succeeded.
+it gives you a single state that is _always_ one of: not yet loaded, loading, failed (with retry), or success.
 You literally cannot access the data without first proving it exists.
 
 This isn't just ergonomics. A forgotten null check is a bug that compiles. In domains where runtime errors are

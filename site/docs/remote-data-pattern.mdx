@@ -10,10 +10,10 @@ type RemoteData<T> =
     | { type: 'initial' }                // haven't started yet
     | { type: 'pending' }                // request in flight
     | { type: 'failed'; errors; retry }  // failed — with errors and a retry function
-    | { type: 'yes'; value: T };         // succeeded — here's your data
+    | { type: 'success'; value: T };      // succeeded — here's your data
 ```
 
-When you're in the `'yes'` branch, `value` is `T`. Not `T | undefined`. Not `T | null`. Just `T`.
+When you're in the `'success'` branch, `value` is `T`. Not `T | undefined`. Not `T | null`. Just `T`.
 No narrowing gymnastics. TypeScript does it for you.
 
 ## Stale data is still data
@@ -55,7 +55,7 @@ function describe<T>(rd: RemoteData<T>): string {
     case 'initial':               return 'Not started';
     case 'pending':               return 'Loading...';
     case 'failed':                return `${rd.errors.length} error(s)`;
-    case 'yes':                   return `Got: ${rd.value}`;
+    case 'success':               return `Got: ${rd.value}`;
     case 'invalidated-immediate': return `Stale (just arrived): ${rd.invalidated.value}`;
     case 'invalidated-initial':   return `Stale (waiting): ${rd.invalidated.value}`;
     case 'invalidated-pending':   return `Refreshing: ${rd.invalidated.value}`;
@@ -73,7 +73,7 @@ const label = match(store.current)
   .with({ type: 'initial' }, () => 'Idle')
   .with({ type: 'pending' }, () => 'Loading...')
   .with({ type: 'failed' },  ({ errors }) => `${errors.length} error(s)`)
-  .with({ type: 'yes' },     ({ value }) => `Hello, ${value.name}`)
+  .with({ type: 'success' }, ({ value }) => `Hello, ${value.name}`)
   .with({ type: 'invalidated-immediate' }, ({ invalidated }) => `Stale: ${invalidated.value.name}`)
   .with({ type: 'invalidated-initial' },   ({ invalidated }) => `Stale: ${invalidated.value.name}`)
   .with({ type: 'invalidated-pending' },   ({ invalidated }) => `Refreshing: ${invalidated.value.name}`)

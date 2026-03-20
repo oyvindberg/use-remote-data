@@ -18,7 +18,7 @@ When your `Promise` rejects (or throws), the store transitions to:
 ```
 
 The `<Await>` component renders an error view automatically. The default one shows the error details and a **retry** button.
-When the user clicks retry, the store goes back to `Pending` and re-fires the request. If it succeeds this time, you get `Yes`. If it fails again, you're back to `Failed` with a fresh `retry`.
+When the user clicks retry, the store goes back to `Pending` and re-fires the request. If it succeeds this time, you get `Success`. If it fails again, you're back to `Failed` with a fresh `retry`.
 
 No `useState` for tracking error state. No `try/catch` boilerplate. No manual "retry" logic.
 
@@ -40,7 +40,7 @@ and _one_ of them fails:
 
 - The combined store moves to `Failed`.
 - The combined `retry` **only re-fetches the stores that failed**. The successful ones keep their data.
-- Once the failing store succeeds, the combined store moves to `Yes` with the full tuple.
+- Once the failing store succeeds, the combined store moves to `Success` with the full tuple.
 
 Try it — this example has a store that fails every 10th call, combined with a store that always succeeds.
 Hit retry a few times to see how only the broken request re-fires.

@@ -33,7 +33,7 @@ export function AwaitUpdate<T, P, E>({
             return idle ? <>{idle(store.run)}</> : null;
         case 'pending':
             return <>{renderLoading()}</>;
-        case 'yes':
+        case 'success':
             return <>{children(current.value, store.run, store.reset)}</>;
         case 'failed':
             return <>{renderError({ errors: current.errors, retry: current.retry, storeName: store.storeName })}</>;

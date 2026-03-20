@@ -91,12 +91,12 @@ export namespace RemoteDataStore {
             this.invalidate = this.#store.invalidate;
         }
 
-        get current(): RemoteData.Yes<T | null> {
+        get current(): RemoteData.Success<T | null> {
             const orNulled: [T, Date] | null = RemoteData.orNull(this.#store.current);
             if (orNulled === null) {
-                return RemoteData.Yes(null, RemoteData.Epoch);
+                return RemoteData.Success(null, RemoteData.Epoch);
             } else {
-                return RemoteData.Yes(...orNulled);
+                return RemoteData.Success(...orNulled);
             }
         }
 

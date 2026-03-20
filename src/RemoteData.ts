@@ -6,7 +6,7 @@ export type RemoteData<T, E = never> =
     | RemoteData.Initial
     | RemoteData.Pending
     | RemoteData.Failed<E>
-    | RemoteData.Yes<T>
+    | RemoteData.Success<T>
     | RemoteData.InvalidatedImmediate<T>
     | RemoteData.InvalidatedInitial<T>
     | RemoteData.InvalidatedPending<T>;
@@ -38,45 +38,45 @@ export namespace RemoteData {
         readonly retry: () => Promise<void>;
     }
 
-    export const Yes = <T>(value: T, updatedAt: Date): Yes<T> => ({ type: 'yes', value, updatedAt });
+    export const Success = <T>(value: T, updatedAt: Date): Success<T> => ({ type: 'success', value, updatedAt });
 
-    /** Convenience: creates a `Yes` with the current timestamp. */
-    export const yes = <T>(value: T): Yes<T> => Yes(value, new Date());
+    /** Convenience: creates a `Success` with the current timestamp. */
+    export const success = <T>(value: T): Success<T> => Success(value, new Date());
 
-    export interface Yes<T> {
-        readonly type: 'yes';
+    export interface Success<T> {
+        readonly type: 'success';
         readonly value: T;
         readonly updatedAt: Date;
     }
 
-    export const InvalidatedImmediate = <T>(invalidated: RemoteData.Yes<T>): InvalidatedImmediate<T> => ({
+    export const InvalidatedImmediate = <T>(invalidated: RemoteData.Success<T>): InvalidatedImmediate<T> => ({
         type: 'invalidated-immediate',
         invalidated,
     });
 
     export interface InvalidatedImmediate<T> {
         readonly type: 'invalidated-immediate';
-        readonly invalidated: RemoteData.Yes<T>;
+        readonly invalidated: RemoteData.Success<T>;
     }
 
-    export const InvalidatedInitial = <T>(invalidated: RemoteData.Yes<T>): InvalidatedInitial<T> => ({
+    export const InvalidatedInitial = <T>(invalidated: RemoteData.Success<T>): InvalidatedInitial<T> => ({
         type: 'invalidated-initial',
         invalidated,
     });
 
     export interface InvalidatedInitial<T> {
         readonly type: 'invalidated-initial';
-        readonly invalidated: RemoteData.Yes<T>;
+        readonly invalidated: RemoteData.Success<T>;
     }
 
-    export const InvalidatedPending = <T>(invalidated: RemoteData.Yes<T>): InvalidatedPending<T> => ({
+    export const InvalidatedPending = <T>(invalidated: RemoteData.Success<T>): InvalidatedPending<T> => ({
         type: 'invalidated-pending',
         invalidated,
     });
 
     export interface InvalidatedPending<T> {
         readonly type: 'invalidated-pending';
-        readonly invalidated: RemoteData.Yes<T>;
+        readonly invalidated: RemoteData.Success<T>;
     }
 
     export type ValuesFrom<Datas extends RemoteData<unknown, unknown>[]> = {
@@ -104,7 +104,7 @@ export namespace RemoteData {
 
         for (const remoteData of remoteDatas) {
             switch (remoteData.type) {
-                case 'yes':
+                case 'success':
                     if (remoteData.updatedAt > updatedAt) {
                         updatedAt = remoteData.updatedAt;
                     }
@@ -143,7 +143,7 @@ export namespace RemoteData {
             return foundInitial;
         }
 
-        const combined = RemoteData.Yes(ret as ValuesFrom<RemoteDatas>, updatedAt);
+        const combined = RemoteData.Success(ret as ValuesFrom<RemoteDatas>, updatedAt);
 
         if (isInvalidated) return RemoteData.InvalidatedPending(combined);
         else return combined;
@@ -171,7 +171,7 @@ export namespace RemoteData {
                 case 'pending':
                     return onEmpty();
 
-                case 'yes':
+                case 'success':
                     return onData(remoteData.value, false, remoteData.updatedAt);
 
                 case 'failed':
@@ -188,7 +188,7 @@ export namespace RemoteData {
         switch (remoteData.type) {
             case 'invalidated-initial':
                 return RemoteData.InvalidatedPending(remoteData.invalidated);
-            case 'yes':
+            case 'success':
                 return RemoteData.InvalidatedPending(remoteData);
             default:
                 return RemoteData.Pending;
@@ -197,7 +197,7 @@ export namespace RemoteData {
 
     export const initialStateFor = <T, E>(remoteData: RemoteData<T, E>): RemoteData<T, E> => {
         switch (remoteData.type) {
-            case 'yes':
+            case 'success':
                 return RemoteData.InvalidatedInitial(remoteData);
             default:
                 return RemoteData.Initial;
@@ -212,19 +212,19 @@ export namespace RemoteData {
                 return RemoteData.Pending;
             case 'failed':
                 return RemoteData.Failed(remoteData.errors, remoteData.retry);
-            case 'yes':
-                return RemoteData.Yes(f(remoteData.value), remoteData.updatedAt);
+            case 'success':
+                return RemoteData.Success(f(remoteData.value), remoteData.updatedAt);
             case 'invalidated-immediate': {
-                const yes = RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
-                return RemoteData.InvalidatedImmediate(yes);
+                const success = RemoteData.Success(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
+                return RemoteData.InvalidatedImmediate(success);
             }
             case 'invalidated-initial': {
-                const yes = RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
-                return RemoteData.InvalidatedInitial(yes);
+                const success = RemoteData.Success(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
+                return RemoteData.InvalidatedInitial(success);
             }
             case 'invalidated-pending': {
-                const yes = RemoteData.Yes(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
-                return RemoteData.InvalidatedPending(yes);
+                const success = RemoteData.Success(f(remoteData.invalidated.value), remoteData.invalidated.updatedAt);
+                return RemoteData.InvalidatedPending(success);
             }
         }
     };

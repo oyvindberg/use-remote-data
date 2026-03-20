@@ -109,7 +109,7 @@ export const useRemoteDataMapEither = <K, V, E>(
                         case 'right': {
                             const value: V = either.value;
                             const now = new Date();
-                            let res: RemoteData<V, E> = RemoteData.Yes(value, now);
+                            let res: RemoteData<V, E> = RemoteData.Success(value, now);
                             if (
                                 options.invalidation &&
                                 !IsInvalidated.isValid(options.invalidation.decide(res.value, res.updatedAt, now))
@@ -195,14 +195,14 @@ export const useRemoteDataMapEither = <K, V, E>(
         /** step four: invalidation logic (if enabled in `options.invalidation`) */
         if (
             isDefined(options.invalidation) &&
-            (remoteData.type === 'yes' || remoteData.type === 'invalidated-immediate')
+            (remoteData.type === 'success' || remoteData.type === 'invalidated-immediate')
         ) {
-            const yes = remoteData.type === 'yes' ? remoteData : remoteData.invalidated;
-            const isInvalidated = options.invalidation.decide(yes.value, yes.updatedAt, new Date());
+            const success = remoteData.type === 'success' ? remoteData : remoteData.invalidated;
+            const isInvalidated = options.invalidation.decide(success.value, success.updatedAt, new Date());
 
             switch (isInvalidated.type) {
                 case 'invalid':
-                    set(jsonKey, RemoteData.InvalidatedInitial(yes));
+                    set(jsonKey, RemoteData.InvalidatedInitial(success));
                     return;
                 case 'valid':
                     return;
@@ -212,7 +212,7 @@ export const useRemoteDataMapEither = <K, V, E>(
                     }
 
                     const handle = setTimeout(
-                        () => set(jsonKey, RemoteData.InvalidatedInitial(yes)),
+                        () => set(jsonKey, RemoteData.InvalidatedInitial(success)),
                         isInvalidated.millis
                     );
                     return () => {
