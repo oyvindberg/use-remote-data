@@ -1,0 +1,174 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Shared Stores
+
+By default, stores live with the component that creates them. This is the right default — no stale cache, no global state to manage, simple data lifetime.
+
+But sometimes **multiple unrelated components** need the same data. A navigation bar shows the current user. A settings panel shows the current user. A comment widget shows the current user. With `useRemoteData`, you'd lift the store to a shared parent and pass it down — which works, but can mean prop-drilling through many layers.
+
+**`useSharedRemoteData`** solves this with name-based deduplication. Two components that call `useSharedRemoteData("currentUser", fetchUser)` share the same store. One fetch, shared state, no prop-drilling.
+
+## Setup
+
+Wrap your app (or a subtree) in `<SharedStoreProvider>`:
+
+```tsx
+import { SharedStoreProvider } from 'use-remote-data';
+
+function App() {
+    return (
+        <SharedStoreProvider>
+            <Router />
+        </SharedStoreProvider>
+    );
+}
+```
+
+## Usage
+
+```tsx
+import { useSharedRemoteData, Await } from 'use-remote-data';
+
+function NavBar() {
+    const store = useSharedRemoteData('currentUser', (signal) =>
+        fetch('/api/me', { signal }).then((r) => r.json())
+    );
+    return (
+        <Await store={store}>
+            {(user) => <span>{user.name}</span>}
+        </Await>
+    );
+}
+
+function SettingsPanel() {
+    // Same name, same data. No second fetch.
+    const store = useSharedRemoteData('currentUser', (signal) =>
+        fetch('/api/me', { signal }).then((r) => r.json())
+    );
+    return (
+        <Await store={store}>
+            {(user) => <h1>Settings for {user.name}</h1>}
+        </Await>
+    );
+}
+```
+
+The first component to mount with a given name starts the fetch. Subsequent components with the same name immediately receive the current state — no duplicate request.
+
+### Try it
+
+<Snippet snippet="shared_stores" />
+
+## How deduplication works
+
+- The **name** is the cache key. Same name = same store, same data.
+- The **first registrant's fetcher wins**. If two components register `"currentUser"` with different fetcher functions, the first one is used and a dev-mode warning is logged.
+- When the **last subscriber unmounts**, the entry is cleaned up — in-flight requests aborted, refresh timers cancelled, state dropped.
+
+:::tip Define fetchers outside components
+Since the first registrant's fetcher wins, avoid defining fetchers inline (which creates a new reference each render). Instead, define them outside the component or wrap them in `useCallback`:
+
+```tsx
+// Good — stable reference
+const fetchUser = (signal: AbortSignal) =>
+    fetch('/api/me', { signal }).then((r) => r.json());
+
+function NavBar() {
+    const store = useSharedRemoteData('currentUser', fetchUser);
+    // ...
+}
+```
+:::
+
+## `gcTime` — grace period before cleanup
+
+By default, when the last subscriber unmounts, the entry is immediately deleted. This can cause unnecessary re-fetches during route transitions where a component unmounts and remounts quickly.
+
+The `gcTime` option keeps the entry alive for a grace period:
+
+```tsx
+const store = useSharedRemoteData('currentUser', fetchUser, {
+    gcTime: 5000, // keep for 5 seconds after last unmount
+});
+```
+
+If a new subscriber mounts within the grace period, it picks up the existing state without a re-fetch. If the grace period expires with no subscribers, the entry is cleaned up.
+
+This is analogous to react-query's `gcTime` (formerly `cacheTime`).
+
+## Refresh strategies
+
+Works identically to `useRemoteData`. Pass a `refresh` option:
+
+```tsx
+const store = useSharedRemoteData('prices', fetchPrices, {
+    refresh: RefreshStrategy.afterMillis(30_000),
+});
+```
+
+One timer per entry, not per subscriber. When the refresh fires, all subscribers see the new data.
+
+## `refresh()` — manual re-fetch
+
+Calling `store.refresh()` from any subscriber re-fetches for all of them:
+
+```tsx
+function RefreshButton() {
+    const store = useSharedRemoteData('posts', fetchPosts);
+    return <button onClick={() => store.refresh()}>Refresh</button>;
+}
+```
+
+## SSR with `initialData`
+
+Pass server-rendered data to the provider. Stores with matching names start in `Success` — no loading spinner, no hydration mismatch:
+
+```tsx
+// Server component fetches data
+const user = await db.users.findFirst();
+const posts = await db.posts.findMany();
+
+// Client wrapper
+<SharedStoreProvider initialData={{ currentUser: user, posts: posts }}>
+    <App />
+</SharedStoreProvider>
+```
+
+Components that call `useSharedRemoteData("currentUser", ...)` render immediately with the server data. If a `refresh` strategy is configured, it kicks in after hydration.
+
+## Full compatibility
+
+`useSharedRemoteData` returns a standard `RemoteDataStore<T>`. Everything works:
+
+```tsx
+// Combine with local stores
+const sharedUser = useSharedRemoteData('currentUser', fetchUser);
+const localPosts = useRemoteData(() => fetchPosts(id), { dependencies: [id] });
+const combined = RemoteDataStore.all(sharedUser, localPosts);
+
+// Map
+const userName = sharedUser.map((u) => u.name);
+
+// orNull
+const userOrNull = sharedUser.orNull;
+```
+
+## When to use `useRemoteData` vs `useSharedRemoteData`
+
+| | `useRemoteData` | `useSharedRemoteData` |
+|---|---|---|
+| Store lifetime | Component that called the hook | While any subscriber is mounted (+ `gcTime`) |
+| Deduplication | None — each call creates its own store | By name — same name = same store |
+| Requires provider | No | Yes (`<SharedStoreProvider>`) |
+| Prop-drilling needed | Yes, for sharing | No — same name = same store |
+| Best for | Data owned by one component tree | Data shared across unrelated components |
+
+**Start with `useRemoteData`.** It's simpler, has no provider, and the component-scoped lifetime prevents stale cache bugs. Reach for `useSharedRemoteData` when you find yourself prop-drilling the same store through 3+ levels, or when truly unrelated components need the same data.
+
+## Options
+
+| Option | Type | Description |
+|---|---|---|
+| `refresh` | `RefreshStrategy<T>` | Auto-refresh strategy (same as `useRemoteData`) |
+| `gcTime` | `number` | Milliseconds to keep the entry alive after the last subscriber unmounts |
+| `debug` | `Console['warn']` | Log state transitions and warnings |

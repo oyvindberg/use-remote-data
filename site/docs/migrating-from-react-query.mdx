@@ -1,0 +1,163 @@
+# Migrating from react-query
+
+This guide maps react-query concepts to `use-remote-data` equivalents. The migration can be incremental — both libraries can coexist in the same app while you move queries over one at a time.
+
+## The key difference
+
+react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isError`, `isFetching`). You check the flags before accessing data, but TypeScript can't enforce this — a forgotten check is a bug that compiles.
+
+`use-remote-data` gives you a `RemoteDataStore<T>` that is always in exactly one state. Inside `<Await>`, your data is `T` — not `T | undefined`. The type system enforces that you can't access data that doesn't exist.
+
+## Concept mapping
+
+| react-query | use-remote-data | Notes |
+|---|---|---|
+| `QueryClientProvider` | `SharedStoreProvider` | Only needed if you use `useSharedRemoteData` for global deduplication. `useRemoteData` needs no provider. |
+| `useQuery({ queryKey, queryFn })` | `useSharedRemoteData(name, queryFn)` | For global deduplication. Or `useRemoteData(queryFn)` for component-scoped data. |
+| `queryKey: ['users', id]` | `name: 'users'` + `dependencies: [id]` | Shared stores use a string name for deduplication. Dependency changes trigger re-fetch. |
+| `data: T \| undefined` | `<Await store={store}>{(data: T) => ...}</Await>` | Data is `T` inside `<Await>`, never `undefined`. |
+| `isLoading` | `store.current.type === 'pending'` | Or just use `<Await>` — it handles loading for you. |
+| `isFetching` / `isValidating` | `isStale` (second arg in `<Await>`) | `{(data, isStale) => ...}` — stale data stays visible during background refresh. |
+| `error` | `Failed` state with `retry` callback | Errors are data, not exceptions. `<Await>` renders them automatically. |
+| `refetch()` | `store.refresh()` | Manual re-fetch. |
+| `gcTime` / `cacheTime` | `gcTime` option on `useSharedRemoteData` | Grace period before cleanup after last subscriber unmounts. |
+| `staleTime` | `RefreshStrategy.afterMillis(ms)` | How long data stays fresh before a background re-fetch. |
+| `refetchInterval` | `RefreshStrategy.afterMillis(ms)` | Same mechanism — automatically re-fetches on schedule. |
+| `enabled: false` | Don't render the `<Await>` | Stores are lazy — they only fetch when rendered. |
+| `select: (data) => data.name` | `store.map((data) => data.name)` | Transform the success value. |
+| `placeholderData` | `initial: RemoteData.success(placeholder)` | Seed the store with placeholder data. |
+| `useMutation` | `useRemoteUpdate` | First-class mutations with `run()`, `reset()`, typed state machine. |
+| `invalidateQueries(['users'])` | `refreshes: [usersStore]` on `useRemoteUpdate` | Declare which stores refresh after a successful mutation. Or call `store.refresh()` manually. |
+| `useQueries([...])` | `RemoteDataStore.all(store1, store2)` | Combine into a typed tuple. Retry only re-fetches failed requests. |
+| `QueryClient` devtools | `debug: console.warn` | No devtools panel, but full state-transition logging. |
+
+## Step-by-step migration
+
+### 1. Add the provider
+
+If you're using deduplication (most react-query apps are), add `<SharedStoreProvider>` alongside your existing `<QueryClientProvider>`:
+
+```tsx
+import { SharedStoreProvider } from 'use-remote-data';
+
+function App() {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <SharedStoreProvider>
+                <Router />
+            </SharedStoreProvider>
+        </QueryClientProvider>
+    );
+}
+```
+
+### 2. Migrate one query at a time
+
+**Before (react-query):**
+
+```tsx
+import { useQuery } from '@tanstack/react-query';
+
+function UserProfile({ id }) {
+    const { data: user, isLoading, error } = useQuery({
+        queryKey: ['user', id],
+        queryFn: () => fetch(`/api/users/${id}`).then(r => r.json()),
+        staleTime: 30_000,
+    });
+
+    if (isLoading) return <Spinner />;
+    if (error) return <p>Error: {error.message}</p>;
+
+    return <h1>{user.name}</h1>;
+    // user is User | undefined — TypeScript doesn't know
+    // you checked isLoading and error first
+}
+```
+
+**After (use-remote-data with shared stores):**
+
+```tsx
+import { useSharedRemoteData, Await, RefreshStrategy } from 'use-remote-data';
+
+const fetchUser = (id: string) => (signal: AbortSignal) =>
+    fetch(`/api/users/${id}`, { signal }).then(r => r.json());
+
+function UserProfile({ id }) {
+    const store = useSharedRemoteData(`user-${id}`, fetchUser(id), {
+        refresh: RefreshStrategy.afterMillis(30_000),
+    });
+
+    return (
+        <Await store={store}
+            loading={() => <Spinner />}
+            error={({ retry }) => (
+                <div>
+                    <p>Something went wrong.</p>
+                    <button onClick={retry}>Retry</button>
+                </div>
+            )}
+        >
+            {(user) => <h1>{user.name}</h1>}
+            {/* user is User — always */}
+        </Await>
+    );
+}
+```
+
+### 3. Migrate mutations
+
+**Before:**
+
+```tsx
+const mutation = useMutation({
+    mutationFn: (data) => updateUser(id, data),
+    onSuccess: () => queryClient.invalidateQueries(['user', id]),
+});
+
+mutation.mutate({ name: 'Alice' });
+```
+
+**After:**
+
+```tsx
+const userStore = useSharedRemoteData(`user-${id}`, fetchUser(id));
+
+const saveStore = useRemoteUpdate(
+    (data: { name: string }) => updateUser(id, data),
+    { refreshes: [userStore] }
+);
+
+saveStore.run({ name: 'Alice' });
+```
+
+The `refreshes` array replaces `invalidateQueries`. After a successful mutation, each listed store re-fetches automatically.
+
+### 4. Remove the react-query provider
+
+Once all queries are migrated, remove `QueryClientProvider` and uninstall `@tanstack/react-query`.
+
+## What you gain
+
+- **Type safety**: Data is `T` inside `<Await>`, not `T | undefined`. A forgotten null check is a compile error, not a runtime bug.
+- **Zero dependencies**: No `@tanstack/query-core`. Just React.
+- **Simpler model**: No query client, no cache configuration, no dehydration/hydration for SSR. Stores are values.
+- **Testability**: `RemoteDataStore.always(RemoteData.success(data))` — no mock servers, no providers, no async coordination.
+- **Surgical retry**: When you combine stores and one fails, `retry()` only re-fetches the broken one.
+
+## What you give up
+
+- **Devtools**: react-query has a visual devtools panel. `use-remote-data` uses `debug: console.warn` for state-transition logging.
+- **Infinite queries**: No built-in infinite scroll support. You'd manage pagination with `useRemoteDataMap` or local state.
+- **Automatic deduplication by default**: `useRemoteData` is component-scoped by default. You opt into deduplication with `useSharedRemoteData`.
+- **Optimistic updates**: Not built-in. You can implement them by updating local state before the mutation completes.
+
+## Coexistence
+
+Both libraries can coexist. A common migration pattern:
+
+1. New features use `use-remote-data`
+2. Existing features stay on react-query
+3. When you touch a file for other reasons, migrate its queries
+4. Eventually remove react-query
+
+The two libraries don't share state, so a query in react-query and a shared store in `use-remote-data` with the same data will fetch independently. This is fine during migration — just don't have both active for the same data in the same component.

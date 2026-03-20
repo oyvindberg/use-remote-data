@@ -124,7 +124,7 @@ Both react-query and SWR fetch data well. The difference is what happens after.
 | Stale data during refetch            | Yes (`isFetching` / `isValidating`)      | Yes (`isStale` flag)                |
 | Retry on error                       | Automatic + manual `refetch()`           | `retry()` callback in Failed state        |
 | Combining requests                   | `useQueries` (typed arrays)              | `RemoteDataStore.all()` (typed tuples)    |
-| Global cache                         | Yes — deduplication across components    | None — data lives with the component      |
+| Global cache                         | Yes — deduplication across components    | Opt-in via [`SharedStoreProvider`](shared-stores) — local by default |
 | Runtime dependencies                 | One (`@tanstack/query-core` / `swr`)     | Zero                                      |
 | Providers / context                  | `QueryClientProvider` / `SWRConfig`      | None                                      |
 

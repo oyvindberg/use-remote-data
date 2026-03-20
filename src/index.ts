@@ -17,3 +17,5 @@ export { type WeakError } from './WeakError';
 export { useRemoteData, useRemoteDataResult, useRemoteData as default } from './useRemoteData';
 export { useRemoteDataMap, useRemoteDataMapResult } from './useRemoteDataMap';
 export { useRemoteUpdate, useRemoteUpdateResult } from './useRemoteUpdate';
+export { SharedStoreProvider, useSharedRemoteData } from './SharedStoreProvider';
+export { type SharedStoreOptions } from './SharedStoreOptions';

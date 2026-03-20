@@ -20,6 +20,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Combining stores', id: 'combining-stores' },
         { type: 'doc', label: 'Failures and Retries', id: 'failures-retries' },
         { type: 'doc', label: 'Sharing Data with Child Components', id: 'sharing-data-with-children' },
+        { type: 'doc', label: 'Shared Stores', id: 'shared-stores' },
         { type: 'doc', label: 'Mutations', id: 'mutations' },
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
@@ -28,6 +29,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Server-Side Rendering', id: 'ssr' },
         { type: 'doc', label: 'Testing', id: 'testing' },
         { type: 'doc', label: 'Debugging', id: 'debugging' },
+        { type: 'doc', label: 'Migrating from react-query', id: 'migrating-from-react-query' },
         {
             type: 'category',
             collapsible: false,
