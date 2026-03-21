@@ -3,7 +3,7 @@ import { RemoteData } from './RemoteData';
 import { isDefined } from './internal/isDefined';
 
 export interface RemoteDataStore<T, E = never> {
-    // should always call this when the data inside is meant to be rendered, typically from `Await`
+    // should of call this when the data inside is meant to be rendered, typically from `Await`
     readonly triggerUpdate: () => CancelTimeout;
     // you can call this explicitly to force a re-fetch
     readonly refresh: () => void;
@@ -153,7 +153,7 @@ export namespace RemoteDataStore {
         new Always(RemoteData.success(value), storeName);
 
     // get a completely static store. Perfect for storybook and so on
-    export const always = <T, E>(current: RemoteData<T, E>, storeName?: string): RemoteDataStore<T, E> =>
+    export const of = <T, E>(current: RemoteData<T, E>, storeName?: string): RemoteDataStore<T, E> =>
         new Always(current, storeName);
 
     class Always<T, E> implements RemoteDataStore<T, E> {

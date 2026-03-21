@@ -19,7 +19,7 @@ expect(screen.getByText('Alice')).toBeInTheDocument();
 
 // Storybook
 export const Loaded = () => <UserCard store={RemoteDataStore.fromValue(alice)} />;
-export const Loading = () => <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />;
+export const Loading = () => <UserCard store={RemoteDataStore.of(RemoteData.Pending)} />;
 
 // SSR
 const store = useRemoteData(() => fetchUser(id), { initial: RemoteData.success(serverData) });
@@ -178,13 +178,13 @@ test('renders the user', () => {
 });
 
 test('renders loading', () => {
-    render(<UserCard store={RemoteDataStore.always(RemoteData.Pending)} />);
+    render(<UserCard store={RemoteDataStore.of(RemoteData.Pending)} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
 });
 
 test('renders error with retry', () => {
     const retry = vi.fn().mockResolvedValue(undefined);
-    const store = RemoteDataStore.always(
+    const store = RemoteDataStore.of(
         RemoteData.Failed([Failure.unexpected(new Error('timeout'))], retry)
     );
     render(<UserCard store={store} />);
@@ -204,17 +204,17 @@ export const Loaded = () => (
 );
 
 export const Loading = () => (
-    <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />
+    <UserCard store={RemoteDataStore.of(RemoteData.Pending)} />
 );
 
 export const Error = () => (
-    <UserCard store={RemoteDataStore.always(
+    <UserCard store={RemoteDataStore.of(
         RemoteData.Failed([Failure.unexpected(new Error('Server returned 500'))], async () => {})
     )} />
 );
 
 export const Refreshing = () => (
-    <UserCard store={RemoteDataStore.always(
+    <UserCard store={RemoteDataStore.of(
         RemoteData.StalePending(RemoteData.Success({ name: 'Alice (stale)' }, new Date()))
     )} />
 );
