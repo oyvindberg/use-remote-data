@@ -1,60 +1,79 @@
 ---
 title: Values all the way down
 authors: [oyvind]
-tags: [react, typescript, functional-programming, architecture]
+tags: [react, typescript, architecture]
 ---
 
 # Values all the way down
 
-React had one good idea that changed everything: a component is a function from data to UI. You pass props in, you get elements out. The component doesn't reach into the void to find what it needs. You *give* it what it needs. That's the contract.
+Here's a claim that sounds too simple to be interesting: **if your component receives data as a prop, testing, SSR, and Storybook all become the same trivially easy operation.**
 
-Somewhere along the way, we forgot this.
+{/* truncate */}
 
-We started putting data in global caches, context providers, and singleton stores. We told ourselves it was pragmatic. Prop drilling is tedious, so we invented escape hatches. But each escape hatch quietly broke the thing that made components useful in the first place: **independence**.
+Not easier. Not "easier with the right setup." Trivially easy. Three lines. No mocks, no providers, no async coordination, no timing tricks:
 
-This post is about what happens when you take the original idea seriously. When data is a value. When dependencies are parameters. When a component is truly a function — not a function that secretly depends on twelve things you can't see.
+```tsx
+// Test
+const store = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
+render(<UserCard store={store} />);
+expect(screen.getByText('Alice')).toBeInTheDocument();
 
-## What is a value?
+// Storybook
+export const Loaded = () => <UserCard store={RemoteDataStore.always(RemoteData.success(alice))} />;
+export const Loading = () => <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />;
 
-A value is a thing you can hold, pass around, and inspect without side effects. The number `42` is a value. The string `"Alice"` is a value. The object `{ name: "Alice", email: "alice@example.com" }` is a value.
+// SSR
+const store = useRemoteData(() => fetchUser(id), { initial: RemoteData.success(serverData) });
+// Renders on the server with real data. No hydration boundary. No dehydration.
+```
 
-A value doesn't depend on when you look at it. It doesn't change because you looked at it from a different component. It doesn't require a provider wrapping your component tree to exist. You can create it, pass it, and use it — and nothing else in your system needs to know.
+These aren't three separate features. They're the same thing: **a component that receives a value doesn't care where the value came from.** A test manufactures it. Storybook manufactures it. A server manufactures it. The component renders identically in all three cases because its only dependency is its props.
 
-Functional programming figured this out decades ago. The entire discipline is built on one bet: **if you make everything a value, composition becomes trivial.** Functions take values and return values. You can combine them freely because there are no hidden channels, no shared mutable state, no "you need to set up X before calling Y."
+That's the whole insight. The rest of this post is about what makes it hard to get there, and what changes when you do.
 
-React made this bet too, in the beginning. A component takes props (values) and returns JSX (a value). That's it. That's the model. Everything that's good about React flows from this.
+## What we're actually talking about
 
-## The global cache trap
+When I say "value," I don't mean something pure or immutable in the strict functional programming sense. A `RemoteDataStore` from `useRemoteData` is, honestly, a mutable stateful object internally — it has abort controllers, request versioning, refresh timers. It changes over time.
 
-Most data-fetching libraries put your data in a global cache. You call a hook, and somewhere behind the scenes, a `QueryClient` or equivalent holds the actual state. Your component doesn't receive the data — it *asks* for the data, and a background system decides what to give it.
+But from the *consumer's* perspective, it has a value-like interface. You receive it as a prop. You pass it to `<Await>`. You can combine it with other stores via `RemoteDataStore.all()`. You can transform it with `.map()`. And critically, you can manufacture a fake one with `RemoteDataStore.always()` that the consuming component *cannot distinguish* from a real one.
 
-This seems convenient. Two components need the same user data? They call the same hook with the same key, and the cache deduplicates. No prop drilling. No coordination.
+That's what matters. Not purity in the academic sense — **substitutability** in the practical sense. Can I give my component a store without setting up the universe? If yes, the component is independent. If no, it's a fragment of a larger system pretending to be independent.
 
-But think about what just happened. Your component now has an invisible dependency on a global system. It can't work without a `QueryClientProvider` wrapping it. It can't be tested without setting up that provider and populating the cache. It can't be rendered in Storybook without mocking the cache layer. It can't be used in a different app without bringing the entire cache infrastructure with it.
+## The infrastructure tax
 
-Your component looks like an independent unit. It has props, it renders UI. But it isn't independent at all. It's a shitty extraction from a big complex system. It only works when the rest of the system is present.
+Most data-fetching libraries create an invisible dependency between your component and a global system. Your component calls `useQuery`, which talks to a `QueryClient`, which lives in a React context provider that must wrap your component tree.
 
-That's not a component. That's a fragment.
+This works fine in production. The provider is there, the cache is configured, everything connects. The cost shows up everywhere *else*:
 
-## Props are the interface
+**Testing:** You need a `QueryClientProvider`, a `QueryClient` instance, probably `msw` or `nock` to intercept HTTP requests, `waitFor` to handle the async state transition, and `act()` to flush updates. A 3-line test becomes a 30-line test. Not because the component is complex, but because the *infrastructure* is complex.
 
-Prop drilling gets a bad reputation. "It's tedious," people say. "You're just passing the same thing through five layers." And they reach for context, or a global store, or a hook that reads from the void.
+**Storybook:** You need the same provider setup, plus either a mock server running or interceptors configured, plus timing hacks to capture the loading state before data arrives. Many teams give up and only write stories for the "loaded" state.
 
-But think about what props actually are: they're the *interface* of the component. They're the explicit declaration of what this component needs to work. When you read a component's props, you know everything about its dependencies. There are no surprises. There's nothing hiding behind a hook that silently couples you to a global system.
+**SSR:** You need to serialize the query client's cache on the server, ship it in the HTML, and restore it on the client inside a `<HydrationBoundary>`. This is conceptual overhead that exists because the cache is global state that must survive the server/client transition.
 
-A component that takes `{ user: User, onSave: (data: FormData) => void }` is telling you exactly what it needs. You can satisfy those props from anywhere — a parent component, a test, a Storybook story, a completely different application. The component doesn't care. It's a function from data to UI, and the data comes from whoever calls it.
+None of this infrastructure exists because *your component* is complex. It exists because your component has a hidden dependency on a global system, and recreating that global system in each context (test, story, server) takes work.
 
-A component that calls `useQuery({ queryKey: ['user', id] })` internally is telling you nothing. Its props might be `{ id: string }`, which looks simple, but it secretly depends on a query client, a cache configuration, a network layer, and whatever state the cache happens to be in when the component renders. You can't give it a user directly. You can't skip the fetch. You can't test it without infrastructure.
+Remove the hidden dependency — make the store a prop — and the infrastructure vanishes. Not because you've done something clever, but because there was never an inherent reason for it to exist.
 
-**Explicit dependencies are a feature, not a cost.** They make components composable, testable, and portable. The "tedium" of prop drilling is the sound of dependencies being made visible — and visible dependencies are dependencies you can reason about.
+## The prop drilling question
 
-When prop drilling gets genuinely painful (more than three or four levels), that's a signal — not that you need context, but that your component tree might need restructuring. Maybe the data should be fetched higher up. Maybe a component is doing too much. The tedium is useful information about your architecture. Hiding it with context doesn't fix the architecture. It hides the problem.
+The obvious objection: "If stores are props, doesn't that mean prop drilling? And isn't prop drilling bad?"
 
-## The revolution of stores as values
+Let's be honest about this. Prop drilling has a real cost. When you pass a store through five layers of components that don't use it, you're polluting their interfaces. A `<PageLayout>` component shouldn't need a `userStore` prop just because a deeply nested `<UserBadge>` needs it. That's not "making dependencies explicit" — that's making intermediate components aware of things they have no business knowing about.
 
-What if your loading state, your error state, and your data were all just... a value? Not a value inside a global cache. Not a value you access through a hook that talks to a provider. Just a value. Something you can hold, pass, and inspect.
+So no, prop drilling is not always good. **But it's good more often than we think**, and when it's bad, it tells you something useful.
 
-That's what `RemoteDataStore` is:
+For one to three levels, prop drilling is just... passing data. It's normal. It's readable. A parent fetches data and gives it to its children. That's React working as designed.
+
+When it gets painful — when you're threading props through five or six layers — that's architectural feedback. It usually means one of two things: either the data should be fetched higher up (closer to where it's consumed by multiple branches), or there's a component doing too much that should be split. Reaching for context at the first sign of drilling hides this feedback. The architecture stays messy, but now it's invisibly messy.
+
+For the cases where prop drilling genuinely doesn't work — where truly unrelated parts of the tree need the same data — there's a real answer that isn't "put everything in a global cache." [`use-remote-data` has an opt-in `SharedStoreProvider`](/docs/shared-stores) that deduplicates by name, with a `gcTime` grace period and automatic cleanup. It's the same interface (`RemoteDataStore<T>`), so `<Await>`, `.map()`, `RemoteDataStore.all()`, testing, and SSR all work identically. You opt into shared state where you need it, not everywhere by default.
+
+The important thing is the *default*. When data is a prop by default and shared state is opt-in, most of your components end up independent, testable, and portable — without thinking about it.
+
+## One interface, every context
+
+Here's the `UserCard` component:
 
 ```tsx
 function UserCard({ store }: { store: RemoteDataStore<User> }) {
@@ -71,17 +90,19 @@ function UserCard({ store }: { store: RemoteDataStore<User> }) {
 }
 ```
 
-This component takes a store as a prop. It doesn't know where the store came from. It doesn't care. The store might have been created by `useRemoteData` in a parent component. It might have been created by `RemoteDataStore.always(RemoteData.success(testUser))` in a test. It might have been pre-filled with server-rendered data. It might be one of three stores combined with `RemoteDataStore.all()`.
+This component cannot tell the difference between:
 
-**The component doesn't know, and it doesn't need to know.** It's a function from a value to UI.
+- A store created by `useRemoteData` that fetched from an API
+- A store created by `RemoteDataStore.always()` in a test
+- A store pre-filled with server data via the `initial` option
+- A store shared across components via `SharedStoreProvider`
+- A store combined from three other stores with `RemoteDataStore.all()`
 
-This is not a feature. It's a consequence of the design. When data is a value and dependencies are parameters, everything else follows.
+In every case, the component receives a `RemoteDataStore<User>` and renders it. That's the contract. Everything outside that contract — how the data was fetched, whether it's cached, whether it's shared, whether it's server-rendered — is someone else's decision.
 
-## What follows
+This is what makes the testing/Storybook/SSR story work. It's not a feature of the library. It's a consequence of the interface. When a component's only dependency is a value in its props, you can satisfy that dependency from anywhere.
 
-### Testing becomes trivial
-
-When stores are values, testing is just calling a function with the arguments you choose.
+### Testing
 
 ```tsx
 test('renders the user', () => {
@@ -93,27 +114,31 @@ test('renders the user', () => {
 });
 
 test('renders loading', () => {
-    const store = RemoteDataStore.always(RemoteData.Pending);
-    render(<UserCard store={store} />);
+    render(<UserCard store={RemoteDataStore.always(RemoteData.Pending)} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
+});
+
+test('renders error with retry', () => {
+    const retry = vi.fn().mockResolvedValue(undefined);
+    const store = RemoteDataStore.always(
+        RemoteData.Failed([Failure.unexpected(new Error('timeout'))], retry)
+    );
+    render(<UserCard store={store} />);
+    expect(screen.getByText(/timeout/)).toBeInTheDocument();
 });
 ```
 
-No mock server. No provider. No `waitFor`. No `act()`. No async coordination. The store is already in the state you want, so the component renders synchronously. The test is three lines because the component has no hidden dependencies.
+No `waitFor`. No `act()`. No mock server. The store is already in the state you want, so the component renders synchronously. Three states, three tests, nine lines of assertions.
 
-Compare this to testing a component that calls `useQuery` internally. You need a `QueryClientProvider`, a `QueryClient`, probably `msw` or `nock` to intercept the HTTP request, `waitFor` to handle the async state transition, and `act()` to flush updates. All that infrastructure exists because the component has a hidden dependency on a global system. Remove the hidden dependency, and the infrastructure disappears.
+To be fair: you could achieve similar test simplicity with react-query by splitting your component into a "container" that calls `useQuery` and a "presentational" component that receives `data: T` as a prop. That's a valid pattern. The difference is that `RemoteDataStore<T>` carries *all* the states — loading, error, success, stale — as a single prop. You don't need to split your component to test the loading state. You don't need a separate wrapper to test the error state. The store is the complete async lifecycle in one value.
 
-### Storybook becomes trivial
-
-Each story is a different state:
+### Storybook
 
 ```tsx
 export const Loaded = () => (
-    <UserCard
-        store={RemoteDataStore.always(
-            RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
-        )}
-    />
+    <UserCard store={RemoteDataStore.always(
+        RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
+    )} />
 );
 
 export const Loading = () => (
@@ -121,80 +146,75 @@ export const Loading = () => (
 );
 
 export const Error = () => (
-    <UserCard
-        store={RemoteDataStore.always(
-            RemoteData.Failed(
-                [Failure.unexpected(new Error('Network timeout'))],
-                async () => {}
-            )
-        )}
-    />
+    <UserCard store={RemoteDataStore.always(
+        RemoteData.Failed([Failure.unexpected(new Error('Server returned 500'))], async () => {})
+    )} />
+);
+
+export const Refreshing = () => (
+    <UserCard store={RemoteDataStore.always(
+        RemoteData.StalePending(RemoteData.Success({ name: 'Alice (stale)' }, new Date()))
+    )} />
 );
 ```
 
-No mock server. No interceptors. No delay hacks to catch the loading frame before data arrives. Just the state you want, rendered immediately. You can see your loading state, your error state, and your data state side by side. No timing tricks.
+Four stories. Four states. No mock server. No interceptors. No delay hacks to catch the loading state before data arrives. The stale-data-during-refresh state, which is almost impossible to capture in a Storybook story with most libraries, is just another constructor call.
 
-### SSR becomes trivial
-
-SSR is just: someone filled the store before you got there.
+### SSR
 
 ```tsx
 const store = useRemoteData(() => fetchUser(id), {
     initial: RemoteData.success(serverData),
+    refresh: RefreshStrategy.afterMillis(30_000),
 });
 ```
 
-`<Await>` sees `Success` on the very first render. No loading spinner. No hydration mismatch. No `<HydrationBoundary>`. No dehydration functions. No serialization config. SSR in other libraries is complex because they need to serialize a global cache, ship it to the client, and restore it. When stores are values passed as props, there's nothing to serialize. You just pass the data.
+`<Await>` sees `Success` on the very first render. The HTML includes the real data. After hydration, the refresh strategy kicks in. No `<HydrationBoundary>`. No dehydration step. No serialization config. SSR with other libraries is complex because they serialize a global cache across the server/client boundary. When stores are props initialized with data, there's nothing to serialize.
 
-### Composition becomes trivial
+## The complexity budget argument
 
-Combine multiple stores into one. The combined store is also just a value:
+Global caches work. react-query is a good library. Teams ship production apps with it every day without cache key collisions or stale data bugs.
+
+But a global cache is still one more thing in your complexity budget. It's a `QueryClient` to configure. A provider to wrap your tree in. Cache keys to name consistently. Stale times to tune. Invalidation logic to get right. Devtools to learn. Hydration boundaries for SSR.
+
+Each of these is individually manageable. Together, they're a system — and systems have a cognitive cost even when they work correctly. Every new team member needs to understand the cache semantics. Every debugging session needs to account for what the cache might be doing.
+
+The question isn't "does a global cache work?" It's "do you need one?" For most components, the answer is no. Data is fetched by a parent, consumed by children, and garbage-collected on unmount. Component-scoped stores handle this with zero configuration. For the cases where you genuinely need cross-component deduplication, opt-in shared state handles it without imposing cache semantics on the 80% of components that don't need them.
+
+## Impossible states
+
+There's one more thing that falls out of modeling async data as a value, and it's arguably the most important: the type system can prevent entire categories of bugs.
+
+Most data-fetching hooks give you a bag of booleans and optional values:
 
 ```tsx
-const userStore = useRemoteData(() => fetchUser(id));
-const postsStore = useRemoteData(() => fetchPosts(id));
-const combined = RemoteDataStore.all(userStore, postsStore);
-
-return (
-    <Await store={combined}>
-        {([user, posts]) => <Dashboard user={user} posts={posts} />}
-    </Await>
-);
+const { data, isLoading, isError, error, isFetching } = useQuery(...)
 ```
 
-The tuple is typed. TypeScript knows the first element is `User` and the second is `Post[]`. If one fails, `retry()` only re-fetches the failed request — the successful ones keep their data. This works because stores are values that compose, not side effects that interleave.
+That's four independent fields. `data` is `T | undefined`. `isLoading` is a boolean. `isError` is a boolean. There are sixteen possible combinations of these flags, and only about four are meaningful. The other twelve are states your app should never be in — but TypeScript allows them.
 
-## The functional programming connection
+A tagged union has exactly the states you define:
 
-None of this is new. Functional programming has been saying the same thing for decades:
+```tsx
+type RemoteData<T> =
+    | { type: 'initial' }
+    | { type: 'pending' }
+    | { type: 'failed'; errors; retry }
+    | { type: 'success'; value: T }
+```
 
-- **Values over side effects.** A value is predictable. A side effect is a surprise. When your data is a value, you can reason about it locally. When your data is a side effect of a global cache lookup, you need to understand the entire system to predict what will happen.
+Four states. No more. TypeScript enforces exhaustive handling — if you switch on `type` and miss a case, it's a compile error. Inside the `success` branch, `value` is `T`, not `T | undefined`. You can't access data that doesn't exist, because the type system won't let you.
 
-- **Parameters over globals.** A function that takes all its inputs as parameters is composable, testable, and portable. A function that reads from a global is none of these things. This is literally what "referential transparency" means in practice.
-
-- **Make illegal states unrepresentable.** A tagged union with four variants (`initial`, `pending`, `failed`, `success`) has exactly four possible states. A bag of booleans (`isLoading`, `isError`) and optional values (`data?`, `error?`) has sixteen combinations, twelve of which are bugs. The type system should make bugs impossible, not merely unlikely.
-
-These ideas sound academic in the abstract. In practice, they mean: your tests are three lines instead of thirty. Your Storybook stories work without infrastructure. Your SSR has no special setup. Your components can move between projects because they don't depend on invisible infrastructure.
-
-## The real cost of "convenience"
-
-Every time you hide a dependency — behind context, behind a global cache, behind a hook that reaches into the void — you're trading something:
-
-- **Testability.** Hidden dependencies need mocking infrastructure. Explicit dependencies just need values.
-- **Portability.** A component with hidden dependencies only works in *your* app. A component with explicit props works anywhere.
-- **Comprehensibility.** Hidden dependencies mean you need to understand the whole system to understand one component. Explicit dependencies mean you can read the component in isolation.
-- **Correctness.** Hidden dependencies create implicit coupling that the type system can't see. Explicit dependencies create coupling that the type system can check.
-
-The "convenience" of not drilling props is paid back with interest every time you write a test, add a Storybook story, debug a production issue, or try to reuse a component in a different context.
+This isn't just about convenience. A forgotten null check on `T | undefined` is a bug that compiles and ships to production. A missing branch on a tagged union is a bug the compiler catches before you commit. The difference between "convention prevents this" and "the type system prevents this" is the difference between a bug you ship and a bug you don't.
 
 ## Where this leaves us
 
-React's original insight was right. A component is a function from data to UI. Props are the interface. Dependencies should be explicit.
+The principle is simple: **make data a prop, and every context becomes easy.** Testing is easy because you can manufacture the prop. Storybook is easy because you can manufacture the prop. SSR is easy because you can manufacture the prop. The component doesn't know and doesn't care.
 
-We drifted from that. We built elaborate systems to avoid threading data through the tree. And those systems created their own problems: cache bugs, testing complexity, hidden coupling, and components that look independent but aren't.
+This isn't a new idea. It's React's original idea — components are functions from data to UI — applied to async state. The tagged union makes the states honest. The store-as-prop interface makes the components independent. The rest follows.
 
-The way back is simple: make data a value. Pass it as a prop. Let the component declare what it needs. Stores, fetched data, callbacks, configuration — all of it should flow through props.
+I won't pretend this is free. You give up automatic deduplication by default (though it's available opt-in). You give up devtools (though `debug: console.warn` traces every state transition). You accept that data flows through the tree as props, which sometimes means passing a store through a layer or two that doesn't use it directly.
 
-This isn't a new idea. It's the original idea, taken seriously. And when you take it seriously, things that used to be hard — testing, SSR, Storybook, error handling, retry logic, composition — become almost embarrassingly easy.
+In exchange, you get components that are genuinely independent. That work in tests without infrastructure. That render in Storybook without timing hacks. That support SSR without hydration boundaries. That compose into typed tuples with surgical retry.
 
-Values compose. Side effects don't. That's the whole post.
+Values compose. That's the whole post.
