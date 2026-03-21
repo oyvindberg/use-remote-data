@@ -148,6 +148,10 @@ export namespace RemoteDataStore {
         }
     }
 
+    // create a store already in the success state. Perfect for testing and storybook
+    export const fromValue = <T>(value: T, storeName?: string): RemoteDataStore<T, never> =>
+        new Always(RemoteData.success(value), storeName);
+
     // get a completely static store. Perfect for storybook and so on
     export const always = <T, E>(current: RemoteData<T, E>, storeName?: string): RemoteDataStore<T, E> =>
         new Always(current, storeName);

@@ -14,12 +14,11 @@ Not easier. Not "easier with the right setup." Trivially easy. Three lines. No m
 
 ```tsx
 // Test
-const store = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
-render(<UserCard store={store} />);
+render(<UserCard store={RemoteDataStore.fromValue({ name: 'Alice' })} />);
 expect(screen.getByText('Alice')).toBeInTheDocument();
 
 // Storybook
-export const Loaded = () => <UserCard store={RemoteDataStore.always(RemoteData.success(alice))} />;
+export const Loaded = () => <UserCard store={RemoteDataStore.fromValue(alice)} />;
 export const Loading = () => <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />;
 
 // SSR
@@ -35,7 +34,7 @@ That's the whole insight. The rest of this post is about what makes it hard to g
 
 When I say "value," I don't mean something pure or immutable in the strict functional programming sense. A `RemoteDataStore` from `useRemoteData` is, honestly, a mutable stateful object internally — it has abort controllers, request versioning, refresh timers. It changes over time.
 
-But from the *consumer's* perspective, it has a value-like interface. You receive it as a prop. You pass it to `<Await>`. You can combine it with other stores via `RemoteDataStore.all()`. You can transform it with `.map()`. And critically, you can manufacture a fake one with `RemoteDataStore.always()` that the consuming component *cannot distinguish* from a real one.
+But from the *consumer's* perspective, it has a value-like interface. You receive it as a prop. You pass it to `<Await>`. You can combine it with other stores via `RemoteDataStore.all()`. You can transform it with `.map()`. And critically, you can manufacture a fake one with `RemoteDataStore.fromValue(data)` that the consuming component *cannot distinguish* from a real one.
 
 That's what matters. Not purity in the academic sense — **substitutability** in the practical sense. Can I give my component a store without setting up the universe? If yes, the component is independent. If no, it's a fragment of a larger system pretending to be independent.
 
@@ -93,7 +92,7 @@ function UserCard({ store }: { store: RemoteDataStore<User> }) {
 This component cannot tell the difference between:
 
 - A store created by `useRemoteData` that fetched from an API
-- A store created by `RemoteDataStore.always()` in a test
+- A store created by `RemoteDataStore.fromValue(testUser)` in a test
 - A store pre-filled with server data via the `initial` option
 - A store shared across components via `SharedStoreProvider`
 - A store combined from three other stores with `RemoteDataStore.all()`
@@ -106,10 +105,7 @@ This is what makes the testing/Storybook/SSR story work. It's not a feature of t
 
 ```tsx
 test('renders the user', () => {
-    const store = RemoteDataStore.always(
-        RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
-    );
-    render(<UserCard store={store} />);
+    render(<UserCard store={RemoteDataStore.fromValue({ name: 'Alice', email: 'alice@example.com' })} />);
     expect(screen.getByText('Alice')).toBeInTheDocument();
 });
 
@@ -136,9 +132,7 @@ To be fair: you could achieve similar test simplicity with react-query by splitt
 
 ```tsx
 export const Loaded = () => (
-    <UserCard store={RemoteDataStore.always(
-        RemoteData.success({ name: 'Alice', email: 'alice@example.com' })
-    )} />
+    <UserCard store={RemoteDataStore.fromValue({ name: 'Alice', email: 'alice@example.com' })} />
 );
 
 export const Loading = () => (
