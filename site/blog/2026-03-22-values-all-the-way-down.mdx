@@ -136,11 +136,7 @@ function Parent() {
 
 The parent provides the user context via a callback. `PostList` doesn't need to know about users — it just calls `onSelectPost` with the data it has. The wiring happens at the boundary.
 
-### When none of that works
-
-For truly unrelated parts of the tree — a navbar and a settings panel that both need the current user, with no shared ancestor that makes sense — [`use-remote-data` has an opt-in `SharedStoreProvider`](/docs/shared-stores) with name-based deduplication, `gcTime` grace period, and automatic cleanup. It returns the same `RemoteDataStore<T>`, so `<Await>`, `.map()`, `RemoteDataStore.all()`, testing, and SSR all work identically.
-
-The important thing is the *default*. When data is a prop by default and shared state is opt-in, most components end up independent, testable, and portable — without thinking about it. And when you do reach for shared state, you're making a conscious choice about which specific data to share, not opting your entire app into a global cache.
+Between element slots, named prop objects, and callbacks, most "prop drilling" problems dissolve. The data stays at the level that owns it. The components below stay independent.
 
 ## One interface, every context
 
