@@ -142,7 +142,7 @@ Once all queries are migrated, remove `QueryClientProvider` and uninstall `@tans
 - **Type safety**: Data is `T` inside `<Await>`, not `T | undefined`. A forgotten null check is a compile error, not a runtime bug.
 - **Zero dependencies**: No `@tanstack/query-core`. Just React.
 - **Simpler model**: No query client, no cache configuration, no dehydration/hydration for SSR. Stores are values.
-- **Testability**: `RemoteDataStore.always(RemoteData.success(data))` — no mock servers, no providers, no async coordination.
+- **Testability**: `RemoteDataStore.of(RemoteData.success(data))` — no mock servers, no providers, no async coordination.
 - **Surgical retry**: When you combine stores and one fails, `retry()` only re-fetches the broken one.
 
 ## What you give up

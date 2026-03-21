@@ -26,6 +26,11 @@ module.exports = {
                     label: 'Docs',
                 },
                 {
+                    to: 'blog',
+                    position: 'left',
+                    label: 'Blog',
+                },
+                {
                     href: 'https://github.com/oyvindberg/use-remote-data',
                     label: 'GitHub',
                     position: 'right',

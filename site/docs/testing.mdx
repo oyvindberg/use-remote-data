@@ -8,21 +8,21 @@ Most data-fetching libraries require mocking to test. You mock the HTTP layer, o
 
 No mocking. No providers. No test utilities. Just data.
 
-## `RemoteDataStore.always()` — a store in any state
+## `RemoteDataStore.of()` — a store in any state
 
-The key function for testing is `RemoteDataStore.always()`. It creates a store that's permanently in whatever state you give it:
+The key function for testing is `RemoteDataStore.of()`. It creates a store that's permanently in whatever state you give it:
 
 ```tsx
 import { RemoteData, RemoteDataStore } from 'use-remote-data';
 
 // A store that has data
-const loaded = RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
+const loaded = RemoteDataStore.of(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
 
 // A store that's loading
-const loading = RemoteDataStore.always(RemoteData.Pending);
+const loading = RemoteDataStore.of(RemoteData.Pending);
 
 // A store that hasn't started
-const idle = RemoteDataStore.always(RemoteData.Initial);
+const idle = RemoteDataStore.of(RemoteData.Initial);
 ```
 
 That's it. These are real `RemoteDataStore` instances — your components can't tell the difference between these and a store created by `useRemoteData`. They render the same way, with the same types.
@@ -53,13 +53,13 @@ import { render, screen } from '@testing-library/react';
 import { Failure, RemoteData, RemoteDataStore } from 'use-remote-data';
 
 test('renders the user when data is available', () => {
-    const store = RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
+    const store = RemoteDataStore.of(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }));
     render(<UserCard store={store} />);
     expect(screen.getByText('Alice')).toBeInTheDocument();
 });
 
 test('renders a spinner while loading', () => {
-    const store = RemoteDataStore.always(RemoteData.Pending);
+    const store = RemoteDataStore.of(RemoteData.Pending);
     render(<UserCard store={store} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
 });
@@ -68,7 +68,7 @@ test('renders an error with retry', () => {
     const retry = vi.fn().mockResolvedValue(undefined);
     // Failure.unexpected() wraps a crash (like a network failure).
     // The errors array is one element for a single store.
-    const store = RemoteDataStore.always(RemoteData.Failed([Failure.unexpected(new Error('Network error'))], retry));
+    const store = RemoteDataStore.of(RemoteData.Failed([Failure.unexpected(new Error('Network error'))], retry));
     render(<UserCard store={store} />);
     expect(screen.getByText(/Network error/)).toBeInTheDocument();
 });
@@ -82,8 +82,8 @@ No `act()` wrappers. No `waitFor()`. No timers. The store is already in the stat
 
 ```tsx
 test('dashboard renders when all data is loaded', () => {
-    const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
-    const postsStore = RemoteDataStore.always(RemoteData.success([{ title: 'Hello world' }]));
+    const userStore = RemoteDataStore.of(RemoteData.success({ name: 'Alice' }));
+    const postsStore = RemoteDataStore.of(RemoteData.success([{ title: 'Hello world' }]));
 
     const combined = RemoteDataStore.all(userStore, postsStore);
     render(<Dashboard store={combined} />);
@@ -93,9 +93,9 @@ test('dashboard renders when all data is loaded', () => {
 });
 
 test('dashboard shows error when one request fails', () => {
-    const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
+    const userStore = RemoteDataStore.of(RemoteData.success({ name: 'Alice' }));
     // Failure.unexpected() wraps a crash — see "Failures and Retries" for details
-    const postsStore = RemoteDataStore.always(
+    const postsStore = RemoteDataStore.of(
         RemoteData.Failed([Failure.unexpected(new Error('timeout'))], async () => {})
     );
 
@@ -114,7 +114,7 @@ You can test how your component looks when data is stale:
 
 ```tsx
 test('shows dimmed text during background refresh', () => {
-    const staleStore = RemoteDataStore.always(
+    const staleStore = RemoteDataStore.of(
         RemoteData.StalePending(RemoteData.Success({ name: 'Alice' }, new Date()))
     );
     render(<UserCard store={staleStore} />);
@@ -133,14 +133,14 @@ The same approach works for Storybook. Each story is a different state:
 import { Failure, RemoteData, RemoteDataStore } from 'use-remote-data';
 
 export const Loaded = () => (
-    <UserCard store={RemoteDataStore.always(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }))} />
+    <UserCard store={RemoteDataStore.of(RemoteData.success({ name: 'Alice', email: 'alice@example.com' }))} />
 );
 
-export const Loading = () => <UserCard store={RemoteDataStore.always(RemoteData.Pending)} />;
+export const Loading = () => <UserCard store={RemoteDataStore.of(RemoteData.Pending)} />;
 
 export const Failed = () => (
     <UserCard
-        store={RemoteDataStore.always(
+        store={RemoteDataStore.of(
             RemoteData.Failed([Failure.unexpected(new Error('Server returned 500'))], async () => {})
         )}
     />
@@ -148,7 +148,7 @@ export const Failed = () => (
 
 export const Refreshing = () => (
     <UserCard
-        store={RemoteDataStore.always(
+        store={RemoteDataStore.of(
             RemoteData.StalePending(
                 RemoteData.Success({ name: 'Alice (stale)', email: 'alice@example.com' }, new Date())
             )
@@ -165,7 +165,7 @@ The design choice that makes testing easy is the same one that makes the library
 **stores are values, and values are passed as parameters.**
 
 Your component doesn't call `useRemoteData` itself — it receives a `RemoteDataStore<T>` from its parent.
-This means the component has no idea whether the store came from a hook, from `RemoteDataStore.always()`, from a test, or from server-rendered data.
+This means the component has no idea whether the store came from a hook, from `RemoteDataStore.of()`, from a test, or from server-rendered data.
 
 This isn't a testing trick. It's the architecture. The same property that makes SSR simple (pass `initial` data), Storybook simple (pass a static store), and component sharing simple (pass a store as a prop) is what makes testing simple.
 

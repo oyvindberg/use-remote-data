@@ -175,7 +175,7 @@ const codeTesting = `
 import { RemoteData, RemoteDataStore, Failure } from "use-remote-data";
 
 // A store that's already loaded — no fetch, no mock
-const store = RemoteDataStore.always(
+const store = RemoteDataStore.of(
   RemoteData.success({ name: "Alice", email: "alice@ex.com" })
 );
 
@@ -183,8 +183,8 @@ render(<UserCard store={store} />);
 expect(screen.getByText("Alice")).toBeInTheDocument();
 
 // Test loading? Errors? Same idea.
-const loading = RemoteDataStore.always(RemoteData.Pending);
-const failed  = RemoteDataStore.always(
+const loading = RemoteDataStore.of(RemoteData.Pending);
+const failed  = RemoteDataStore.of(
   RemoteData.Failed(
     [Failure.unexpected(new Error("timeout"))],
     async () => {}
@@ -350,7 +350,7 @@ export default function Home() {
                 {/* Testing */}
                 <Section
                     title="Test without mocking."
-                    text="Stores are values. Pass one to your component and assert what renders — no mock servers, no providers, no async coordination. RemoteDataStore.always() creates a store in any state you want. The same approach works for Storybook."
+                    text="Stores are values. Pass one to your component and assert what renders — no mock servers, no providers, no async coordination. RemoteDataStore.of() creates a store in any state you want. The same approach works for Storybook."
                     code={codeTesting}
                     alt
                     reverse
