@@ -56,19 +56,91 @@ Remove the hidden dependency — make the store a prop — and the infrastructur
 
 ## The prop drilling question
 
-The obvious objection: "If stores are props, doesn't that mean prop drilling? And isn't prop drilling bad?"
+The obvious objection: "If stores are props, doesn't that mean prop drilling? Doesn't that mean a `<PageLayout>` needs a `userStore` prop just because some deeply nested `<UserBadge>` uses it?"
 
-Let's be honest about this. Prop drilling has a real cost. When you pass a store through five layers of components that don't use it, you're polluting their interfaces. A `<PageLayout>` component shouldn't need a `userStore` prop just because a deeply nested `<UserBadge>` needs it. That's not "making dependencies explicit" — that's making intermediate components aware of things they have no business knowing about.
+It doesn't have to. React already has the tools to solve this without hiding dependencies. You just have to use them.
 
-So no, prop drilling is not always good. **But it's good more often than we think**, and when it's bad, it tells you something useful.
+### Pass elements, not data
 
-For one to three levels, prop drilling is just... passing data. It's normal. It's readable. A parent fetches data and gives it to its children. That's React working as designed.
+The first tool is the one people forget about: **`ReactNode` as a prop.** Instead of drilling data through intermediate layers, build the component higher up and pass the *element* through:
 
-When it gets painful — when you're threading props through five or six layers — that's architectural feedback. It usually means one of two things: either the data should be fetched higher up (closer to where it's consumed by multiple branches), or there's a component doing too much that should be split. Reaching for context at the first sign of drilling hides this feedback. The architecture stays messy, but now it's invisibly messy.
+```tsx
+// Instead of this — drilling userStore through Layout
+function App() {
+    const userStore = useRemoteData(() => fetchUser());
+    return <Layout userStore={userStore} />;  // Layout doesn't use it, just passes it down
+}
 
-For the cases where prop drilling genuinely doesn't work — where truly unrelated parts of the tree need the same data — there's a real answer that isn't "put everything in a global cache." [`use-remote-data` has an opt-in `SharedStoreProvider`](/docs/shared-stores) that deduplicates by name, with a `gcTime` grace period and automatic cleanup. It's the same interface (`RemoteDataStore<T>`), so `<Await>`, `.map()`, `RemoteDataStore.all()`, testing, and SSR all work identically. You opt into shared state where you need it, not everywhere by default.
+// Do this — build the element at the top, pass it as a slot
+function App() {
+    const userStore = useRemoteData(() => fetchUser());
+    return (
+        <Layout
+            sidebar={
+                <Await store={userStore}>
+                    {(user) => <UserBadge user={user} />}
+                </Await>
+            }
+        />
+    );
+}
+```
 
-The important thing is the *default*. When data is a prop by default and shared state is opt-in, most of your components end up independent, testable, and portable — without thinking about it.
+`Layout` doesn't know about users. It doesn't have a `userStore` prop. It just has a `sidebar: ReactNode` slot and renders it wherever it belongs. The user data stays at the level that owns it, and the rendered element flows down.
+
+This is inversion of control, and React supports it natively. A component that accepts `ReactNode` props is saying "you decide what goes here, I decide where it goes." No data needs to pass through. No interface pollution.
+
+### Bundle props into objects
+
+The second tool is even simpler: **data modeling.** If you're passing five related props through multiple layers, that's not a drilling problem — it's a missing abstraction:
+
+```tsx
+// Instead of drilling five props
+function Page({ user, posts, stats, onSave, onDelete }: ...) { ... }
+
+// Model the dependency
+interface DashboardData {
+    user: User;
+    posts: Post[];
+    stats: Stats;
+}
+
+interface DashboardActions {
+    onSave: (data: FormData) => void;
+    onDelete: (id: string) => void;
+}
+
+function Page({ data, actions }: { data: DashboardData; actions: DashboardActions }) { ... }
+```
+
+Five props become two. Give them a name that describes what they are. This is just data modeling — grouping related things and naming the group. The same principle that makes a `User` type better than three loose strings applies to component interfaces.
+
+### Use callbacks for data the parent doesn't have
+
+Sometimes a child needs to combine parent data with data only it has — a selected row ID, a form value, a scroll position. That's a callback:
+
+```tsx
+function Parent() {
+    const userStore = useRemoteData(() => fetchUser());
+    return (
+        <Await store={userStore}>
+            {(user) => (
+                <PostList
+                    onSelectPost={(postId) => navigate(`/users/${user.id}/posts/${postId}`)}
+                />
+            )}
+        </Await>
+    );
+}
+```
+
+The parent provides the user context via a callback. `PostList` doesn't need to know about users — it just calls `onSelectPost` with the data it has. The wiring happens at the boundary.
+
+### When none of that works
+
+For truly unrelated parts of the tree — a navbar and a settings panel that both need the current user, with no shared ancestor that makes sense — [`use-remote-data` has an opt-in `SharedStoreProvider`](/docs/shared-stores) with name-based deduplication, `gcTime` grace period, and automatic cleanup. It returns the same `RemoteDataStore<T>`, so `<Await>`, `.map()`, `RemoteDataStore.all()`, testing, and SSR all work identically.
+
+The important thing is the *default*. When data is a prop by default and shared state is opt-in, most components end up independent, testable, and portable — without thinking about it. And when you do reach for shared state, you're making a conscious choice about which specific data to share, not opting your entire app into a global cache.
 
 ## One interface, every context
 
