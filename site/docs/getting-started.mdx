@@ -120,12 +120,25 @@ Both react-query and SWR fetch data well. The difference is what happens after.
 | Global cache                     | Yes — deduplication across components | Opt-in via [`SharedStoreProvider`](shared-stores) — local by default |
 | Runtime dependencies             | One (`@tanstack/query-core` / `swr`)  | Zero                                                                 |
 | Providers / context              | `QueryClientProvider` / `SWRConfig`   | None                                                                 |
+| Performance                      | Per-query cache + observer overhead   | [Faster at every sharing level](performance)                         |
+| React Compiler                   | Supported                             | Supported — zero per-render allocations                              |
 
 react-query and SWR are great libraries with large ecosystems. If you need devtools, infinite queries, or automatic deduplication across components, use them.
 
 `use-remote-data` is for when you want **airtight types** and a **simpler mental model**.
 No global cache to configure. No context providers. No optional data.
 Just a store, a component, and data that's always in an honest state.
+
+### React Compiler and concurrent rendering
+
+`use-remote-data` is fully compatible with the React Compiler (React 19+) and concurrent rendering
+features like `startTransition` and Suspense boundaries.
+
+- All hooks follow the [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks) — no conditional or nested hook calls
+- No ref writes during render — state is synced via `useEffect` / `useLayoutEffect`
+- `useSharedRemoteData` uses `useSyncExternalStore` for tear-free concurrent reads
+- Refresh timers are managed via refs, surviving parent re-renders without resetting
+- Zero per-render allocations — class instances are cached in refs, no closures recreated each render
 
 ### What about React 19's `use()` hook?
 

@@ -9,7 +9,36 @@ the request fires once, and every `<Await>` that renders it gets the same cached
 
 <Snippet snippet="use_twice" />
 
-### Should I pass `RemoteDataStore<T>` or just `T`?
+## Multiple keyed resources
+
+When a parent needs to fetch many related resources (order items, user list, paginated data),
+use `useRemoteDataMap` in the parent and pass individual stores to children:
+
+```tsx
+function OrderList({ orderIds }: { orderIds: number[] }) {
+    const orders = useRemoteDataMap<number, Order>(
+        (id, signal) => fetchOrder(id, signal)
+    );
+
+    return (
+        <div>
+            {orderIds.map((id) => (
+                <Await key={id} store={orders.get(id)}>
+                    {(order) => <OrderRow order={order} />}
+                </Await>
+            ))}
+        </div>
+    );
+}
+```
+
+If multiple children call `orders.get(5)`, they all receive the same cached store — one fetch, shared state.
+This is automatic deduplication without a global cache, query keys, or providers. Just React's normal data flow.
+
+See the [Performance](performance) page for benchmarks showing this pattern is faster than react-query
+at every sharing level.
+
+## Should I pass `RemoteDataStore<T>` or just `T`?
 
 Ask yourself: does the child need to show its own loading state?
 
