@@ -136,7 +136,6 @@ features like `startTransition` and Suspense boundaries.
 
 - All hooks follow the [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks) — no conditional or nested hook calls
 - No ref writes during render — state is synced via `useEffect` / `useLayoutEffect`
-- `useSharedRemoteData` uses `useSyncExternalStore` for tear-free concurrent reads
 - Refresh timers are managed via refs, surviving parent re-renders without resetting
 - Zero per-render allocations — class instances are cached in refs, no closures recreated each render
 
