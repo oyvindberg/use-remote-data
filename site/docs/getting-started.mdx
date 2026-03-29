@@ -131,7 +131,7 @@ Just a store, a component, and data that's always in an honest state.
 
 ### React Compiler and concurrent rendering
 
-`use-remote-data` is designed to work with the React Compiler and concurrent rendering features like `startTransition` and Suspense boundaries.
+`use-remote-data` is compatible with the React Compiler and concurrent rendering features like `startTransition` and Suspense boundaries. All 51 components pass `react-compiler-healthcheck` with zero errors.
 
 - All hooks follow the [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks) — no conditional or nested hook calls
 - No ref writes during render — state is synced via `useEffect` / `useLayoutEffect`
