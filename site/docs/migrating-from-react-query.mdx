@@ -30,7 +30,7 @@ react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isE
 | `invalidateQueries(['users'])`    | `refreshes: [usersStore]` on `useRemoteUpdate`    | Declare which stores refresh after a successful mutation. Or call `store.refresh()` manually.             |
 | `useQueries([...])`               | `RemoteDataStore.all(store1, store2)`             | Combine into a typed tuple. Retry only re-fetches failed requests.                                        |
 | `useInfiniteQuery`                | `useRemoteDataMap` + local page list              | Each page is a key in the map. See [Infinite Scroll](infinite-scroll).                                    |
-| `QueryClient` devtools            | `debug: console.warn`                             | No devtools panel, but full state-transition logging.                                                     |
+| `QueryClient` devtools            | `<RemoteDataDevtools />`                          | Fiber-scanning panel that auto-discovers all stores. See [Debugging](debugging).                          |
 
 ## Step-by-step migration
 
@@ -148,7 +148,7 @@ Once all queries are migrated, remove `QueryClientProvider` and uninstall `@tans
 
 ## What you give up
 
-- **Devtools**: react-query has a visual devtools panel. `use-remote-data` uses `debug: console.warn` for state-transition logging.
+- **Devtools**: react-query's devtools is a browser extension with richer filtering and timeline views. `use-remote-data`'s `<RemoteDataDevtools />` is an in-app panel — simpler but no install required.
 - **Automatic deduplication by default**: `useRemoteData` is component-scoped by default. You opt into deduplication by [passing stores as props](sharing-data-with-children) or with `useSharedRemoteData`.
 - **Optimistic updates**: Not built-in. You can implement them by updating local state before the mutation completes.
 

@@ -116,3 +116,40 @@ console.log(store.current);
 This is a plain object — you can `JSON.stringify` it, pass it to a logger, or inspect it in React DevTools.
 The `type` field tells you exactly which state the store is in: `'initial'`, `'pending'`, `'failed'`, `'success'`,
 `'stale-immediate'`, `'stale-initial'`, or `'stale-pending'`.
+
+## `<RemoteDataDevtools />` — visual panel
+
+Drop the devtools component anywhere in your app to see all active stores at a glance:
+
+```tsx
+import { RemoteDataDevtools } from 'use-remote-data';
+
+function App() {
+    return (
+        <>
+            <Router />
+            {process.env.NODE_ENV === 'development' && <RemoteDataDevtools />}
+        </>
+    );
+}
+```
+
+The panel scans the React fiber tree and finds every `RemoteDataStore` passed as a prop to any component — no registration, no wrapper hooks, no provider. It shows:
+
+- Store name and current state (with color-coded indicators)
+- Data preview (truncated JSON for success, error message for failures)
+- Time since last fetch
+- Which component owns the store
+
+Stores are deduplicated: if the same store is passed to 10 components, it shows once. Shared stores (`useSharedRemoteData`) with the same name are also deduplicated.
+
+### Options
+
+| Prop           | Type                                  | Default          | Description                    |
+| -------------- | ------------------------------------- | ---------------- | ------------------------------ |
+| `pollInterval` | `number`                              | `1000`           | How often to re-scan (ms)      |
+| `position`     | `'bottom-right'` \| `'bottom-left'`  | `'bottom-right'` | Panel position                 |
+
+:::tip Try it on this site
+Click the **devtools** button in the bottom-left corner of this page, then run any code snippet. You'll see the stores appear in the panel as they fetch and resolve.
+:::
