@@ -29,6 +29,4 @@ This snippet simulates 25 items across 5 pages, with random failures on ~every 4
 
 ## Compared to react-query
 
-react-query's `useInfiniteQuery` treats all pages as a single query. If page 3 fails, the entire query fails — you lose pages 1 and 2 and must refetch everything.
-
-With `useRemoteDataMap`, each page is independent. Failures are isolated. Retry is surgical — only the broken page re-fetches.
+react-query has a dedicated `useInfiniteQuery` hook with built-in page management and cursor tracking. The `useRemoteDataMap` approach is simpler — no special hook, no `getNextPageParam` config — but you manage the cursor list yourself with `useState`.
