@@ -31,18 +31,17 @@ function cleanup(root: ReturnType<typeof createRoot>, container: HTMLDivElement)
     container.remove();
 }
 
-/** Wait until `predicate` returns true, polling via microtask + rAF. */
-function waitUntil(predicate: () => boolean, timeout: number): Promise<void> {
+function waitUntil(predicate: () => boolean, timeout: number, label: string, diagnostic?: () => string): Promise<void> {
     return new Promise((resolve, reject) => {
         const deadline = performance.now() + timeout;
         const check = () => {
             if (predicate()) {
                 resolve();
             } else if (performance.now() > deadline) {
-                reject(new Error('waitUntil timed out'));
+                const extra = diagnostic ? ` — ${diagnostic()}` : '';
+                reject(new Error(`waitUntil timed out: ${label}${extra}`));
             } else {
-                // tight poll: setTimeout(0) resolves in ~1-4ms (vs rAF ~16ms)
-                setTimeout(check, 0);
+                setTimeout(check, 1);
             }
         };
         setTimeout(check, 0);
@@ -64,8 +63,12 @@ async function measureMount(scenario: Scenario, n: number, iters: number): Promi
                 {Array.from({ length: n }, (_, j) => <scenario.Item key={j} id={j} />)}
             </Wrap>
         );
-        // wait for React to commit (at least one DOM node from our items)
-        await waitUntil(() => container.querySelectorAll('span').length >= n, 10000);
+        await waitUntil(
+            () => container.querySelectorAll('span').length >= n,
+            60_000,
+            `${scenario.name} mount iter ${i}`,
+            () => `spans: ${container.querySelectorAll('span').length}/${n}`
+        );
         times.push(performance.now() - start);
         cleanup(root, container);
         await new Promise((r) => setTimeout(r, 30));
@@ -95,9 +98,12 @@ async function measureRerender(scenario: Scenario, n: number, iters: number): Pr
     }
 
     const { root, container } = renderOffscreen(<Parent />);
-    // wait for initial mount + fetches to settle
-    await waitUntil(() => container.querySelectorAll('[data-resolved]').length >= n, 15000);
-    // extra settle time
+    await waitUntil(
+        () => container.querySelectorAll('[data-resolved]').length >= n,
+        60_000,
+        `${scenario.name} rerender settle`,
+        () => `resolved: ${container.querySelectorAll('[data-resolved]').length}/${n}`
+    );
     await new Promise((r) => setTimeout(r, 100));
 
     const times: number[] = [];
@@ -105,10 +111,11 @@ async function measureRerender(scenario: Scenario, n: number, iters: number): Pr
         const expectedTick = String(i + 1);
         triggerRerender!();
         const start = performance.now();
-        await waitUntil(() => {
-            const el = container.querySelector('[data-tick]');
-            return el?.textContent === expectedTick;
-        }, 10000);
+        await waitUntil(
+            () => container.querySelector('[data-tick]')?.textContent === expectedTick,
+            60_000,
+            `${scenario.name} rerender iter ${i}`,
+        );
         times.push(performance.now() - start);
         await new Promise((r) => setTimeout(r, 10));
     }
@@ -136,18 +143,12 @@ async function measureFullLifecycle(scenario: Scenario, n: number, iters: number
 
         await waitUntil(
             () => container.querySelectorAll('[data-resolved]').length >= n,
-            30000
+            60_000,
+            `${scenario.name} lifecycle iter ${i}`,
+            () => `resolved: ${container.querySelectorAll('[data-resolved]').length}/${n}, total spans: ${container.querySelectorAll('span').length}`
         );
 
-        const elapsed = performance.now() - start;
-        times.push(elapsed);
-
-        // sanity check
-        const resolved = container.querySelectorAll('[data-resolved]').length;
-        if (resolved !== n) {
-            console.warn(`${scenario.name}: expected ${n} resolved items, got ${resolved}`);
-        }
-
+        times.push(performance.now() - start);
         cleanup(root, container);
         await new Promise((r) => setTimeout(r, 50));
     }

@@ -3,52 +3,59 @@ import React, { useState, useCallback } from 'react';
 import { runBenchmark, type BenchResult } from './harness';
 import {
     rawScenario,
-    urdOldScenario,
     urdScenario,
-    urdSharedScenario,
     rqScenario,
     withKeyMapping,
 } from './scenarios';
 
+interface RunConfig {
+    label: string;
+    uniqueKeys: number;
+    results: BenchResult[];
+}
+
 function App() {
     const [n, setN] = useState(1000);
-    const [uniqueKeys, setUniqueKeys] = useState(1000);
     const [iters, setIters] = useState(5);
     const [running, setRunning] = useState(false);
     const [status, setStatus] = useState('Ready.');
-    const [results, setResults] = useState<BenchResult[] | null>(null);
+    const [runs, setRuns] = useState<RunConfig[] | null>(null);
 
     const run = useCallback(async () => {
         setRunning(true);
-        setResults(null);
+        setRuns(null);
         await new Promise((r) => setTimeout(r, 50));
 
-        const hasDedup = uniqueKeys < n;
+        const tiers = [
+            { uniqueKeys: n, label: `${n} unique (no sharing)` },
+            { uniqueKeys: Math.max(1, Math.round(n / 2)), label: `${Math.max(1, Math.round(n / 2))} unique (2x sharing)` },
+            { uniqueKeys: Math.max(1, Math.round(n / 10)), label: `${Math.max(1, Math.round(n / 10))} unique (10x sharing)` },
+            { uniqueKeys: Math.max(1, Math.round(n / 100)), label: `${Math.max(1, Math.round(n / 100))} unique (100x sharing)` },
+            { uniqueKeys: 1, label: `1 unique (all same)` },
+        ];
 
-        // Build scenarios based on config.
-        // When uniqueKeys < n, multiple components share the same key —
-        // this is where deduplication matters, so include shared/react-query.
-        const scenarios = hasDedup
-            ? [
-                  withKeyMapping(rawScenario, uniqueKeys),
-                  withKeyMapping(urdScenario, uniqueKeys),
-                  withKeyMapping(urdSharedScenario, uniqueKeys),
-                  withKeyMapping(urdOldScenario, uniqueKeys),
-                  withKeyMapping(rqScenario, uniqueKeys),
-              ]
-            : [
-                  rawScenario,
-                  urdOldScenario,
-                  urdScenario,
-                  urdSharedScenario,
-                  rqScenario,
-              ];
+        const allRuns: RunConfig[] = [];
 
-        const res = await runBenchmark(scenarios, n, iters, setStatus);
-        setResults(res);
+        for (const tier of tiers) {
+            setStatus(`Running: ${tier.label}...`);
+            await new Promise((r) => setTimeout(r, 30));
+
+            const scenarios = [
+                withKeyMapping(rawScenario, tier.uniqueKeys),
+                withKeyMapping(urdScenario, tier.uniqueKeys),
+                withKeyMapping(rqScenario, tier.uniqueKeys),
+            ];
+
+            const results = await runBenchmark(scenarios, n, iters, (msg) =>
+                setStatus(`${tier.label}: ${msg}`)
+            );
+            allRuns.push({ label: tier.label, uniqueKeys: tier.uniqueKeys, results });
+        }
+
+        setRuns(allRuns);
         setStatus('Done.');
         setRunning(false);
-    }, [n, uniqueKeys, iters]);
+    }, [n, iters]);
 
     return (
         <div>
@@ -60,15 +67,6 @@ function App() {
                         type="number"
                         value={n}
                         onChange={(e) => setN(Number(e.target.value))}
-                        style={{ width: 80, fontFamily: 'inherit' }}
-                    />
-                </label>
-                <label>
-                    Unique keys:{' '}
-                    <input
-                        type="number"
-                        value={uniqueKeys}
-                        onChange={(e) => setUniqueKeys(Number(e.target.value))}
                         style={{ width: 80, fontFamily: 'inherit' }}
                     />
                 </label>
@@ -85,21 +83,19 @@ function App() {
                     {running ? 'Running...' : 'Run Benchmark'}
                 </button>
             </div>
-            <p style={{ marginTop: 4, color: '#888', fontSize: 13 }}>
-                {uniqueKeys < n
-                    ? `${n} components fetching ${uniqueKeys} unique resources (${Math.round(n / uniqueKeys)}x sharing)`
-                    : `${n} components each fetching a unique resource`}
-            </p>
             <p className={running ? 'running' : 'done'} style={{ marginTop: 8 }}>
                 {status}
             </p>
 
-            {results && <ResultsTable results={results} />}
+            {runs && runs.map((r) => (
+                <ResultsTable key={r.label} config={r} />
+            ))}
         </div>
     );
 }
 
-function ResultsTable({ results }: { results: BenchResult[] }) {
+function ResultsTable({ config }: { config: RunConfig }) {
+    const { label, results } = config;
     const fmt = (ms: number) => ms.toFixed(1);
     const best = (field: keyof Omit<BenchResult, 'name'>) =>
         Math.min(...results.map((r) => r[field]));
@@ -113,10 +109,9 @@ function ResultsTable({ results }: { results: BenchResult[] }) {
         );
     };
 
-    const raw = results.find((r) => r.name.includes('raw'));
-
     return (
-        <>
+        <div style={{ marginTop: 24 }}>
+            <h3 style={{ fontSize: 14, marginBottom: 4 }}>{label}</h3>
             <table>
                 <thead>
                     <tr>
@@ -137,31 +132,7 @@ function ResultsTable({ results }: { results: BenchResult[] }) {
                     ))}
                 </tbody>
             </table>
-            {raw && (
-                <table style={{ marginTop: 16 }}>
-                    <thead>
-                        <tr>
-                            <th>Library overhead vs raw React</th>
-                            <th>Mount</th>
-                            <th>Re-render</th>
-                            <th>Full lifecycle</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {results
-                            .filter((r) => !r.name.includes('raw'))
-                            .map((r) => (
-                                <tr key={r.name}>
-                                    <td>{r.name}</td>
-                                    <td>{((r.mountMs / raw.mountMs - 1) * 100).toFixed(0)}%</td>
-                                    <td>{((r.rerenderMs / raw.rerenderMs - 1) * 100).toFixed(0)}%</td>
-                                    <td>{((r.fullLifecycleMs / raw.fullLifecycleMs - 1) * 100).toFixed(0)}%</td>
-                                </tr>
-                            ))}
-                    </tbody>
-                </table>
-            )}
-        </>
+        </div>
     );
 }
 
