@@ -71,13 +71,13 @@ const store = useRemoteData(() => fetchUser(id), {
 
 This logs:
 
-| When                            | Message                                                     |
-| ------------------------------- | ----------------------------------------------------------- |
-| Store state changes             | `user => { type: 'pending' }`                               |
-| Data arrives                    | `user => { type: 'success', value: {...}, updatedAt: ... }` |
-| Dependency change               | `user refreshing due to deps, from/to: [1] [2]`             |
-| Refresh scheduled               | `user: will refresh in 30000`                               |
-| Unmount cancels timer           | `user: cancelled refresh on unmount`                        |
+| When                  | Message                                                     |
+| --------------------- | ----------------------------------------------------------- |
+| Store state changes   | `user => { type: 'pending' }`                               |
+| Data arrives          | `user => { type: 'success', value: {...}, updatedAt: ... }` |
+| Dependency change     | `user refreshing due to deps, from/to: [1] [2]`             |
+| Refresh scheduled     | `user: will refresh in 30000`                               |
+| Unmount cancels timer | `user: cancelled refresh on unmount`                        |
 
 Every message is prefixed with `storeName` when set, so you can filter your console by store name.
 

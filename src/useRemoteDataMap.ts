@@ -173,9 +173,7 @@ class MapStore<K extends string | number | undefined, V, E> implements RemoteDat
         } catch (error: WeakError) {
             this.#set(
                 key,
-                RemoteData.Failed<E>([Failure.unexpected(error)], () =>
-                    this.#runAndUpdate(key, RemoteData.Pending)
-                )
+                RemoteData.Failed<E>([Failure.unexpected(error)], () => this.#runAndUpdate(key, RemoteData.Pending))
             );
             return Promise.resolve();
         }
@@ -227,7 +225,10 @@ class MapStore<K extends string | number | undefined, V, E> implements RemoteDat
         }
 
         /** step four: refresh logic (if enabled in `options.refresh`) */
-        if (isDefined(this.options.refresh) && (remoteData.type === 'success' || remoteData.type === 'stale-immediate')) {
+        if (
+            isDefined(this.options.refresh) &&
+            (remoteData.type === 'success' || remoteData.type === 'stale-immediate')
+        ) {
             const success = remoteData.type === 'success' ? remoteData : remoteData.stale;
             const staleness = this.options.refresh.decide(success.value, success.updatedAt, new Date());
 

@@ -5,16 +5,10 @@
  * count stays bounded. A render count above the expected maximum fails the
  * test immediately — no timeouts needed.
  */
-import {
-    Await,
-    RefreshStrategy,
-    RemoteDataStore,
-    useRemoteData,
-    useRemoteUpdate,
-} from '../src';
-import { useSharedRemoteData, SharedStoreProvider } from '../src/SharedStoreProvider';
+import { Await, RefreshStrategy, RemoteDataStore, useRemoteData, useRemoteUpdate } from '../src';
 import { AwaitUpdate } from '../src/AwaitUpdate';
-import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
+import { SharedStoreProvider, useSharedRemoteData } from '../src/SharedStoreProvider';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
@@ -28,9 +22,7 @@ function useRenderCount(): React.RefObject<number> {
     return count;
 }
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <SharedStoreProvider>{children}</SharedStoreProvider>
-);
+const wrapper = ({ children }: { children: React.ReactNode }) => <SharedStoreProvider>{children}</SharedStoreProvider>;
 
 // ---------------------------------------------------------------------------
 // useRemoteData scenarios
@@ -64,12 +56,7 @@ test('no infinite renders: fetch failure → retry → success', async () => {
             return Promise.resolve(99);
         });
         return (
-            <Await
-                store={store}
-                error={({ retry }) => (
-                    <button onClick={() => retry()}>retry</button>
-                )}
-            >
+            <Await store={store} error={({ retry }) => <button onClick={() => retry()}>retry</button>}>
                 {(v) => <span>val: {v}</span>}
             </Await>
         );
@@ -291,12 +278,19 @@ test('no infinite renders: RemoteDataStore.all with mixed states', async () => {
         renderCount++;
         const fast = useRemoteData(() => Promise.resolve('fast'));
         const slow = useRemoteData(
-            () => new Promise<string>((r) => { slowResolve = r; })
+            () =>
+                new Promise<string>((r) => {
+                    slowResolve = r;
+                })
         );
         const combined = RemoteDataStore.all(fast, slow);
         return (
             <Await store={combined} loading={() => <span>loading</span>}>
-                {([a, b]) => <span>done: {a},{b}</span>}
+                {([a, b]) => (
+                    <span>
+                        done: {a},{b}
+                    </span>
+                )}
             </Await>
         );
     };
@@ -322,10 +316,7 @@ test('no infinite renders: mutation run → success', async () => {
         renderCount++;
         const store = useRemoteUpdate(() => Promise.resolve('saved'));
         return (
-            <AwaitUpdate
-                store={store}
-                idle={(run) => <button onClick={() => run()}>go</button>}
-            >
+            <AwaitUpdate store={store} idle={(run) => <button onClick={() => run()}>go</button>}>
                 {(v) => <span>result: {v}</span>}
             </AwaitUpdate>
         );
@@ -359,10 +350,7 @@ test('no infinite renders: mutation with refreshes', async () => {
         return (
             <div>
                 <Await store={data}>{(v) => <span>data: {v}</span>}</Await>
-                <AwaitUpdate
-                    store={mutation}
-                    idle={(run) => <button onClick={() => run()}>mutate</button>}
-                >
+                <AwaitUpdate store={mutation} idle={(run) => <button onClick={() => run()}>mutate</button>}>
                     {() => <span>mutated</span>}
                 </AwaitUpdate>
             </div>
@@ -427,9 +415,7 @@ test('no infinite renders: shared store with parent re-renders', async () => {
 
     const Child = () => {
         childRenderCount++;
-        const store = useSharedRemoteData('shared-rerender', () =>
-            Promise.resolve('data')
-        );
+        const store = useSharedRemoteData('shared-rerender', () => Promise.resolve('data'));
         return <Await store={store}>{(v) => <span>{v}</span>}</Await>;
     };
 
@@ -500,7 +486,10 @@ test('no infinite renders: unmount during fetch', async () => {
     const Test = () => {
         renderCount++;
         const store = useRemoteData(
-            () => new Promise<number>((r) => { resolvePromise = r; })
+            () =>
+                new Promise<number>((r) => {
+                    resolvePromise = r;
+                })
         );
         return <Await store={store}>{(v) => <span>{v}</span>}</Await>;
     };

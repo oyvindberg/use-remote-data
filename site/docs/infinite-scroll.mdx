@@ -6,9 +6,7 @@ Infinite scroll is a `useRemoteDataMap` where each page is a key and you grow th
 
 ```tsx
 const [cursors, setCursors] = useState([0]);
-const pages = useRemoteDataMap<number, Page>(
-    (cursor, signal) => fetchPage(cursor, signal)
-);
+const pages = useRemoteDataMap<number, Page>((cursor, signal) => fetchPage(cursor, signal));
 ```
 
 Each cursor maps to an independent store. Already-loaded pages stay rendered while the next page loads. If page 3 fails, pages 1 and 2 keep their data — the error and retry button only appear for page 3.

@@ -2,8 +2,8 @@
  * Benchmark harness. Renders N components offscreen, measures timings,
  * reports results. Each scenario gets the same treatment.
  */
-import { createRoot } from 'react-dom/client';
 import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 
 /**
  * Each scenario provides a single component that renders `n` items.
@@ -25,7 +25,10 @@ export interface BenchResult {
     fullLifecycleMs: number;
 }
 
-function renderOffscreen(element: React.ReactElement): { root: ReturnType<typeof createRoot>; container: HTMLDivElement } {
+function renderOffscreen(element: React.ReactElement): {
+    root: ReturnType<typeof createRoot>;
+    container: HTMLDivElement;
+} {
     const container = document.createElement('div');
     document.getElementById('stage')!.appendChild(container);
     const root = createRoot(container);
@@ -64,9 +67,7 @@ async function measureMount(scenario: Scenario, n: number, uniqueKeys: number, i
 
     for (let i = 0; i < iters; i++) {
         const start = performance.now();
-        const { root, container } = renderOffscreen(
-            <scenario.Scene n={n} uniqueKeys={uniqueKeys} />
-        );
+        const { root, container } = renderOffscreen(<scenario.Scene n={n} uniqueKeys={uniqueKeys} />);
         await waitUntil(
             () => container.querySelectorAll('span').length >= n,
             30_000,
@@ -117,7 +118,7 @@ async function measureRerender(scenario: Scenario, n: number, uniqueKeys: number
         await waitUntil(
             () => container.querySelector('[data-tick]')?.textContent === expectedTick,
             30_000,
-            `${scenario.name} rerender iter ${i}`,
+            `${scenario.name} rerender iter ${i}`
         );
         times.push(performance.now() - start);
         await new Promise((r) => setTimeout(r, 10));
@@ -137,15 +138,14 @@ async function measureFullLifecycle(scenario: Scenario, n: number, uniqueKeys: n
 
     for (let i = 0; i < iters; i++) {
         const start = performance.now();
-        const { root, container } = renderOffscreen(
-            <scenario.Scene n={n} uniqueKeys={uniqueKeys} />
-        );
+        const { root, container } = renderOffscreen(<scenario.Scene n={n} uniqueKeys={uniqueKeys} />);
 
         await waitUntil(
             () => container.querySelectorAll('[data-resolved]').length >= n,
             30_000,
             `${scenario.name} lifecycle iter ${i}`,
-            () => `resolved: ${container.querySelectorAll('[data-resolved]').length}/${n}, total spans: ${container.querySelectorAll('span').length}`
+            () =>
+                `resolved: ${container.querySelectorAll('[data-resolved]').length}/${n}, total spans: ${container.querySelectorAll('span').length}`
         );
 
         times.push(performance.now() - start);

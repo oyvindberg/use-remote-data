@@ -1,7 +1,7 @@
+import { type BenchResult, runBenchmark } from './harness';
+import { rawScenario, rqScenario, urdScenario } from './scenarios';
+import React, { useCallback, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import React, { useState, useCallback } from 'react';
-import { runBenchmark, type BenchResult } from './harness';
-import { rawScenario, urdScenario, rqScenario } from './scenarios';
 
 const SCENARIOS = [rawScenario, urdScenario, rqScenario];
 
@@ -79,18 +79,15 @@ function App() {
                 {status}
             </p>
 
-            {runs && runs.map((r) => (
-                <ResultsTable key={r.label} config={r} />
-            ))}
+            {runs && runs.map((r) => <ResultsTable key={r.label} config={r} />)}
         </div>
     );
 }
 
 function ResultsTable({ config }: { config: RunConfig }) {
     const { label, results } = config;
-    const fmt = (ms: number) => ms < 0 ? 'T/O' : ms.toFixed(1);
-    const validResults = (field: keyof Omit<BenchResult, 'name'>) =>
-        results.map((r) => r[field]).filter((v) => v >= 0);
+    const fmt = (ms: number) => (ms < 0 ? 'T/O' : ms.toFixed(1));
+    const validResults = (field: keyof Omit<BenchResult, 'name'>) => results.map((r) => r[field]).filter((v) => v >= 0);
     const best = (field: keyof Omit<BenchResult, 'name'>) => {
         const valid = validResults(field);
         return valid.length > 0 ? Math.min(...valid) : -1;
@@ -99,11 +96,7 @@ function ResultsTable({ config }: { config: RunConfig }) {
     const cell = (val: number, bestVal: number) => {
         if (val < 0) return <td style={{ color: '#f55' }}>T/O</td>;
         const isBest = bestVal >= 0 && Math.abs(val - bestVal) < 0.5;
-        return (
-            <td style={isBest ? { color: '#0f0', fontWeight: 'bold' } : {}}>
-                {fmt(val)}
-            </td>
-        );
+        return <td style={isBest ? { color: '#0f0', fontWeight: 'bold' } : {}}>{fmt(val)}</td>;
     };
 
     return (

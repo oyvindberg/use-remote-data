@@ -4,23 +4,16 @@
  *   - use-remote-data: useRemoteDataMap in a parent, Await for each item
  *   - react-query: QueryClientProvider + per-component useQuery
  */
+import type { Scenario } from './harness';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import React, { useEffect, useRef, useState } from 'react';
 import { Await, useRemoteDataMap } from 'use-remote-data';
-
-import {
-    QueryClient,
-    QueryClientProvider,
-    useQuery,
-} from '@tanstack/react-query';
-
-import type { Scenario } from './harness';
 
 // ---------------------------------------------------------------------------
 // Shared fetcher — 5ms simulated latency
 // ---------------------------------------------------------------------------
 
-const fakeFetch = (id: number): Promise<number> =>
-    new Promise((r) => setTimeout(() => r(id * 10), 5));
+const fakeFetch = (id: number): Promise<number> => new Promise((r) => setTimeout(() => r(id * 10), 5));
 
 // ---------------------------------------------------------------------------
 // 1. Raw React — per-component useState + useEffect
@@ -30,8 +23,12 @@ function RawItem({ id }: { id: number }) {
     const [data, setData] = useState<number | null>(null);
     useEffect(() => {
         let cancelled = false;
-        fakeFetch(id).then((v) => { if (!cancelled) setData(v); });
-        return () => { cancelled = true; };
+        fakeFetch(id).then((v) => {
+            if (!cancelled) setData(v);
+        });
+        return () => {
+            cancelled = true;
+        };
     }, [id]);
     if (data === null) return <span>...</span>;
     return <span data-resolved>{data}</span>;
@@ -63,9 +60,7 @@ export const rawScenario: Scenario = {
 const loading = () => <span>...</span>;
 
 function URDScene({ n, uniqueKeys }: { n: number; uniqueKeys: number }) {
-    const map = useRemoteDataMap<number, number>(
-        (key) => fakeFetch(key)
-    );
+    const map = useRemoteDataMap<number, number>((key) => fakeFetch(key));
     return (
         <>
             {Array.from({ length: n }, (_, i) => {

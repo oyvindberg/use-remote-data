@@ -172,12 +172,9 @@ const { data, fetchNextPage, hasNextPage } = useInfiniteQuery({
 ```tsx
 function PostFeed() {
     const [cursors, setCursors] = useState([0]);
-    const pages = useRemoteDataMap<number, PostPage>(
-        (cursor, signal) => fetchPosts(cursor, signal)
-    );
+    const pages = useRemoteDataMap<number, PostPage>((cursor, signal) => fetchPosts(cursor, signal));
 
-    const addPage = (nextCursor: number) =>
-        setCursors((prev) => [...prev, nextCursor]);
+    const addPage = (nextCursor: number) => setCursors((prev) => [...prev, nextCursor]);
 
     return (
         <div>
@@ -188,11 +185,7 @@ function PostFeed() {
                             {page.posts.map((post) => (
                                 <PostCard key={post.id} post={post} />
                             ))}
-                            {page.nextCursor && (
-                                <button onClick={() => addPage(page.nextCursor)}>
-                                    Load more
-                                </button>
-                            )}
+                            {page.nextCursor && <button onClick={() => addPage(page.nextCursor)}>Load more</button>}
                         </>
                     )}
                 </Await>

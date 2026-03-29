@@ -21,22 +21,22 @@ Each library uses its recommended pattern:
 ### Full lifecycle (ms) — 1,000 components
 
 | Resources | Each fetched by | raw React | **use-remote-data** | react-query |
-| ---: | ---: | ---: | ---: | ---: |
-| 1,000 | 1 | **53** | 102 | 788 |
-| 500 | 2 | 191 | **167** | 582 |
-| 100 | 10 | 276 | **85** | 277 |
-| 10 | 100 | 184 | **67** | 100 |
-| 1 | 1,000 | 181 | **56** | 109 |
+| --------: | --------------: | --------: | ------------------: | ----------: |
+|     1,000 |               1 |    **53** |                 102 |         788 |
+|       500 |               2 |       191 |             **167** |         582 |
+|       100 |              10 |       276 |              **85** |         277 |
+|        10 |             100 |       184 |              **67** |         100 |
+|         1 |           1,000 |       181 |              **56** |         109 |
 
 `use-remote-data` is faster than react-query at every sharing level. It's also faster than raw React as soon as any data is shared (2+ components per resource), because `useRemoteDataMap` deduplicates fetches while raw React fires one fetch per component regardless.
 
 ### Mount and re-render (ms) — 1,000 unique resources
 
-| Scenario | Mount | Re-render |
-| --- | ---: | ---: |
-| **raw React** | 24 | 6 |
-| **use-remote-data** | 20 | 7 |
-| **react-query** | 45 | 16 |
+| Scenario            | Mount | Re-render |
+| ------------------- | ----: | --------: |
+| **raw React**       |    24 |         6 |
+| **use-remote-data** |    20 |         7 |
+| **react-query**     |    45 |        16 |
 
 Mount and re-render overhead is minimal for `use-remote-data` — within noise of raw React. react-query adds ~2x overhead on mount due to QueryObserver creation and cache subscription.
 
@@ -63,9 +63,7 @@ For multiple keyed resources, `useRemoteDataMap` manages them from a single hook
 
 ```tsx
 function OrderList({ orderIds }: { orderIds: number[] }) {
-    const orders = useRemoteDataMap<number, Order>(
-        (id, signal) => fetchOrder(id, signal)
-    );
+    const orders = useRemoteDataMap<number, Order>((id, signal) => fetchOrder(id, signal));
 
     return (
         <div>

@@ -7,20 +7,20 @@
  */
 import { Await, useRemoteData, useRemoteUpdate } from '../src';
 import { AwaitUpdate } from '../src/AwaitUpdate';
-import { render, screen, waitFor, act } from '@testing-library/react';
-import React, { DependencyList, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CancelTimeout } from '../src/CancelTimeout';
+import { Failure } from '../src/Failure';
+import { Options } from '../src/Options';
 import { RemoteData } from '../src/RemoteData';
 import { RemoteDataStore } from '../src/RemoteDataStore';
+import { RemoteUpdateOptions } from '../src/RemoteUpdateOptions';
 import { RemoteUpdateStore } from '../src/RemoteUpdateStore';
 import { Result } from '../src/Result';
-import { CancelTimeout } from '../src/CancelTimeout';
 import { Staleness } from '../src/Staleness';
-import { Failure } from '../src/Failure';
 import { WeakError } from '../src/WeakError';
-import { Options } from '../src/Options';
-import { RemoteUpdateOptions } from '../src/RemoteUpdateOptions';
 import { depsChanged } from '../src/internal/depsChanged';
 import { isDefined } from '../src/internal/isDefined';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import React, { DependencyList, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Simulated latency
@@ -43,7 +43,10 @@ const fakeMutation = async (): Promise<string> => {
 // Old-style Await — uses [store] dep (new object each render → runs every render)
 // ---------------------------------------------------------------------------
 
-function OldAwait<T, E>({ store, children }: {
+function OldAwait<T, E>({
+    store,
+    children,
+}: {
     store: RemoteDataStore<T, E>;
     children: (value: T, isStale: boolean) => React.ReactNode;
 }) {
@@ -70,9 +73,7 @@ const useRemoteDataOldStyle = <T,>(
     const depsRef = useRef<DependencyList | undefined>(options.dependencies);
     const requestVersionsRef = useRef(new Map<K, number>());
     const abortControllersRef = useRef(new Map<K, AbortController>());
-    const refreshHandlesRef = useRef(
-        new Map<K, { handle: ReturnType<typeof setTimeout>; updatedAt: Date }>()
-    );
+    const refreshHandlesRef = useRef(new Map<K, { handle: ReturnType<typeof setTimeout>; updatedAt: Date }>());
 
     useEffect(
         () => () => {
@@ -113,13 +114,21 @@ const useRemoteDataOldStyle = <T,>(
                     if (requestVersionsRef.current.get(key) !== requestVersion) return;
                     switch (result.tag) {
                         case 'err':
-                            set(key, RemoteData.Failed([Failure.expected(result.value)], () => runAndUpdate(key, RemoteData.Pending)));
+                            set(
+                                key,
+                                RemoteData.Failed([Failure.expected(result.value)], () =>
+                                    runAndUpdate(key, RemoteData.Pending)
+                                )
+                            );
                             break;
                         case 'ok': {
                             const value = result.value;
                             const now = new Date();
                             let res: RemoteData<T, never> = RemoteData.Success(value, now);
-                            if (options.refresh && !Staleness.isFresh(options.refresh.decide(res.value, res.updatedAt, now))) {
+                            if (
+                                options.refresh &&
+                                !Staleness.isFresh(options.refresh.decide(res.value, res.updatedAt, now))
+                            ) {
                                 res = RemoteData.StaleImmediate(res);
                             }
                             set(key, res);
@@ -129,10 +138,18 @@ const useRemoteDataOldStyle = <T,>(
                 .catch((error: WeakError) => {
                     if (controller.signal.aborted) return;
                     if (requestVersionsRef.current.get(key) !== requestVersion) return;
-                    set(key, RemoteData.Failed<never>([Failure.unexpected(error)], () => runAndUpdate(key, RemoteData.Pending)));
+                    set(
+                        key,
+                        RemoteData.Failed<never>([Failure.unexpected(error)], () =>
+                            runAndUpdate(key, RemoteData.Pending)
+                        )
+                    );
                 });
         } catch (error: WeakError) {
-            set(key, RemoteData.Failed<never>([Failure.unexpected(error)], () => runAndUpdate(key, RemoteData.Pending)));
+            set(
+                key,
+                RemoteData.Failed<never>([Failure.unexpected(error)], () => runAndUpdate(key, RemoteData.Pending))
+            );
             return Promise.resolve();
         }
     };
@@ -163,8 +180,11 @@ const useRemoteDataOldStyle = <T,>(
             const success = remoteData.type === 'success' ? remoteData : remoteData.stale;
             const staleness = options.refresh.decide(success.value, success.updatedAt, new Date());
             switch (staleness.type) {
-                case 'stale': set(key, RemoteData.StaleInitial(success)); return;
-                case 'fresh': return;
+                case 'stale':
+                    set(key, RemoteData.StaleInitial(success));
+                    return;
+                case 'fresh':
+                    return;
                 case 'check-after': {
                     const existing = refreshHandlesRef.current.get(key);
                     if (existing && existing.updatedAt.getTime() === success.updatedAt.getTime()) return;
@@ -184,10 +204,15 @@ const useRemoteDataOldStyle = <T,>(
 
     return {
         storeName: storeName(key),
-        get current() { return remoteDatas.get(key) || RemoteData.Initial; },
+        get current() {
+            return remoteDatas.get(key) || RemoteData.Initial;
+        },
         refresh: () => {
             const timer = refreshHandlesRef.current.get(key);
-            if (timer) { clearTimeout(timer.handle); refreshHandlesRef.current.delete(key); }
+            if (timer) {
+                clearTimeout(timer.handle);
+                refreshHandlesRef.current.delete(key);
+            }
             abortControllersRef.current.get(key)?.abort();
             const cv = requestVersionsRef.current.get(key) ?? 0;
             requestVersionsRef.current.set(key, cv + 1);
@@ -200,8 +225,12 @@ const useRemoteDataOldStyle = <T,>(
             });
         },
         triggerUpdate: () => triggerUpdate(key),
-        get orNull(): RemoteDataStore<T | null, never> { return RemoteDataStore.orNull(this); },
-        map<U>(fn: (value: T) => U): RemoteDataStore<U, never> { return RemoteDataStore.map(this, fn); },
+        get orNull(): RemoteDataStore<T | null, never> {
+            return RemoteDataStore.orNull(this);
+        },
+        map<U>(fn: (value: T) => U): RemoteDataStore<U, never> {
+            return RemoteDataStore.map(this, fn);
+        },
     };
 };
 
@@ -224,7 +253,9 @@ const useRemoteUpdateOldStyle = <T, P = void>(
     optionsRef.current = options;
 
     useEffect(
-        () => () => { abortControllerRef.current?.abort(); },
+        () => () => {
+            abortControllerRef.current?.abort();
+        },
         []
     );
 
@@ -236,7 +267,8 @@ const useRemoteUpdateOldStyle = <T, P = void>(
         abortControllerRef.current = controller;
         setState((prev) => RemoteData.pendingStateFor(prev));
         try {
-            return fetcherRef.current(params, controller.signal)
+            return fetcherRef
+                .current(params, controller.signal)
                 .then((value) => {
                     if (controller.signal.aborted) return;
                     if (requestIdRef.current !== requestId) return;
@@ -266,10 +298,16 @@ const useRemoteUpdateOldStyle = <T, P = void>(
         reset,
         triggerUpdate: () => undefined,
         refresh: reset,
-        get current() { return state; },
+        get current() {
+            return state;
+        },
         storeName: options?.storeName,
-        get orNull(): RemoteDataStore<T | null, never> { return RemoteDataStore.orNull(this); },
-        map<U>(fn: (value: T) => U): RemoteDataStore<U, never> { return RemoteDataStore.map(this, fn); },
+        get orNull(): RemoteDataStore<T | null, never> {
+            return RemoteDataStore.orNull(this);
+        },
+        map<U>(fn: (value: T) => U): RemoteDataStore<U, never> {
+            return RemoteDataStore.map(this, fn);
+        },
     };
 };
 
@@ -281,7 +319,11 @@ const loading = () => <span>...</span>;
 
 function OptimizedFetchItem() {
     const store = useRemoteData(fakeFetch);
-    return <Await store={store} loading={loading}>{(v) => <span>{v}</span>}</Await>;
+    return (
+        <Await store={store} loading={loading}>
+            {(v) => <span>{v}</span>}
+        </Await>
+    );
 }
 
 function ClosureFetchItem() {
@@ -302,10 +344,14 @@ function ClosureMutationItem() {
     const store = useRemoteUpdateOldStyle(fakeMutation);
     const current = store.current;
     switch (current.type) {
-        case 'initial': return <button onClick={() => store.run()}>go</button>;
-        case 'pending': return <span>...</span>;
-        case 'success': return <span>{current.value}</span>;
-        default: return <span>err</span>;
+        case 'initial':
+            return <button onClick={() => store.run()}>go</button>;
+        case 'pending':
+            return <span>...</span>;
+        case 'success':
+            return <span>{current.value}</span>;
+        default:
+            return <span>err</span>;
     }
 }
 
@@ -318,7 +364,8 @@ function BaselineItem() {
 // ---------------------------------------------------------------------------
 
 function bench(fn: () => void, iterations: number): number {
-    fn(); fn(); // warmup
+    fn();
+    fn(); // warmup
     const times: number[] = [];
     for (let i = 0; i < iterations; i++) {
         const start = performance.now();
@@ -336,13 +383,17 @@ function rerenderBench(Item: React.FC, n: number, iters: number): number {
         trigger = () => setTick((t) => t + 1);
         return (
             <div>
-                {Array.from({ length: n }, (_, i) => <Item key={i} />)}
+                {Array.from({ length: n }, (_, i) => (
+                    <Item key={i} />
+                ))}
                 <span>{tick}</span>
             </div>
         );
     }
     const { unmount } = render(<Parent />);
-    const ms = bench(() => { act(() => trigger()); }, iters);
+    const ms = bench(() => {
+        act(() => trigger());
+    }, iters);
     unmount();
     return ms;
 }
@@ -357,21 +408,33 @@ const ITERS = 7;
 test(`benchmark: useRemoteData — ${N} components (mount + re-render)`, () => {
     const baselineMount = bench(() => {
         const { unmount } = render(
-            <div>{Array.from({ length: N }, (_, i) => <BaselineItem key={i} />)}</div>
+            <div>
+                {Array.from({ length: N }, (_, i) => (
+                    <BaselineItem key={i} />
+                ))}
+            </div>
         );
         unmount();
     }, ITERS);
 
     const closureMount = bench(() => {
         const { unmount } = render(
-            <div>{Array.from({ length: N }, (_, i) => <ClosureFetchItem key={i} />)}</div>
+            <div>
+                {Array.from({ length: N }, (_, i) => (
+                    <ClosureFetchItem key={i} />
+                ))}
+            </div>
         );
         unmount();
     }, ITERS);
 
     const optimizedMount = bench(() => {
         const { unmount } = render(
-            <div>{Array.from({ length: N }, (_, i) => <OptimizedFetchItem key={i} />)}</div>
+            <div>
+                {Array.from({ length: N }, (_, i) => (
+                    <OptimizedFetchItem key={i} />
+                ))}
+            </div>
         );
         unmount();
     }, ITERS);
@@ -389,28 +452,46 @@ test(`benchmark: useRemoteData — ${N} components (mount + re-render)`, () => {
     console.log(`${'='.repeat(64)}`);
     console.log(`\n  MOUNT (ms)                        time    vs baseline`);
     console.log(`    baseline (no hook)           ${baselineMount.toFixed(1).padStart(8)}`);
-    console.log(`    old (closures/render)        ${closureMount.toFixed(1).padStart(8)}    ${overhead(closureMount, baselineMount)}`);
-    console.log(`    new (class instances)        ${optimizedMount.toFixed(1).padStart(8)}    ${overhead(optimizedMount, baselineMount)}`);
+    console.log(
+        `    old (closures/render)        ${closureMount.toFixed(1).padStart(8)}    ${overhead(closureMount, baselineMount)}`
+    );
+    console.log(
+        `    new (class instances)        ${optimizedMount.toFixed(1).padStart(8)}    ${overhead(optimizedMount, baselineMount)}`
+    );
     console.log(`\n  RE-RENDER (ms)                    time    vs baseline`);
     console.log(`    baseline (no hook)           ${baselineRerender.toFixed(1).padStart(8)}`);
-    console.log(`    old (closures/render)        ${closureRerender.toFixed(1).padStart(8)}    ${overhead(closureRerender, baselineRerender)}`);
-    console.log(`    new (class instances)        ${optimizedRerender.toFixed(1).padStart(8)}    ${overhead(optimizedRerender, baselineRerender)}`);
+    console.log(
+        `    old (closures/render)        ${closureRerender.toFixed(1).padStart(8)}    ${overhead(closureRerender, baselineRerender)}`
+    );
+    console.log(
+        `    new (class instances)        ${optimizedRerender.toFixed(1).padStart(8)}    ${overhead(optimizedRerender, baselineRerender)}`
+    );
     console.log(`\n  HOOK OVERHEAD (re-render, baseline subtracted)`);
-    console.log(`    old: ${hookOld.toFixed(1)} ms   new: ${hookNew.toFixed(1)} ms   ratio: ${(hookOld / Math.max(hookNew, 0.01)).toFixed(1)}x`);
+    console.log(
+        `    old: ${hookOld.toFixed(1)} ms   new: ${hookNew.toFixed(1)} ms   ratio: ${(hookOld / Math.max(hookNew, 0.01)).toFixed(1)}x`
+    );
     console.log(`${'='.repeat(64)}\n`);
 });
 
 test(`benchmark: useRemoteUpdate — ${N} components (mount + re-render)`, () => {
     const closureMount = bench(() => {
         const { unmount } = render(
-            <div>{Array.from({ length: N }, (_, i) => <ClosureMutationItem key={i} />)}</div>
+            <div>
+                {Array.from({ length: N }, (_, i) => (
+                    <ClosureMutationItem key={i} />
+                ))}
+            </div>
         );
         unmount();
     }, ITERS);
 
     const optimizedMount = bench(() => {
         const { unmount } = render(
-            <div>{Array.from({ length: N }, (_, i) => <OptimizedMutationItem key={i} />)}</div>
+            <div>
+                {Array.from({ length: N }, (_, i) => (
+                    <OptimizedMutationItem key={i} />
+                ))}
+            </div>
         );
         unmount();
     }, ITERS);
@@ -426,7 +507,9 @@ test(`benchmark: useRemoteUpdate — ${N} components (mount + re-render)`, () =>
     console.log(`    new (current impl)           ${optimizedMount.toFixed(1).padStart(8)}`);
     console.log(`\n  RE-RENDER (ms)                    time    old/new`);
     console.log(`    old (closures/render)        ${closureRerender.toFixed(1).padStart(8)}`);
-    console.log(`    new (current impl)           ${optimizedRerender.toFixed(1).padStart(8)}    ${(closureRerender / Math.max(optimizedRerender, 0.01)).toFixed(2)}x`);
+    console.log(
+        `    new (current impl)           ${optimizedRerender.toFixed(1).padStart(8)}    ${(closureRerender / Math.max(optimizedRerender, 0.01)).toFixed(2)}x`
+    );
     console.log(`${'='.repeat(64)}\n`);
 });
 
@@ -435,11 +518,17 @@ test(`benchmark: useRemoteData — full lifecycle (fetch + resolve + render)`, a
 
     let resolveAll: Array<(v: number) => void> = [];
     const controlledFetch = (): Promise<number> =>
-        new Promise<number>((resolve) => { resolveAll.push(resolve); });
+        new Promise<number>((resolve) => {
+            resolveAll.push(resolve);
+        });
 
     function OptItem() {
         const store = useRemoteData(controlledFetch);
-        return <Await store={store} loading={loading}>{(v) => <span className="val">{v}</span>}</Await>;
+        return (
+            <Await store={store} loading={loading}>
+                {(v) => <span className="val">{v}</span>}
+            </Await>
+        );
     }
 
     function OldItem() {
@@ -451,7 +540,11 @@ test(`benchmark: useRemoteData — full lifecycle (fetch + resolve + render)`, a
     resolveAll = [];
     const t0Old = performance.now();
     const { unmount: unmount1 } = render(
-        <div>{Array.from({ length: BATCH }, (_, i) => <OldItem key={i} />)}</div>
+        <div>
+            {Array.from({ length: BATCH }, (_, i) => (
+                <OldItem key={i} />
+            ))}
+        </div>
     );
     // wait for fetches to start
     await waitFor(() => expect(resolveAll.length).toBe(BATCH));
@@ -469,7 +562,11 @@ test(`benchmark: useRemoteData — full lifecycle (fetch + resolve + render)`, a
     resolveAll = [];
     const t0New = performance.now();
     const { unmount: unmount2 } = render(
-        <div>{Array.from({ length: BATCH }, (_, i) => <OptItem key={i} />)}</div>
+        <div>
+            {Array.from({ length: BATCH }, (_, i) => (
+                <OptItem key={i} />
+            ))}
+        </div>
     );
     await waitFor(() => expect(resolveAll.length).toBe(BATCH));
     act(() => resolveAll.forEach((r, i) => r(i)));

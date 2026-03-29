@@ -129,7 +129,9 @@ function formatValue(state: RemoteData<unknown, unknown>): string {
         case 'stale-pending':
             return truncate(JSON.stringify(state.stale.value), 60);
         case 'failed':
-            return state.errors.map((e) => (e.tag === 'unexpected' ? String(e.value) : JSON.stringify(e.value))).join(', ');
+            return state.errors
+                .map((e) => (e.tag === 'unexpected' ? String(e.value) : JSON.stringify(e.value)))
+                .join(', ');
         default:
             return '';
     }
@@ -191,8 +193,7 @@ export function RemoteDataDevtools({
         return () => clearInterval(handle);
     }, [interval]);
 
-    const posStyle =
-        pos === 'bottom-right' ? { bottom: 8, right: 8 } : { bottom: 8, left: 8 };
+    const posStyle = pos === 'bottom-right' ? { bottom: 8, right: 8 } : { bottom: 8, left: 8 };
 
     return (
         <div
@@ -227,15 +228,12 @@ export function RemoteDataDevtools({
             >
                 <span>use-remote-data</span>
                 <span style={{ color: '#888' }}>
-                    {stores.length} store{stores.length !== 1 ? 's' : ''}{' '}
-                    {collapsed ? '▸' : '▾'}
+                    {stores.length} store{stores.length !== 1 ? 's' : ''} {collapsed ? '▸' : '▾'}
                 </span>
             </div>
             {!collapsed && (
                 <div style={{ padding: '4px 0' }}>
-                    {stores.length === 0 && (
-                        <div style={{ padding: '8px 10px', color: '#666' }}>No stores found</div>
-                    )}
+                    {stores.length === 0 && <div style={{ padding: '8px 10px', color: '#666' }}>No stores found</div>}
                     {stores.map((s) => {
                         const { symbol, color } = stateLabel[s.state.type] ?? {
                             symbol: '?',
@@ -253,26 +251,12 @@ export function RemoteDataDevtools({
                             >
                                 <div>
                                     <span style={{ color, marginRight: 6 }}>{symbol}</span>
-                                    <span style={{ color: '#adf' }}>
-                                        {s.storeName ?? s.propName}
-                                    </span>
-                                    <span style={{ color: '#666', marginLeft: 8 }}>
-                                        {s.state.type}
-                                    </span>
-                                    {age && (
-                                        <span style={{ color: '#666', marginLeft: 8 }}>
-                                            {age}
-                                        </span>
-                                    )}
+                                    <span style={{ color: '#adf' }}>{s.storeName ?? s.propName}</span>
+                                    <span style={{ color: '#666', marginLeft: 8 }}>{s.state.type}</span>
+                                    {age && <span style={{ color: '#666', marginLeft: 8 }}>{age}</span>}
                                 </div>
-                                {value && (
-                                    <div style={{ color: '#999', marginLeft: 16, marginTop: 1 }}>
-                                        {value}
-                                    </div>
-                                )}
-                                <div style={{ color: '#555', marginLeft: 16 }}>
-                                    {s.componentName}
-                                </div>
+                                {value && <div style={{ color: '#999', marginLeft: 16, marginTop: 1 }}>{value}</div>}
+                                <div style={{ color: '#555', marginLeft: 16 }}>{s.componentName}</div>
                             </div>
                         );
                     })}

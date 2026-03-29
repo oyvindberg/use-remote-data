@@ -16,9 +16,7 @@ use `useRemoteDataMap` in the parent and pass individual stores to children:
 
 ```tsx
 function OrderList({ orderIds }: { orderIds: number[] }) {
-    const orders = useRemoteDataMap<number, Order>(
-        (id, signal) => fetchOrder(id, signal)
-    );
+    const orders = useRemoteDataMap<number, Order>((id, signal) => fetchOrder(id, signal));
 
     return (
         <div>

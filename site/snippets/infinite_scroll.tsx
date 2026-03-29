@@ -29,9 +29,7 @@ const fetchPage = (cursor: number): Promise<Page> =>
 
 export function Component() {
     const [cursors, setCursors] = useState([0]);
-    const pages = useRemoteDataMap<number, Page>(
-        (cursor) => fetchPage(cursor)
-    );
+    const pages = useRemoteDataMap<number, Page>((cursor) => fetchPage(cursor));
 
     const loadMore = (nextCursor: number) =>
         setCursors((prev) =>
@@ -44,7 +42,9 @@ export function Component() {
                 <Await
                     key={cursor}
                     store={pages.get(cursor)}
-                    loading={() => <p style={{ color: 'gray' }}>Loading page...</p>}
+                    loading={() => (
+                        <p style={{ color: 'gray' }}>Loading page...</p>
+                    )}
                     error={({ retry }) => (
                         <div style={{ color: 'red' }}>
                             <p>Failed to load page.</p>
@@ -58,7 +58,9 @@ export function Component() {
                                 <p key={item}>{item}</p>
                             ))}
                             {page.nextCursor !== null && (
-                                <button onClick={() => loadMore(page.nextCursor!)}>
+                                <button
+                                    onClick={() => loadMore(page.nextCursor!)}
+                                >
                                     Load more
                                 </button>
                             )}
