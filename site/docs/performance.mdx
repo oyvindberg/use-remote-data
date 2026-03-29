@@ -1,0 +1,72 @@
+# Performance
+
+`use-remote-data` is designed to add as little overhead as possible on top of raw React. Here's how it compares to react-query.
+
+## Benchmark setup
+
+1,000 components, each fetching a number with 5ms simulated latency, rendering "..." while loading, then the resolved value. Measured in Chrome using `performance.now()`, median of 5 iterations. Three metrics:
+
+- **Mount** — render all components from scratch
+- **Re-render** — parent state change forces all children to re-render (data already loaded)
+- **Full lifecycle** — mount, fetch, resolve, render data (the metric that matters most)
+
+## Unique queries (no sharing)
+
+Every component fetches a different resource. Deduplication has nothing to deduplicate — this measures pure per-component overhead.
+
+| Scenario | Mount | Re-render | Full lifecycle |
+| --- | ---: | ---: | ---: |
+| **raw React** (useState + useEffect) | 31 ms | 8 ms | 67 ms |
+| **use-remote-data** | 25 ms | 13 ms | 160 ms |
+| **react-query** | 116 ms | 21 ms | 987 ms |
+
+use-remote-data is within noise of raw React on mount. react-query is 6x slower on the full lifecycle — its QueryClient cache, QueryObserver instances, key hashing, and retry/focus middleware are pure overhead when every query is unique.
+
+## The deduplication crossover
+
+Real apps share data: a user profile fetched by the nav bar, the sidebar, and the settings page. When multiple components request the same resource, react-query deduplicates fetches automatically. `use-remote-data` does the same with `useSharedRemoteData`.
+
+We ran the same 1,000 components with varying numbers of unique keys. With 100 unique keys, each resource is shared by 10 components. With 1 unique key, all 1,000 components request the same resource.
+
+### Full lifecycle (ms) by sharing ratio
+
+| Sharing | use-remote-data | react-query |
+| --- | ---: | ---: |
+| 1x (all unique) | **160** | 987 |
+| 2x | **207** | 626 |
+| 10x | **414** | 236 |
+| 100x | 534 | **175** |
+| 1000x (all same) | 616 | **84** |
+
+**The crossover is around 10x sharing.** Below that, use-remote-data wins — each component is cheap and there are few duplicates to eliminate. Above that, react-query wins — firing 10 fetches instead of 1,000 is faster regardless of per-query overhead.
+
+For shared data, use `useSharedRemoteData` which deduplicates by name — similar to react-query's `queryKey`. In our benchmarks, `useSharedRemoteData` tracks react-query closely in the deduplication zone.
+
+### Choosing the right hook
+
+| Scenario | Recommended hook |
+| --- | --- |
+| Component-local data (search results, form submissions) | `useRemoteData` |
+| Data shared by 2-3 components in a subtree | `useRemoteData` + prop passing |
+| Data shared across the app (current user, config) | `useSharedRemoteData` |
+
+You don't have to choose upfront. Start with `useRemoteData` and switch to `useSharedRemoteData` when you need deduplication — the API is nearly identical.
+
+## Why it's fast
+
+`use-remote-data` stores state in React's own `useState` with class instances allocated once via `useRef`. The per-render cost is a single `sync()` call (three field assignments). Store objects are cached — same reference across renders, no allocations.
+
+react-query is built on a `QueryClient` cache with `QueryObserver` instances that subscribe via `useSyncExternalStore`. Every query creates an observer, hashes its key, subscribes to cache notifications, and runs through retry/focus/reconnect middleware. These features buy you deduplication, devtools, and automatic refetching — but they have a per-query cost that adds up.
+
+## Reproducing
+
+The benchmark app is in `bench/`. It runs in a real browser — no jsdom.
+
+```bash
+cd bench
+npm install
+npx vite
+# open http://localhost:5173 in Chrome
+```
+
+Click "Run Benchmark" to run all five sharing tiers automatically. You can adjust the component count and iteration count.

@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Server-Side Rendering', id: 'ssr' },
         { type: 'doc', label: 'Testing', id: 'testing' },
         { type: 'doc', label: 'Debugging', id: 'debugging' },
+        { type: 'doc', label: 'Performance', id: 'performance' },
         { type: 'doc', label: 'Migrating from react-query', id: 'migrating-from-react-query' },
         {
             type: 'category',

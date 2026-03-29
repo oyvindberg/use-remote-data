@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>use-remote-data benchmark</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: ui-monospace, monospace; padding: 24px; background: #111; color: #eee; }
+        h1 { font-size: 18px; margin-bottom: 16px; }
+        #app { max-width: 900px; }
+        table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+        th, td { padding: 6px 12px; text-align: right; border: 1px solid #333; }
+        th { background: #222; text-align: left; }
+        td:first-child { text-align: left; }
+        .running { color: #ff0; }
+        .done { color: #0f0; }
+        button { font-family: inherit; font-size: 14px; padding: 8px 16px; margin: 8px 4px; cursor: pointer; background: #333; color: #eee; border: 1px solid #555; }
+        button:hover { background: #444; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .hidden { display: none; }
+        #stage { position: fixed; top: -9999px; left: -9999px; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="stage"></div>
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
