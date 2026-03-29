@@ -49,11 +49,20 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
     // request versioning and abort controllers for cancellation
     const requestVersionsRef = useRef(new Map<K, number>());
     const abortControllersRef = useRef(new Map<K, AbortController>());
+    const refreshHandlesRef = useRef(new Map<K, { handle: ReturnType<typeof setTimeout>; updatedAt: Date }>());
 
-    // abort all in-flight requests on unmount
+    // abort all in-flight requests and clear refresh timers on unmount
     useEffect(
         () => () => {
             abortControllersRef.current.forEach((c) => c.abort());
+            if (refreshHandlesRef.current.size > 0) {
+                refreshHandlesRef.current.forEach(({ handle }, key) => {
+                    if (options.debug) {
+                        options.debug(`${storeName(key)}: cancelled refresh on unmount`);
+                    }
+                    clearTimeout(handle);
+                });
+            }
         },
         []
     );
@@ -154,6 +163,8 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
             // abort all in-flight requests and bump their versions so stale responses are discarded
             abortControllersRef.current.forEach((c) => c.abort());
             abortControllersRef.current.clear();
+            refreshHandlesRef.current.forEach(({ handle }) => clearTimeout(handle));
+            refreshHandlesRef.current.clear();
             requestVersionsRef.current.forEach((v, k) => {
                 requestVersionsRef.current.set(k, v + 1);
             });
@@ -194,18 +205,27 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
                     return;
                 case 'fresh':
                     return;
-                case 'check-after':
+                case 'check-after': {
+                    // skip if a timer is already running for this exact data version
+                    const existing = refreshHandlesRef.current.get(key);
+                    if (existing && existing.updatedAt.getTime() === success.updatedAt.getTime()) {
+                        return;
+                    }
+                    if (existing) {
+                        clearTimeout(existing.handle);
+                    }
+
                     if (options.debug) {
                         options.debug(`${storeName(key)}: will refresh in ${staleness.millis}`);
                     }
 
-                    const handle = setTimeout(() => set(key, RemoteData.StaleInitial(success)), staleness.millis);
-                    return () => {
-                        if (options.debug) {
-                            options.debug(`${storeName(key)}: cancelled refresh on unmount`);
-                        }
-                        clearTimeout(handle);
-                    };
+                    const handle = setTimeout(() => {
+                        refreshHandlesRef.current.delete(key);
+                        set(key, RemoteData.StaleInitial(success));
+                    }, staleness.millis);
+                    refreshHandlesRef.current.set(key, { handle, updatedAt: success.updatedAt });
+                    return;
+                }
             }
         }
     };
@@ -217,10 +237,24 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
                 return remoteDatas.get(key) || RemoteData.Initial;
             },
             refresh: () => {
+                const timer = refreshHandlesRef.current.get(key);
+                if (timer) {
+                    clearTimeout(timer.handle);
+                    refreshHandlesRef.current.delete(key);
+                }
                 abortControllersRef.current.get(key)?.abort();
                 const currentVersion = requestVersionsRef.current.get(key) ?? 0;
                 requestVersionsRef.current.set(key, currentVersion + 1);
-                set(key, RemoteData.initialStateFor(remoteDatas.get(key) || RemoteData.Initial));
+                setRemoteDatas((old) => {
+                    const current = old.get(key) || RemoteData.Initial;
+                    const next = RemoteData.initialStateFor(current);
+                    if (options.debug) {
+                        options.debug(`${storeName(key)} => `, next);
+                    }
+                    const updated = new Map(old);
+                    updated.set(key, next);
+                    return updated;
+                });
             },
             triggerUpdate: () => triggerUpdate(key),
             get orNull(): RemoteDataStore<V | null, E> {

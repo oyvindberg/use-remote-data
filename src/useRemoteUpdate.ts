@@ -5,7 +5,7 @@ import { RemoteUpdateOptions } from './RemoteUpdateOptions';
 import { RemoteUpdateStore } from './RemoteUpdateStore';
 import { Result } from './Result';
 import { WeakError } from './WeakError';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export const useRemoteUpdate = <T, P = void, E = never>(
     run: (params: P, signal: AbortSignal) => Promise<T>,
@@ -23,8 +23,9 @@ export const useRemoteUpdateResult = <T, P = void, E = never>(
     const requestIdRef = useRef(0);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // sync refs after commit so stable callbacks always read fresh values
-    useEffect(() => {
+    // sync refs after commit so stable callbacks always read fresh values.
+    // useLayoutEffect runs before child useEffects, minimizing the stale-ref window
+    useLayoutEffect(() => {
         fetcherRef.current = run;
         optionsRef.current = options;
     });
