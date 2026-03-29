@@ -69,7 +69,7 @@ async function measureMount(scenario: Scenario, n: number, uniqueKeys: number, i
         );
         await waitUntil(
             () => container.querySelectorAll('span').length >= n,
-            60_000,
+            30_000,
             `${scenario.name} mount iter ${i}`,
             () => `spans: ${container.querySelectorAll('span').length}/${n}`
         );
@@ -103,7 +103,7 @@ async function measureRerender(scenario: Scenario, n: number, uniqueKeys: number
     const { root, container } = renderOffscreen(<Parent />);
     await waitUntil(
         () => container.querySelectorAll('[data-resolved]').length >= n,
-        60_000,
+        30_000,
         `${scenario.name} rerender settle`,
         () => `resolved: ${container.querySelectorAll('[data-resolved]').length}/${n}`
     );
@@ -116,7 +116,7 @@ async function measureRerender(scenario: Scenario, n: number, uniqueKeys: number
         const start = performance.now();
         await waitUntil(
             () => container.querySelector('[data-tick]')?.textContent === expectedTick,
-            60_000,
+            30_000,
             `${scenario.name} rerender iter ${i}`,
         );
         times.push(performance.now() - start);
@@ -143,7 +143,7 @@ async function measureFullLifecycle(scenario: Scenario, n: number, uniqueKeys: n
 
         await waitUntil(
             () => container.querySelectorAll('[data-resolved]').length >= n,
-            60_000,
+            30_000,
             `${scenario.name} lifecycle iter ${i}`,
             () => `resolved: ${container.querySelectorAll('[data-resolved]').length}/${n}, total spans: ${container.querySelectorAll('span').length}`
         );
@@ -171,17 +171,36 @@ export async function runBenchmark(
     const results: BenchResult[] = [];
 
     for (const s of scenarios) {
-        onProgress(`${s.name}: mounting ${n}...`);
-        const mountMs = await measureMount(s, n, uniqueKeys, iters);
+        let mountMs = -1;
+        let rerenderMs = -1;
+        let fullLifecycleMs = -1;
 
-        onProgress(`${s.name}: re-rendering ${n}...`);
-        const rerenderMs = await measureRerender(s, n, uniqueKeys, iters);
+        try {
+            onProgress(`${s.name}: mounting ${n}...`);
+            mountMs = await measureMount(s, n, uniqueKeys, iters);
+        } catch (e) {
+            console.warn(`${s.name} mount failed:`, e);
+            onProgress(`${s.name}: mount timed out`);
+        }
 
-        onProgress(`${s.name}: full lifecycle (${n} fetches)...`);
-        const fullLifecycleMs = await measureFullLifecycle(s, n, uniqueKeys, iters);
+        try {
+            onProgress(`${s.name}: re-rendering ${n}...`);
+            rerenderMs = await measureRerender(s, n, uniqueKeys, iters);
+        } catch (e) {
+            console.warn(`${s.name} rerender failed:`, e);
+            onProgress(`${s.name}: rerender timed out`);
+        }
+
+        try {
+            onProgress(`${s.name}: full lifecycle (${n} fetches)...`);
+            fullLifecycleMs = await measureFullLifecycle(s, n, uniqueKeys, iters);
+        } catch (e) {
+            console.warn(`${s.name} lifecycle failed:`, e);
+            onProgress(`${s.name}: lifecycle timed out`);
+        }
 
         results.push({ name: s.name, mountMs, rerenderMs, fullLifecycleMs });
-        onProgress(`${s.name}: done (${mountMs.toFixed(0)} / ${rerenderMs.toFixed(0)} / ${fullLifecycleMs.toFixed(0)})`);
+        onProgress(`${s.name}: done`);
     }
 
     return results;

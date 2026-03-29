@@ -88,12 +88,17 @@ function App() {
 
 function ResultsTable({ config }: { config: RunConfig }) {
     const { label, results } = config;
-    const fmt = (ms: number) => ms.toFixed(1);
-    const best = (field: keyof Omit<BenchResult, 'name'>) =>
-        Math.min(...results.map((r) => r[field]));
+    const fmt = (ms: number) => ms < 0 ? 'T/O' : ms.toFixed(1);
+    const validResults = (field: keyof Omit<BenchResult, 'name'>) =>
+        results.map((r) => r[field]).filter((v) => v >= 0);
+    const best = (field: keyof Omit<BenchResult, 'name'>) => {
+        const valid = validResults(field);
+        return valid.length > 0 ? Math.min(...valid) : -1;
+    };
 
     const cell = (val: number, bestVal: number) => {
-        const isBest = Math.abs(val - bestVal) < 0.5;
+        if (val < 0) return <td style={{ color: '#f55' }}>T/O</td>;
+        const isBest = bestVal >= 0 && Math.abs(val - bestVal) < 0.5;
         return (
             <td style={isBest ? { color: '#0f0', fontWeight: 'bold' } : {}}>
                 {fmt(val)}
