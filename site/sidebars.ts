@@ -24,6 +24,7 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Mutations', id: 'mutations' },
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
+        { type: 'doc', label: 'Infinite Scroll', id: 'infinite-scroll' },
         { type: 'doc', label: 'Cancellation', id: 'cancellation' },
         { type: 'doc', label: 'Typed Errors', id: 'typed-errors' },
         { type: 'doc', label: 'Server-Side Rendering', id: 'ssr' },

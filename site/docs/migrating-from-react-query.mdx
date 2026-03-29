@@ -29,7 +29,7 @@ react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isE
 | `useMutation`                     | `useRemoteUpdate`                                 | First-class mutations with `run()`, `reset()`, typed state machine.                                       |
 | `invalidateQueries(['users'])`    | `refreshes: [usersStore]` on `useRemoteUpdate`    | Declare which stores refresh after a successful mutation. Or call `store.refresh()` manually.             |
 | `useQueries([...])`               | `RemoteDataStore.all(store1, store2)`             | Combine into a typed tuple. Retry only re-fetches failed requests.                                        |
-| `useInfiniteQuery`                | `useRemoteDataMap` + local page list              | Each page is a key in the map. See [example below](#infinite-scroll).                                     |
+| `useInfiniteQuery`                | `useRemoteDataMap` + local page list              | Each page is a key in the map. See [Infinite Scroll](infinite-scroll).                                    |
 | `QueryClient` devtools            | `debug: console.warn`                             | No devtools panel, but full state-transition logging.                                                     |
 
 ## Step-by-step migration
@@ -202,7 +202,7 @@ function PostFeed() {
 }
 ```
 
-Each page is an independent store entry — already-loaded pages stay rendered while the next page loads. If a page fails, its `<Await>` shows an error with retry, without affecting the other pages.
+Each page is an independent store entry — already-loaded pages stay rendered while the next page loads. If a page fails, its `<Await>` shows an error with retry, without affecting the other pages. See the [Infinite Scroll](infinite-scroll) page for a runnable example.
 
 ## Coexistence
 

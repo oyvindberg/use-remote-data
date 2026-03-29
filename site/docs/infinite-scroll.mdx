@@ -1,0 +1,34 @@
+import { Snippet } from '../src/components/Snippet';
+
+# Infinite Scroll
+
+Infinite scroll is a `useRemoteDataMap` where each page is a key and you grow the list of keys as the user scrolls.
+
+```tsx
+const [cursors, setCursors] = useState([0]);
+const pages = useRemoteDataMap<number, Page>(
+    (cursor, signal) => fetchPage(cursor, signal)
+);
+```
+
+Each cursor maps to an independent store. Already-loaded pages stay rendered while the next page loads. If page 3 fails, pages 1 and 2 keep their data — the error and retry button only appear for page 3.
+
+## Try it
+
+This snippet simulates 25 items across 5 pages, with random failures on ~every 4th fetch. Click "Load more" to fetch the next page. When a page fails, click "Retry this page" — only the failed page re-fetches.
+
+<Snippet snippet="infinite_scroll" />
+
+## How it works
+
+1. `useState([0])` tracks which cursors to render — starts with the first page
+2. `useRemoteDataMap` manages one store per cursor — fetches are deduped by key
+3. Each `<Await>` independently handles loading, error, and success for its page
+4. "Load more" appends the next cursor to the list, which triggers a new `<Await>` to mount and start fetching
+5. A failed page shows its own error + retry without affecting the rest
+
+## Compared to react-query
+
+react-query's `useInfiniteQuery` treats all pages as a single query. If page 3 fails, the entire query fails — you lose pages 1 and 2 and must refetch everything.
+
+With `useRemoteDataMap`, each page is independent. Failures are isolated. Retry is surgical — only the broken page re-fetches.
