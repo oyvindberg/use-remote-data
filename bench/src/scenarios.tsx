@@ -1,20 +1,27 @@
 /**
- * Four scenario implementations, each doing the same work:
+ * Benchmark scenarios. Each does the same work:
  *   1. Fetch a number (5ms simulated latency)
  *   2. Render it once resolved
  *   3. Show "..." while loading
  *
+ * The `uniqueKeys` parameter controls how many distinct fetch keys exist.
+ * E.g. 1000 components with uniqueKeys=100 → each key is fetched by 10 components.
+ * This lets us compare deduplication (react-query, useSharedRemoteData) vs
+ * per-component fetching (useRemoteData, raw React).
+ *
  * Variants:
  *   - raw React (useState + useEffect, no library)
- *   - use-remote-data (current, class-based)
- *   - use-remote-data "old style" (closures per render, inlined)
- *   - @tanstack/react-query
+ *   - use-remote-data (useRemoteData, per-component)
+ *   - use-remote-data shared (useSharedRemoteData, deduplicated)
+ *   - use-remote-data old style (closures per render)
+ *   - @tanstack/react-query (deduplicated)
  */
 import React, { DependencyList, useEffect, useRef, useState } from 'react';
 import {
     Await,
     useRemoteData,
 } from 'use-remote-data';
+import { SharedStoreProvider, useSharedRemoteData } from 'use-remote-data/SharedStoreProvider';
 import { RemoteData } from 'use-remote-data/RemoteData';
 import { RemoteDataStore } from 'use-remote-data/RemoteDataStore';
 import { Result } from 'use-remote-data/Result';
@@ -64,7 +71,7 @@ export const rawScenario: Scenario = {
 };
 
 // ---------------------------------------------------------------------------
-// 1. use-remote-data (current, class-based)
+// 1. use-remote-data (current, class-based, per-component)
 // ---------------------------------------------------------------------------
 
 const loading = () => <span>...</span>;
@@ -79,13 +86,38 @@ function URDItem({ id }: { id: number }) {
 }
 
 export const urdScenario: Scenario = {
-    name: 'use-remote-data (classes)',
+    name: 'use-remote-data',
     Item: URDItem,
 };
 
 // ---------------------------------------------------------------------------
-// 2. use-remote-data OLD STYLE — closures per render
-//    Faithful reproduction of the pre-optimisation hook shape.
+// 2. use-remote-data shared (useSharedRemoteData, deduplicated)
+// ---------------------------------------------------------------------------
+
+function URDSharedItem({ id }: { id: number }) {
+    const store = useSharedRemoteData(
+        `bench-${id}`,
+        () => fakeFetch(id)
+    );
+    return (
+        <Await store={store} loading={loading}>
+            {(v) => <span data-resolved>{v}</span>}
+        </Await>
+    );
+}
+
+function URDSharedWrapper({ children }: { children: React.ReactNode }) {
+    return <SharedStoreProvider>{children}</SharedStoreProvider>;
+}
+
+export const urdSharedScenario: Scenario = {
+    name: 'use-remote-data (shared)',
+    Item: URDSharedItem,
+    Wrapper: URDSharedWrapper,
+};
+
+// ---------------------------------------------------------------------------
+// 3. use-remote-data OLD STYLE — closures per render
 // ---------------------------------------------------------------------------
 
 function OldAwait<T>({ store, children }: {
@@ -154,9 +186,7 @@ const useRemoteDataOld = <T,>(
                     if (requestVersionsRef.current.get(key) !== requestVersion) return;
                     switch (result.tag) {
                         case 'ok': {
-                            const value = result.value;
-                            const now = new Date();
-                            set(key, RemoteData.Success(value, now));
+                            set(key, RemoteData.Success(result.value, new Date()));
                         }
                     }
                 })
@@ -225,11 +255,10 @@ export const urdOldScenario: Scenario = {
 };
 
 // ---------------------------------------------------------------------------
-// 3. @tanstack/react-query
+// 4. @tanstack/react-query (deduplicated)
 // ---------------------------------------------------------------------------
 
 function RQWrapper({ children }: { children: React.ReactNode }) {
-    // lazy init — avoid constructing a new QueryClient on every render
     const clientRef = useRef<QueryClient | null>(null);
     if (clientRef.current === null) {
         clientRef.current = new QueryClient({
@@ -237,7 +266,7 @@ function RQWrapper({ children }: { children: React.ReactNode }) {
                 queries: {
                     retry: false,
                     staleTime: Infinity,
-                    gcTime: 5 * 60 * 1000, // keep cache alive during benchmark
+                    gcTime: 5 * 60 * 1000,
                 },
             },
         });
@@ -259,3 +288,20 @@ export const rqScenario: Scenario = {
     Item: RQItem,
     Wrapper: RQWrapper,
 };
+
+// ---------------------------------------------------------------------------
+// Scenario builder — maps component id to a fetch key based on uniqueKeys
+// ---------------------------------------------------------------------------
+
+/** Wraps a scenario so that component `id` maps to `id % uniqueKeys`. */
+export function withKeyMapping(scenario: Scenario, uniqueKeys: number): Scenario {
+    const MappedItem = ({ id }: { id: number }) => {
+        const mappedId = id % uniqueKeys;
+        return <scenario.Item id={mappedId} />;
+    };
+    return {
+        ...scenario,
+        name: scenario.name,
+        Item: MappedItem,
+    };
+}

@@ -1,12 +1,18 @@
 import { createRoot } from 'react-dom/client';
 import React, { useState, useCallback } from 'react';
 import { runBenchmark, type BenchResult } from './harness';
-import { rawScenario, urdOldScenario, urdScenario, rqScenario } from './scenarios';
-
-const SCENARIOS = [rawScenario, urdOldScenario, urdScenario, rqScenario];
+import {
+    rawScenario,
+    urdOldScenario,
+    urdScenario,
+    urdSharedScenario,
+    rqScenario,
+    withKeyMapping,
+} from './scenarios';
 
 function App() {
     const [n, setN] = useState(1000);
+    const [uniqueKeys, setUniqueKeys] = useState(1000);
     const [iters, setIters] = useState(5);
     const [running, setRunning] = useState(false);
     const [status, setStatus] = useState('Ready.');
@@ -17,16 +23,37 @@ function App() {
         setResults(null);
         await new Promise((r) => setTimeout(r, 50));
 
-        const res = await runBenchmark(SCENARIOS, n, iters, setStatus);
+        const hasDedup = uniqueKeys < n;
+
+        // Build scenarios based on config.
+        // When uniqueKeys < n, multiple components share the same key —
+        // this is where deduplication matters, so include shared/react-query.
+        const scenarios = hasDedup
+            ? [
+                  withKeyMapping(rawScenario, uniqueKeys),
+                  withKeyMapping(urdScenario, uniqueKeys),
+                  withKeyMapping(urdSharedScenario, uniqueKeys),
+                  withKeyMapping(urdOldScenario, uniqueKeys),
+                  withKeyMapping(rqScenario, uniqueKeys),
+              ]
+            : [
+                  rawScenario,
+                  urdOldScenario,
+                  urdScenario,
+                  urdSharedScenario,
+                  rqScenario,
+              ];
+
+        const res = await runBenchmark(scenarios, n, iters, setStatus);
         setResults(res);
         setStatus('Done.');
         setRunning(false);
-    }, [n, iters]);
+    }, [n, uniqueKeys, iters]);
 
     return (
         <div>
             <h1>use-remote-data benchmark</h1>
-            <div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
                 <label>
                     Components:{' '}
                     <input
@@ -36,7 +63,15 @@ function App() {
                         style={{ width: 80, fontFamily: 'inherit' }}
                     />
                 </label>
-                {' '}
+                <label>
+                    Unique keys:{' '}
+                    <input
+                        type="number"
+                        value={uniqueKeys}
+                        onChange={(e) => setUniqueKeys(Number(e.target.value))}
+                        style={{ width: 80, fontFamily: 'inherit' }}
+                    />
+                </label>
                 <label>
                     Iterations:{' '}
                     <input
@@ -46,11 +81,15 @@ function App() {
                         style={{ width: 60, fontFamily: 'inherit' }}
                     />
                 </label>
-                {' '}
                 <button onClick={run} disabled={running}>
                     {running ? 'Running...' : 'Run Benchmark'}
                 </button>
             </div>
+            <p style={{ marginTop: 4, color: '#888', fontSize: 13 }}>
+                {uniqueKeys < n
+                    ? `${n} components fetching ${uniqueKeys} unique resources (${Math.round(n / uniqueKeys)}x sharing)`
+                    : `${n} components each fetching a unique resource`}
+            </p>
             <p className={running ? 'running' : 'done'} style={{ marginTop: 8 }}>
                 {status}
             </p>
@@ -74,7 +113,6 @@ function ResultsTable({ results }: { results: BenchResult[] }) {
         );
     };
 
-    // find the raw baseline for "overhead" column
     const raw = results.find((r) => r.name.includes('raw'));
 
     return (
