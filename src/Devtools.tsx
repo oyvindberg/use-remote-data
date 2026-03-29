@@ -84,10 +84,14 @@ function scanTree(rootFiber: any): StoreInfo[] {
         for (const [propName, value] of Object.entries(props)) {
             if (propName === 'children') continue;
             if (!isRemoteDataStore(value)) continue;
-            if (seen.has(value)) continue;
-            seen.add(value);
-
+            // Deduplicate by storeName when set (shared stores create fresh
+            // facade objects each render, but share the same name), otherwise
+            // by object reference (KeyStore instances are cached and stable).
             const store = value as RemoteDataStore<unknown, unknown>;
+            const dedupeKey = store.storeName ?? value;
+            if (seen.has(dedupeKey)) continue;
+            seen.add(dedupeKey);
+
             const componentName = getComponentName(fiber);
             found.push({
                 id: `${componentName}:${store.storeName ?? propName}`,
