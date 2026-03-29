@@ -1,12 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import React, { useState, useCallback } from 'react';
 import { runBenchmark, type BenchResult } from './harness';
-import {
-    rawScenario,
-    urdScenario,
-    rqScenario,
-    withKeyMapping,
-} from './scenarios';
+import { rawScenario, urdScenario, rqScenario } from './scenarios';
+
+const SCENARIOS = [rawScenario, urdScenario, rqScenario];
 
 interface RunConfig {
     label: string;
@@ -41,13 +38,7 @@ function App() {
             setStatus(`Running: ${tier.label}...`);
             await new Promise((r) => setTimeout(r, 30));
 
-            const scenarios = [
-                withKeyMapping(rawScenario, tier.uniqueKeys),
-                withKeyMapping(urdScenario, tier.uniqueKeys),
-                withKeyMapping(rqScenario, tier.uniqueKeys),
-            ];
-
-            const results = await runBenchmark(scenarios, n, iters, (msg) =>
+            const results = await runBenchmark(SCENARIOS, n, tier.uniqueKeys, iters, (msg) =>
                 setStatus(`${tier.label}: ${msg}`)
             );
             allRuns.push({ label: tier.label, uniqueKeys: tier.uniqueKeys, results });

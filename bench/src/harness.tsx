@@ -5,10 +5,17 @@
 import { createRoot } from 'react-dom/client';
 import React, { useState } from 'react';
 
+/**
+ * Each scenario provides a single component that renders `n` items.
+ * The component receives `n` and `uniqueKeys` and must render
+ * a `<span data-resolved>` for each item once its data arrives.
+ * This lets each library use its natural pattern — per-component hooks,
+ * parent-owned maps, or whatever fits.
+ */
 export interface Scenario {
     name: string;
-    Item: React.FC<{ id: number }>;
-    Wrapper?: React.FC<{ children: React.ReactNode }>;
+    /** Renders `n` items. Each resolved item must contain a <span data-resolved>. */
+    Scene: React.FC<{ n: number; uniqueKeys: number }>;
 }
 
 export interface BenchResult {
@@ -49,19 +56,16 @@ function waitUntil(predicate: () => boolean, timeout: number, label: string, dia
 }
 
 // ---------------------------------------------------------------------------
-// Mount: render N items, wait for first commit
+// Mount
 // ---------------------------------------------------------------------------
 
-async function measureMount(scenario: Scenario, n: number, iters: number): Promise<number> {
+async function measureMount(scenario: Scenario, n: number, uniqueKeys: number, iters: number): Promise<number> {
     const times: number[] = [];
-    const Wrap = scenario.Wrapper ?? React.Fragment;
 
     for (let i = 0; i < iters; i++) {
         const start = performance.now();
         const { root, container } = renderOffscreen(
-            <Wrap>
-                {Array.from({ length: n }, (_, j) => <scenario.Item key={j} id={j} />)}
-            </Wrap>
+            <scenario.Scene n={n} uniqueKeys={uniqueKeys} />
         );
         await waitUntil(
             () => container.querySelectorAll('span').length >= n,
@@ -79,21 +83,20 @@ async function measureMount(scenario: Scenario, n: number, iters: number): Promi
 }
 
 // ---------------------------------------------------------------------------
-// Re-render: mount once, then trigger parent state changes
+// Re-render
 // ---------------------------------------------------------------------------
 
-async function measureRerender(scenario: Scenario, n: number, iters: number): Promise<number> {
-    const Wrap = scenario.Wrapper ?? React.Fragment;
+async function measureRerender(scenario: Scenario, n: number, uniqueKeys: number, iters: number): Promise<number> {
     let triggerRerender: (() => void) | null = null;
 
     function Parent() {
         const [tick, setTick] = useState(0);
         triggerRerender = () => setTick((t) => t + 1);
         return (
-            <Wrap>
-                {Array.from({ length: n }, (_, j) => <scenario.Item key={j} id={j} />)}
+            <div>
+                <scenario.Scene n={n} uniqueKeys={uniqueKeys} />
                 <span data-tick>{tick}</span>
-            </Wrap>
+            </div>
         );
     }
 
@@ -126,19 +129,16 @@ async function measureRerender(scenario: Scenario, n: number, iters: number): Pr
 }
 
 // ---------------------------------------------------------------------------
-// Full lifecycle: mount → fetch → resolve → render data
+// Full lifecycle
 // ---------------------------------------------------------------------------
 
-async function measureFullLifecycle(scenario: Scenario, n: number, iters: number): Promise<number> {
-    const Wrap = scenario.Wrapper ?? React.Fragment;
+async function measureFullLifecycle(scenario: Scenario, n: number, uniqueKeys: number, iters: number): Promise<number> {
     const times: number[] = [];
 
     for (let i = 0; i < iters; i++) {
         const start = performance.now();
         const { root, container } = renderOffscreen(
-            <Wrap>
-                {Array.from({ length: n }, (_, j) => <scenario.Item key={j} id={j} />)}
-            </Wrap>
+            <scenario.Scene n={n} uniqueKeys={uniqueKeys} />
         );
 
         await waitUntil(
@@ -164,6 +164,7 @@ async function measureFullLifecycle(scenario: Scenario, n: number, iters: number
 export async function runBenchmark(
     scenarios: Scenario[],
     n: number,
+    uniqueKeys: number,
     iters: number,
     onProgress: (msg: string) => void
 ): Promise<BenchResult[]> {
@@ -171,13 +172,13 @@ export async function runBenchmark(
 
     for (const s of scenarios) {
         onProgress(`${s.name}: mounting ${n}...`);
-        const mountMs = await measureMount(s, n, iters);
+        const mountMs = await measureMount(s, n, uniqueKeys, iters);
 
         onProgress(`${s.name}: re-rendering ${n}...`);
-        const rerenderMs = await measureRerender(s, n, iters);
+        const rerenderMs = await measureRerender(s, n, uniqueKeys, iters);
 
         onProgress(`${s.name}: full lifecycle (${n} fetches)...`);
-        const fullLifecycleMs = await measureFullLifecycle(s, n, iters);
+        const fullLifecycleMs = await measureFullLifecycle(s, n, uniqueKeys, iters);
 
         results.push({ name: s.name, mountMs, rerenderMs, fullLifecycleMs });
         onProgress(`${s.name}: done (${mountMs.toFixed(0)} / ${rerenderMs.toFixed(0)} / ${fullLifecycleMs.toFixed(0)})`);
