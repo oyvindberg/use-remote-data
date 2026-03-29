@@ -26,12 +26,13 @@ function App() {
         setRuns(null);
         await new Promise((r) => setTimeout(r, 50));
 
+        const k = (divisor: number) => Math.max(1, Math.round(n / divisor));
         const tiers = [
-            { uniqueKeys: n, label: `${n} unique (no sharing)` },
-            { uniqueKeys: Math.max(1, Math.round(n / 2)), label: `${Math.max(1, Math.round(n / 2))} unique (2x sharing)` },
-            { uniqueKeys: Math.max(1, Math.round(n / 10)), label: `${Math.max(1, Math.round(n / 10))} unique (10x sharing)` },
-            { uniqueKeys: Math.max(1, Math.round(n / 100)), label: `${Math.max(1, Math.round(n / 100))} unique (100x sharing)` },
-            { uniqueKeys: 1, label: `1 unique (all same)` },
+            { uniqueKeys: n, label: `${n} resources, each fetched by 1 component` },
+            { uniqueKeys: k(2), label: `${k(2)} resources, each fetched by 2 components` },
+            { uniqueKeys: k(10), label: `${k(10)} resources, each fetched by 10 components` },
+            { uniqueKeys: k(100), label: `${k(100)} resources, each fetched by 100 components` },
+            { uniqueKeys: 1, label: `1 resource fetched by all ${n} components` },
         ];
 
         const allRuns: RunConfig[] = [];

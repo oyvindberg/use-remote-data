@@ -10,9 +10,14 @@
 - **Re-render** — parent state change forces all children to re-render (data already loaded)
 - **Full lifecycle** — mount, fetch, resolve, render data (the metric that matters most)
 
-## Unique queries (no sharing)
+Each library uses its recommended pattern:
 
-Every component fetches a different resource. Deduplication has nothing to deduplicate — this measures pure per-component overhead.
+- **use-remote-data** — `useRemoteDataMap` in a parent component, stores passed to children via context. This is the natural React approach: lift state up, pass it down. When multiple children need the same resource, they share the same store — no duplicate fetches, no deduplication infrastructure.
+- **react-query** — `useQuery` per component. react-query deduplicates automatically through its QueryClient cache.
+
+## 1,000 resources, each fetched by 1 component
+
+No sharing — every component fetches a different resource. This measures pure per-component overhead.
 
 | Scenario | Mount | Re-render | Full lifecycle |
 | --- | ---: | ---: | ---: |
@@ -20,37 +25,66 @@ Every component fetches a different resource. Deduplication has nothing to dedup
 | **use-remote-data** | 25 ms | 13 ms | 160 ms |
 | **react-query** | 116 ms | 21 ms | 987 ms |
 
-use-remote-data is within noise of raw React on mount. react-query is 6x slower on the full lifecycle — its QueryClient cache, QueryObserver instances, key hashing, and retry/focus middleware are pure overhead when every query is unique.
+use-remote-data is within noise of raw React on mount. react-query is 6x slower on the full lifecycle.
 
-## The deduplication crossover
+## Sharing: how deduplication changes the picture
 
-Real apps share data: a user profile fetched by the nav bar, the sidebar, and the settings page. When multiple components request the same resource, react-query deduplicates fetches automatically. `use-remote-data` does the same with `useSharedRemoteData`.
+Real apps share data — a user profile used by the nav bar, the sidebar, and the settings page. We ran the benchmark with different amounts of sharing to find the crossover point.
 
-We ran the same 1,000 components with varying numbers of unique keys. With 100 unique keys, each resource is shared by 10 components. With 1 unique key, all 1,000 components request the same resource.
+### Full lifecycle (ms) — 1,000 components
 
-### Full lifecycle (ms) by sharing ratio
+| Resources | Components per resource | use-remote-data | react-query |
+| ---: | ---: | ---: | ---: |
+| 1,000 | 1 | **160** | 987 |
+| 500 | 2 | **207** | 626 |
+| 100 | 10 | **414** | 236 |
+| 10 | 100 | 534 | **175** |
+| 1 | 1,000 | 616 | **84** |
 
-| Sharing | use-remote-data | react-query |
-| --- | ---: | ---: |
-| 1x (all unique) | **160** | 987 |
-| 2x | **207** | 626 |
-| 10x | **414** | 236 |
-| 100x | 534 | **175** |
-| 1000x (all same) | 616 | **84** |
+**use-remote-data is faster when each resource is fetched by fewer than ~10 components.** This covers most real-world apps — the majority of data is page-specific or component-specific, not shared across dozens of consumers.
 
-**The crossover is around 10x sharing.** Below that, use-remote-data wins — each component is cheap and there are few duplicates to eliminate. Above that, react-query wins — firing 10 fetches instead of 1,000 is faster regardless of per-query overhead.
+When sharing is heavy (100+ components watching the same resource), react-query's per-component `useSyncExternalStore` subscription is more efficient than React's prop-based re-rendering.
 
-For shared data, use `useSharedRemoteData` which deduplicates by name — similar to react-query's `queryKey`. In our benchmarks, `useSharedRemoteData` tracks react-query closely in the deduplication zone.
+## Sharing data in use-remote-data
 
-### Choosing the right hook
+Unlike react-query, `use-remote-data` doesn't use a global cache for deduplication. Instead, you share data the React way: create the store higher in the component tree and pass it down.
 
-| Scenario | Recommended hook |
-| --- | --- |
-| Component-local data (search results, form submissions) | `useRemoteData` |
-| Data shared by 2-3 components in a subtree | `useRemoteData` + prop passing |
-| Data shared across the app (current user, config) | `useSharedRemoteData` |
+```tsx
+function Dashboard() {
+    const userStore = useRemoteData(() => fetchCurrentUser());
 
-You don't have to choose upfront. Start with `useRemoteData` and switch to `useSharedRemoteData` when you need deduplication — the API is nearly identical.
+    return (
+        <div>
+            {/* All three share one store — one fetch, one state */}
+            <NavBar userStore={userStore} />
+            <Sidebar userStore={userStore} />
+            <MainContent userStore={userStore} />
+        </div>
+    );
+}
+```
+
+For multiple keyed resources, `useRemoteDataMap` manages them from a single hook:
+
+```tsx
+function OrderList({ orderIds }: { orderIds: number[] }) {
+    const orders = useRemoteDataMap<number, Order>(
+        (id, signal) => fetchOrder(id, signal)
+    );
+
+    return (
+        <div>
+            {orderIds.map((id) => (
+                <Await key={id} store={orders.get(id)}>
+                    {(order) => <OrderRow order={order} />}
+                </Await>
+            ))}
+        </div>
+    );
+}
+```
+
+No provider, no query keys, no cache configuration. Just React components passing values.
 
 ## Why it's fast
 
