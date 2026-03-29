@@ -11,22 +11,22 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 onClick={() => setShow((s) => !s)}
                 style={{
                     position: 'fixed',
-                    bottom: 8,
-                    left: 8,
+                    bottom: 12,
+                    left: 12,
                     zIndex: 100000,
                     fontFamily: 'ui-monospace, monospace',
-                    fontSize: 11,
-                    padding: '4px 10px',
-                    background: show ? '#333' : '#1a1a1a',
-                    color: show ? '#0f0' : '#888',
-                    border: '1px solid #333',
-                    borderRadius: 4,
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    padding: '6px 14px',
+                    background: show ? '#0a0' : '#222',
+                    color: show ? '#fff' : '#0f0',
+                    border: '2px solid #0f0',
+                    borderRadius: 6,
                     cursor: 'pointer',
-                    opacity: show ? 1 : 0.5,
                 }}
                 title="Toggle use-remote-data devtools"
             >
-                urd
+                {show ? '✕ devtools' : '⚡ devtools'}
             </button>
             {show && <RemoteDataDevtools position="bottom-right" />}
         </>
