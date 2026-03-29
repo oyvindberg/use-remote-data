@@ -9,9 +9,7 @@ import { Staleness } from './Staleness';
 import { WeakError } from './WeakError';
 import { depsChanged } from './internal/depsChanged';
 import { isDefined } from './internal/isDefined';
-import { DependencyList, useEffect, useRef, useState, version } from 'react';
-
-const reactMajor = Number(version.split('.')[0]);
+import { DependencyList, useEffect, useRef, useState } from 'react';
 
 export const useRemoteDataMap = <K extends string | number, V>(
     run: (key: K, signal: AbortSignal) => Promise<V>,
@@ -48,21 +46,6 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
         return;
     };
 
-    // for react 17: we're not allowed to update state after unmount
-    // for react 18: the unmounting happens immediately, but we're allowed to update whenever
-    let canUpdate = true;
-    if (reactMajor < 18) {
-        useEffect(
-            () => () => {
-                if (options.debug) {
-                    options.debug(`${storeName(undefined)} unmounting`);
-                }
-                canUpdate = false;
-            },
-            []
-        );
-    }
-
     // request versioning and abort controllers for cancellation
     const requestVersionsRef = useRef(new Map<K, number>());
     const abortControllersRef = useRef(new Map<K, AbortController>());
@@ -76,19 +59,15 @@ export const useRemoteDataMapCore = <K extends string | number | undefined, V, E
     );
 
     const set = (key: K, data: RemoteData<V, E>): void => {
-        if (canUpdate) {
-            if (options.debug) {
-                options.debug(`${storeName(key)} => `, data);
-            }
-
-            setRemoteDatas((oldRemoteDatas) => {
-                const newRemoteDatas = new Map(oldRemoteDatas);
-                newRemoteDatas.set(key, data);
-                return newRemoteDatas;
-            });
-        } else if (options.debug) {
-            options.debug(`${storeName(key)} dropped update because component has been unmounted`, data);
+        if (options.debug) {
+            options.debug(`${storeName(key)} => `, data);
         }
+
+        setRemoteDatas((oldRemoteDatas) => {
+            const newRemoteDatas = new Map(oldRemoteDatas);
+            newRemoteDatas.set(key, data);
+            return newRemoteDatas;
+        });
     };
 
     const runAndUpdate = (key: K, pendingState: RemoteData<V, E>): Promise<void> => {

@@ -293,44 +293,28 @@ export function useSharedRemoteData<T>(
         };
     }, [name]);
 
-    // build a RemoteDataStore facade that reads from shared state
-    const storeRef = useRef<RemoteDataStore<T> | null>(null);
-
-    if (storeRef.current === null) {
-        const self: RemoteDataStore<T> = {
-            storeName: name,
-            get current() {
-                return state;
-            },
-            triggerUpdate: (): CancelTimeout => {
-                // refresh scheduling is handled by the registry,
-                // but we still need this to be callable from <Await>
-                registry.scheduleRefresh(name, entry);
-                return undefined;
-            },
-            refresh: () => {
-                registry.fetch(name, entry);
-            },
-            get orNull(): RemoteDataStore<T | null> {
-                return RemoteDataStore.orNull(self);
-            },
-            map<U>(fn: (value: T) => U): RemoteDataStore<U> {
-                return RemoteDataStore.map(self, fn);
-            },
-        };
-        storeRef.current = self;
-    }
-
-    // The store's `current` getter closes over `state` from this render.
-    // We must update the store object so `current` reflects the latest state.
-    // Re-create the getter each render to capture the new `state`.
-    const store = storeRef.current;
-    Object.defineProperty(store, 'current', {
-        get() {
+    // build a RemoteDataStore facade — created fresh each render to avoid stale closures
+    const store: RemoteDataStore<T> = {
+        storeName: name,
+        get current() {
             return state;
         },
-        configurable: true,
-    });
+        triggerUpdate: (): CancelTimeout => {
+            // refresh scheduling is handled by the registry,
+            // but we still need this to be callable from <Await>
+            registry.scheduleRefresh(name, entry);
+            return undefined;
+        },
+        refresh: () => {
+            registry.fetch(name, entry);
+        },
+        get orNull(): RemoteDataStore<T | null> {
+            return RemoteDataStore.orNull(store);
+        },
+        map<U>(fn: (value: T) => U): RemoteDataStore<U> {
+            return RemoteDataStore.map(store, fn);
+        },
+    };
 
     return store;
 }

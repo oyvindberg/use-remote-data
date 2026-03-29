@@ -5,9 +5,7 @@ import { RemoteUpdateOptions } from './RemoteUpdateOptions';
 import { RemoteUpdateStore } from './RemoteUpdateStore';
 import { Result } from './Result';
 import { WeakError } from './WeakError';
-import { useCallback, useEffect, useRef, useState, version } from 'react';
-
-const reactMajor = Number(version.split('.')[0]);
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const useRemoteUpdate = <T, P = void, E = never>(
     run: (params: P, signal: AbortSignal) => Promise<T>,
@@ -25,19 +23,11 @@ export const useRemoteUpdateResult = <T, P = void, E = never>(
     const requestIdRef = useRef(0);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    fetcherRef.current = run;
-    optionsRef.current = options;
-
-    // for react 17: we're not allowed to update state after unmount
-    const canUpdateRef = useRef(true);
-    if (reactMajor < 18) {
-        useEffect(
-            () => () => {
-                canUpdateRef.current = false;
-            },
-            []
-        );
-    }
+    // sync refs after commit so stable callbacks always read fresh values
+    useEffect(() => {
+        fetcherRef.current = run;
+        optionsRef.current = options;
+    });
 
     // abort in-flight request on unmount
     useEffect(
@@ -71,7 +61,7 @@ export const useRemoteUpdateResult = <T, P = void, E = never>(
                 .current(params, controller.signal)
                 .then((result) => {
                     if (controller.signal.aborted) return;
-                    if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
+                    if (requestIdRef.current !== requestId) return;
                     const opts = optionsRef.current;
                     switch (result.tag) {
                         case 'err': {
@@ -93,7 +83,7 @@ export const useRemoteUpdateResult = <T, P = void, E = never>(
                 })
                 .catch((error: WeakError) => {
                     if (controller.signal.aborted) return;
-                    if (requestIdRef.current !== requestId || !canUpdateRef.current) return;
+                    if (requestIdRef.current !== requestId) return;
                     const opts = optionsRef.current;
                     debugLog('unexpected error =>', error);
                     const errors: readonly Failure<WeakError, E>[] = [Failure.unexpected(error)];
