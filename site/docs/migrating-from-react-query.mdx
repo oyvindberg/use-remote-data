@@ -29,6 +29,7 @@ react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isE
 | `useMutation`                     | `useRemoteUpdate`                                 | First-class mutations with `run()`, `reset()`, typed state machine.                                       |
 | `invalidateQueries(['users'])`    | `refreshes: [usersStore]` on `useRemoteUpdate`    | Declare which stores refresh after a successful mutation. Or call `store.refresh()` manually.             |
 | `useQueries([...])`               | `RemoteDataStore.all(store1, store2)`             | Combine into a typed tuple. Retry only re-fetches failed requests.                                        |
+| `useInfiniteQuery`                | `useRemoteDataMap` + local page list              | Each page is a key in the map. See [example below](#infinite-scroll).                                     |
 | `QueryClient` devtools            | `debug: console.warn`                             | No devtools panel, but full state-transition logging.                                                     |
 
 ## Step-by-step migration
@@ -148,9 +149,60 @@ Once all queries are migrated, remove `QueryClientProvider` and uninstall `@tans
 ## What you give up
 
 - **Devtools**: react-query has a visual devtools panel. `use-remote-data` uses `debug: console.warn` for state-transition logging.
-- **Infinite queries**: No built-in infinite scroll support. You'd manage pagination with `useRemoteDataMap` or local state.
-- **Automatic deduplication by default**: `useRemoteData` is component-scoped by default. You opt into deduplication with `useSharedRemoteData`.
+- **Automatic deduplication by default**: `useRemoteData` is component-scoped by default. You opt into deduplication by [passing stores as props](sharing-data-with-children) or with `useSharedRemoteData`.
 - **Optimistic updates**: Not built-in. You can implement them by updating local state before the mutation completes.
+
+## Infinite scroll
+
+react-query has a dedicated `useInfiniteQuery` hook. In `use-remote-data`, infinite scroll is just a `useRemoteDataMap` where you grow the list of page keys:
+
+**Before (react-query):**
+
+```tsx
+const { data, fetchNextPage, hasNextPage } = useInfiniteQuery({
+    queryKey: ['posts'],
+    queryFn: ({ pageParam }) => fetchPosts(pageParam),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: 0,
+});
+```
+
+**After (use-remote-data):**
+
+```tsx
+function PostFeed() {
+    const [cursors, setCursors] = useState([0]);
+    const pages = useRemoteDataMap<number, PostPage>(
+        (cursor, signal) => fetchPosts(cursor, signal)
+    );
+
+    const addPage = (nextCursor: number) =>
+        setCursors((prev) => [...prev, nextCursor]);
+
+    return (
+        <div>
+            {cursors.map((cursor) => (
+                <Await key={cursor} store={pages.get(cursor)}>
+                    {(page) => (
+                        <>
+                            {page.posts.map((post) => (
+                                <PostCard key={post.id} post={post} />
+                            ))}
+                            {page.nextCursor && (
+                                <button onClick={() => addPage(page.nextCursor)}>
+                                    Load more
+                                </button>
+                            )}
+                        </>
+                    )}
+                </Await>
+            ))}
+        </div>
+    );
+}
+```
+
+Each page is an independent store entry — already-loaded pages stay rendered while the next page loads. If a page fails, its `<Await>` shows an error with retry, without affecting the other pages.
 
 ## Coexistence
 
