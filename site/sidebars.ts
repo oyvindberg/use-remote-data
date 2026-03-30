@@ -24,11 +24,13 @@ const sidebars: SidebarsConfig = {
         { type: 'doc', label: 'Mutations', id: 'mutations' },
         { type: 'doc', label: 'Mutation patterns', id: 'mutation-patterns' },
         { type: 'doc', label: 'Dynamic Data', id: 'dynamic-data' },
+        { type: 'doc', label: 'Infinite Scroll', id: 'infinite-scroll' },
         { type: 'doc', label: 'Cancellation', id: 'cancellation' },
         { type: 'doc', label: 'Typed Errors', id: 'typed-errors' },
         { type: 'doc', label: 'Server-Side Rendering', id: 'ssr' },
         { type: 'doc', label: 'Testing', id: 'testing' },
         { type: 'doc', label: 'Debugging', id: 'debugging' },
+        { type: 'doc', label: 'Performance', id: 'performance' },
         { type: 'doc', label: 'Migrating from react-query', id: 'migrating-from-react-query' },
         {
             type: 'category',

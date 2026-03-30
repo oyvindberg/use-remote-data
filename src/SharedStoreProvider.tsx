@@ -5,7 +5,7 @@ import { RemoteDataStore } from './RemoteDataStore';
 import { type SharedStoreOptions } from './SharedStoreOptions';
 import { Staleness } from './Staleness';
 import { type WeakError } from './WeakError';
-import { type ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from 'react';
 
 // ---------------------------------------------------------------------------
 // Registry — the mutable bag of shared state, held in a ref
@@ -16,8 +16,8 @@ interface Entry<T> {
     refCount: number;
     /** The current RemoteData state */
     state: RemoteData<T, never>;
-    /** Subscribers — each mounted hook registers a setState here */
-    listeners: Set<(rd: RemoteData<T, never>) => void>;
+    /** Subscribers — onChange callbacks from useSyncExternalStore */
+    listeners: Set<() => void>;
     /** Abort controller for the current in-flight request */
     abortController: AbortController | null;
     /** Monotonic request version (stale-response guard) */
@@ -120,7 +120,7 @@ class StoreRegistry {
         if (entry.options.debug) {
             entry.options.debug(`[shared] ${name} =>`, next);
         }
-        entry.listeners.forEach((fn) => fn(next));
+        entry.listeners.forEach((fn) => fn());
     }
 
     /** Run the fetcher, update state, handle refresh scheduling */
@@ -257,12 +257,27 @@ export function useSharedRemoteData<T>(
     const resolvedOptions: SharedStoreOptions<T> = options ?? {};
     const entry = registry.getOrCreate<T>(name, run, resolvedOptions);
 
-    // local state — synced from the shared entry via listener
-    const [state, setState] = useState<RemoteData<T, never>>(() => entry.state);
+    // subscribe to state changes — useSyncExternalStore reads synchronously,
+    // eliminating the stale frame that useState + useEffect would produce
+    const subscribe = useCallback(
+        (onChange: () => void) => {
+            entry.listeners.add(onChange);
+            return () => {
+                entry.listeners.delete(onChange);
+            };
+        },
+        [entry]
+    );
 
+    const state = useSyncExternalStore(
+        subscribe,
+        () => entry.state,
+        () => entry.state
+    );
+
+    // lifecycle management: refCount, fetch trigger, GC
     useEffect(() => {
         entry.refCount++;
-        entry.listeners.add(setState);
         registry.cancelGc(entry);
 
         if (entry.refCount === 1 && entry.state.type === 'initial') {
@@ -270,17 +285,11 @@ export function useSharedRemoteData<T>(
             registry.fetch(name, entry);
         } else if (entry.refCount === 1) {
             // First subscriber, but state is already populated (e.g., from initialData)
-            // Sync local state and schedule refresh if configured
-            setState(entry.state);
             registry.scheduleRefresh(name, entry);
-        } else {
-            // Late joiner — sync to current state
-            setState(entry.state);
         }
 
         return () => {
             entry.refCount--;
-            entry.listeners.delete(setState);
 
             if (entry.refCount <= 0) {
                 const gcTime = resolvedOptions.gcTime;
@@ -293,44 +302,28 @@ export function useSharedRemoteData<T>(
         };
     }, [name]);
 
-    // build a RemoteDataStore facade that reads from shared state
-    const storeRef = useRef<RemoteDataStore<T> | null>(null);
-
-    if (storeRef.current === null) {
-        const self: RemoteDataStore<T> = {
-            storeName: name,
-            get current() {
-                return state;
-            },
-            triggerUpdate: (): CancelTimeout => {
-                // refresh scheduling is handled by the registry,
-                // but we still need this to be callable from <Await>
-                registry.scheduleRefresh(name, entry);
-                return undefined;
-            },
-            refresh: () => {
-                registry.fetch(name, entry);
-            },
-            get orNull(): RemoteDataStore<T | null> {
-                return RemoteDataStore.orNull(self);
-            },
-            map<U>(fn: (value: T) => U): RemoteDataStore<U> {
-                return RemoteDataStore.map(self, fn);
-            },
-        };
-        storeRef.current = self;
-    }
-
-    // The store's `current` getter closes over `state` from this render.
-    // We must update the store object so `current` reflects the latest state.
-    // Re-create the getter each render to capture the new `state`.
-    const store = storeRef.current;
-    Object.defineProperty(store, 'current', {
-        get() {
+    // build a RemoteDataStore facade — created fresh each render to avoid stale closures
+    const store: RemoteDataStore<T> = {
+        storeName: name,
+        get current() {
             return state;
         },
-        configurable: true,
-    });
+        triggerUpdate: (): CancelTimeout => {
+            // refresh scheduling is handled by the registry,
+            // but we still need this to be callable from <Await>
+            registry.scheduleRefresh(name, entry);
+            return undefined;
+        },
+        refresh: () => {
+            registry.fetch(name, entry);
+        },
+        get orNull(): RemoteDataStore<T | null> {
+            return RemoteDataStore.orNull(store);
+        },
+        map<U>(fn: (value: T) => U): RemoteDataStore<U> {
+            return RemoteDataStore.map(store, fn);
+        },
+    };
 
     return store;
 }

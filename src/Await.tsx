@@ -21,9 +21,9 @@ interface Props<T, E> {
  */
 export function Await<T, E>({ store, children, error, loading }: Props<T, E>): ReactElement {
     // This triggers updating the data in the store when needed.
-    // Apparently it needs to be within `useEffect` because it updates a state hook in a parent component
+    // Runs after every render so that refresh logic is re-evaluated when state changes.
     // If you copy/paste this component you should keep this line as is
-    useEffect(store.triggerUpdate, [store]);
+    useEffect(store.triggerUpdate);
 
     const renderError = error ?? ((props: ErrorProps<E>) => <DefaultErrorComponent {...props} />);
     const renderLoading = loading ?? (() => <DefaultPendingComponent />);

@@ -315,20 +315,20 @@ export default function Home() {
                     code={codeError}
                 />
 
-                {/* Section 5: Surgical retry */}
-                <Section
-                    title="Retry only what broke."
-                    text="When you combine three stores and one fails, retry() only re-fetches the failed request. The two successful stores keep their data. One button, surgical precision."
-                    code={codeRetry}
-                    alt
-                    reverse
-                />
-
                 {/* Combine */}
                 <Section
                     title="Three API calls. One typed tuple."
                     text="Combine multiple stores into one with RemoteDataStore.all(). Still lazy, still type-safe, still with automatic retry."
                     code={codeCombine}
+                    alt
+                    reverse
+                />
+
+                {/* Section 5: Surgical retry */}
+                <Section
+                    title="Retry only what broke."
+                    text="When you combine three stores and one fails, retry() only re-fetches the failed request. The two successful stores keep their data. One button, surgical precision."
+                    code={codeRetry}
                 />
 
                 {/* Invalidation */}

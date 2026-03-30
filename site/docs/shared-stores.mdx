@@ -2,11 +2,11 @@ import { Snippet } from '../src/components/Snippet';
 
 # Shared Stores
 
-By default, stores live with the component that creates them. This is the right default — no stale cache, no global state to manage, simple data lifetime.
+By default, stores live with the component that creates them. This is the right default — no stale cache, no global state to manage, simple data lifetime. When multiple components need the same data, the recommended approach is to [lift the store up and pass it down](sharing-data-with-children).
 
-But sometimes **multiple unrelated components** need the same data. A navigation bar shows the current user. A settings panel shows the current user. A comment widget shows the current user. With `useRemoteData`, you'd lift the store to a shared parent and pass it down — which works, but can mean prop-drilling through many layers.
+**`useSharedRemoteData`** is for cases where prop-passing isn't practical — typically when deeply nested or unrelated components need the same data without a common parent in reach. It uses name-based deduplication: two components that call `useSharedRemoteData("currentUser", fetchUser)` share the same store. One fetch, shared state, no prop-drilling.
 
-**`useSharedRemoteData`** solves this with name-based deduplication. Two components that call `useSharedRemoteData("currentUser", fetchUser)` share the same store. One fetch, shared state, no prop-drilling.
+This is also useful as a **migration path from react-query**, where global deduplication via query keys is the default pattern. `useSharedRemoteData` offers the same ergonomics. See [Migrating from react-query](migrating-from-react-query) for a step-by-step guide.
 
 ## Setup
 
@@ -151,7 +151,7 @@ const userOrNull = sharedUser.orNull;
 | Prop-drilling needed | Yes, for sharing                       | No — same name = same store                  |
 | Best for             | Data owned by one component tree       | Data shared across unrelated components      |
 
-**Start with `useRemoteData`.** It's simpler, has no provider, and the component-scoped lifetime prevents stale cache bugs. Reach for `useSharedRemoteData` when you find yourself prop-drilling the same store through 3+ levels, or when truly unrelated components need the same data.
+**Start with `useRemoteData`** and pass stores as props — it's simpler, has no provider, no cache to configure, and is [faster at every sharing level](performance). Reach for `useSharedRemoteData` when prop-passing truly isn't practical (deeply nested trees, unrelated component subtrees), or as a migration bridge from react-query.
 
 ## Options
 
