@@ -1,0 +1,42 @@
+name: Deploy docs
+
+on:
+    push:
+        branches: ['master']
+        paths:
+            - 'site/**'
+            - '.github/workflows/deploy-docs.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+concurrency:
+    group: deploy-docs
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: 'npm'
+                  cache-dependency-path: site/package-lock.json
+            - name: Install dependencies
+              working-directory: site
+              run: npm ci
+            - name: Build site
+              working-directory: site
+              run: npm run build
+            - name: Publish to gh-pages
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: site/build
+                  publish_branch: gh-pages
+                  user_name: 'github-actions[bot]'
+                  user_email: 'github-actions[bot]@users.noreply.github.com'
+                  commit_message: 'Deploy site from ${{ github.sha }}'
