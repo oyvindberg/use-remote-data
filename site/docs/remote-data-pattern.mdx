@@ -1,7 +1,7 @@
 # The RemoteData Type
 
 Every async request is in exactly one state: it hasn't started, it's in flight, it failed, or it succeeded.
-Most code models this with a bag of booleans and optional values — `isLoading`, `data?`, `error?` — and nothing stops you from having `isLoading: true` and `data: someValue` at the same time.
+Most code models this with a bag of booleans and optional values (`isLoading`, `data?`, `error?`), and nothing stops you from having `isLoading: true` and `data: someValue` at the same time.
 
 `RemoteData` is a union type. One state at a time. TypeScript knows which one.
 
@@ -9,8 +9,8 @@ Most code models this with a bag of booleans and optional values — `isLoading`
 type RemoteData<T> =
     | { type: 'initial' } // haven't started yet
     | { type: 'pending' } // request in flight
-    | { type: 'failed'; errors; retry } // failed — with errors and a retry function
-    | { type: 'success'; value: T }; // succeeded — here's your data
+    | { type: 'failed'; errors; retry } // failed, with errors and a retry function
+    | { type: 'success'; value: T }; // succeeded, here's your data
 ```
 
 When you're in the `'success'` branch, `value` is `T`. Not `T | undefined`. Not `T | null`. Just `T`.
@@ -18,7 +18,7 @@ No narrowing gymnastics. TypeScript does it for you.
 
 ## Stale data is still data
 
-Most libraries throw your data away when they re-fetch. You had a dashboard full of numbers — now you have a spinner.
+Most libraries throw your data away when they re-fetch. You had a dashboard full of numbers; now you have a spinner.
 
 `use-remote-data` keeps the old value visible while the refresh happens. Three additional states handle this:
 
@@ -28,7 +28,7 @@ Most libraries throw your data away when they re-fetch. You had a dashboard full
 | `stale-initial`   | Previously-fresh data was marked stale, re-fetch hasn't started yet                                                       | Yes            |
 | `stale-pending`   | Re-fetch is in progress, old data still visible                                                                           | Yes            |
 
-**You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean — `isStale` — which tells you everything:
+**You don't need to memorize these.** Inside `<Await>`, all three are collapsed into a single boolean, `isStale`, which tells you everything:
 
 ```tsx
 <Await store={store}>
@@ -45,7 +45,7 @@ Data stays on screen. Users see something useful instead of a spinner. One boole
 ## Exhaustive matching
 
 Most of the time you'll use `<Await>` and never touch these states directly.
-But when you need custom control flow — logging, analytics, conditional rendering — you
+But when you need custom control flow (logging, analytics, conditional rendering), you
 can switch on the `type` field, and TypeScript will enforce that you handle every case:
 
 ```ts
@@ -65,7 +65,7 @@ function describe<T>(rd: RemoteData<T>): string {
             return `Stale (waiting): ${rd.stale.value}`;
         case 'stale-pending':
             return `Refreshing: ${rd.stale.value}`;
-        // No default — TypeScript errors if you miss a case.
+        // No default; TypeScript errors if you miss a case.
     }
 }
 ```
@@ -90,8 +90,8 @@ const label = match(store.current)
 
 The `RemoteData` pattern originates in [Elm](https://package.elm-lang.org/packages/krisajenkins/remotedata/latest/)
 and has been adopted across many typed languages.
-The core idea — represent async state as a union type with a `type` tag, instead of a bag of booleans — is the same
+The core idea (represent async state as a union type with a `type` tag, instead of a bag of booleans) is the same
 principle behind [zod](https://zod.dev/) (parse, don't validate),
 [neverthrow](https://github.com/supermacro/neverthrow) (errors as values),
 and [ts-pattern](https://github.com/gvergnaud/ts-pattern) (exhaustive matching).
-If you like TypeScript's tagged unions (sometimes called "discriminated unions"), `RemoteData` is the natural way to model async data.
+If you like TypeScript's tagged unions (sometimes called "discriminated unions"), `RemoteData` should feel familiar.

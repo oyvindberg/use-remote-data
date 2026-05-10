@@ -62,7 +62,7 @@ function UserProfile({ id }) {
 const codeAwait = `
 <Await store={userStore}>
   {(user) => (
-    // user is User — never undefined,
+    // user is User. Never undefined,
     // never null, never loading.
     <div>
       <h1>{user.name}</h1>
@@ -129,7 +129,7 @@ const store = useRemoteData(
 );
 
 // isStale is true while background
-// refresh is in progress — old data stays visible
+// refresh is in progress, old data stays visible
 <Await store={store}>
   {(prices, isStale) => (
     <div style={{ opacity: isStale ? 0.6 : 1 }}>
@@ -174,7 +174,7 @@ return (
 const codeTesting = `
 import { RemoteData, RemoteDataStore, Failure } from "use-remote-data";
 
-// A store that's already loaded — no fetch, no mock
+// A store that's already loaded. No fetch, no mock
 const store = RemoteDataStore.always(
   RemoteData.success({ name: "Alice", email: "alice@ex.com" })
 );
@@ -200,7 +200,7 @@ function UserPage({ id }) {
     () => fetchUser(id), { dependencies: [id] }
   );
 
-  // Pass the store down — child components
+  // Pass the store down: child components
   // share the same fetch, same cache.
   return (
     <Layout>
@@ -222,7 +222,7 @@ const quickHits = [
     },
     {
         title: 'Lazy by default',
-        text: 'Stores only fetch when rendered. Define data dependencies upfront — only what mounts hits the network.',
+        text: 'Stores only fetch when rendered. Define data dependencies upfront; only what mounts hits the network.',
     },
     {
         title: 'Mutations that refresh',
@@ -230,7 +230,7 @@ const quickHits = [
     },
     {
         title: 'Typed errors',
-        text: 'Separate domain errors from crashes. Validate with Zod, handle GraphQL unions — TypeScript knows which error you have.',
+        text: 'Separate domain errors from crashes. Validate with Zod, handle GraphQL unions; TypeScript knows which error you have.',
     },
 ];
 
@@ -255,7 +255,7 @@ function Section({ title, text, code, alt, reverse }) {
 
 export default function Home() {
     return (
-        <Layout description="A React hook for async data. Loading, error, success — always one state, always type-safe.">
+        <Layout description="A React hook for async data. Loading, error, success: always one state, always type-safe.">
             {/* Hero */}
             <header className={styles.hero}>
                 <div className={styles.heroInner}>
@@ -263,7 +263,7 @@ export default function Home() {
                     <p className={styles.heroSubtitle}>
                         One hook. One component. Your data is <code>T</code>, not <code>T&nbsp;|&nbsp;undefined</code>.
                         <br />
-                        Loading, error, success — always one state, always type-safe.
+                        Loading, error, success: always one state, always type-safe.
                     </p>
                     <div className={styles.heroCta}>
                         <Link className={styles.ctaButton} to="/docs/getting-started">
@@ -295,7 +295,7 @@ export default function Home() {
                 {/* Section 2 */}
                 <Section
                     title="Inside Await, your data is never undefined."
-                    text="The Await component narrows the type. Inside the callback, your data is the success type — no null checks, no optional chaining, no guessing."
+                    text="The Await component narrows the type. Inside the callback, your data is the success type. No null checks, no optional chaining, no guessing."
                     code={codeAwait}
                 />
 
@@ -311,14 +311,14 @@ export default function Home() {
                 {/* Section 4: Error handling */}
                 <Section
                     title="Errors are data, not exceptions."
-                    text="When a request fails, the store moves to the Failed state — with the error and a retry callback. No try/catch. No error boundaries. No manual error state. Just a render prop."
+                    text="When a request fails, the store moves to the Failed state, with the error and a retry callback. No try/catch. No error boundaries. No manual error state. Just a render prop."
                     code={codeError}
                 />
 
                 {/* Combine */}
                 <Section
                     title="Three API calls. One typed tuple."
-                    text="Combine multiple stores into one with RemoteDataStore.all(). Still lazy, still type-safe, still with automatic retry."
+                    text="Combine multiple stores into one with RemoteDataStore.all(). Lazy, type-safe, with automatic retry."
                     code={codeCombine}
                     alt
                     reverse
@@ -327,14 +327,14 @@ export default function Home() {
                 {/* Section 5: Surgical retry */}
                 <Section
                     title="Retry only what broke."
-                    text="When you combine three stores and one fails, retry() only re-fetches the failed request. The two successful stores keep their data. One button, surgical precision."
+                    text="When you combine three stores and one fails, retry() only re-fetches the failed request. The two successful stores keep their data. One button, one re-fetch."
                     code={codeRetry}
                 />
 
                 {/* Invalidation */}
                 <Section
                     title="Data stays fresh automatically."
-                    text="Tell the store how long data should live. It re-fetches in the background when data goes stale — your users keep seeing the old data while the new data loads. No spinners, no flicker."
+                    text="Tell the store how long data should live. It re-fetches in the background when data goes stale, so your users keep seeing the old data while the new data loads. No spinners, no flicker."
                     code={codeRefresh}
                     alt
                     reverse
@@ -350,7 +350,7 @@ export default function Home() {
                 {/* Testing */}
                 <Section
                     title="Test without mocking."
-                    text="Stores are values. Pass one to your component and assert what renders — no mock servers, no providers, no async coordination. RemoteDataStore.always() creates a store in any state you want. The same approach works for Storybook."
+                    text="Stores are values. Pass one to your component and assert what renders. No mock servers, no providers, no async coordination. RemoteDataStore.always() creates a store in any state you want. The same approach works for Storybook."
                     code={codeTesting}
                     alt
                     reverse
@@ -359,7 +359,7 @@ export default function Home() {
                 {/* Lifetime */}
                 <Section
                     title="Data lifetime follows component hierarchy."
-                    text="Stores live in components, not in a global cache. Mount a page — its data fetches. Unmount — it's gone. No manual cache invalidation, no stale entries leaking across routes. Pass a store as a prop and every child shares the same fetch."
+                    text="Stores live in components, not in a global cache. Mount a page, its data fetches. Unmount, it's gone. No manual cache invalidation, no stale entries leaking across routes. Pass a store as a prop and every child shares the same fetch."
                     code={codeLifetime}
                     alt
                     reverse

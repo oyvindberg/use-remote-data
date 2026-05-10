@@ -2,8 +2,8 @@ import { Snippet } from '../src/components/Snippet';
 
 # Dynamic Data
 
-If you need parameterized requests—like paginated lists
-or fetching multiple resource IDs—use the **`useRemoteDataMap`** hook.
+If you need parameterized requests (paginated lists,
+or fetching multiple resource IDs), use the **`useRemoteDataMap`** hook.
 It returns an object with a `.get(key)` method for each distinct data slice.
 
 ```tsx
@@ -15,8 +15,8 @@ const secondPageStore = itemsStore.get(2);
 
 This creates independent `RemoteDataStore` objects for each page, all managed under one `RemoteDataMap` instance.
 
-If multiple components call `.get()` with the same key, they receive the same cached store — the fetch
-only fires once. This makes `useRemoteDataMap` the natural way to share keyed data across a component
+If multiple components call `.get()` with the same key, they receive the same cached store; the fetch
+only fires once. This makes `useRemoteDataMap` a clean way to share keyed data across a component
 subtree without a global cache. See [Sharing Data with Children](sharing-data-with-children) for the pattern.
 
 <Snippet snippet="dynamic" />

@@ -9,5 +9,5 @@ Only the stores that are actually rendered will trigger a network request.
 This means:
 
 - **No wasted requests.** A store behind a collapsed panel or an unselected tab stays idle.
-- **No `enabled` flag.** You don't need to conditionally disable fetching — if the component isn't rendered, the fetch doesn't happen.
+- **No `enabled` flag.** You don't need to conditionally disable fetching: if the component isn't rendered, the fetch doesn't happen.
 - **Declare everything upfront, fetch on demand.** Define your data dependencies at the top of your component tree, and let the rendering tree decide what's needed.
