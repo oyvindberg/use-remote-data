@@ -2,7 +2,7 @@ name: Deploy docs
 
 on:
     push:
-        branches: ['master', 'fix/hooks-rules-compliance']
+        branches: ['master']
         paths:
             - 'site/**'
             - '.github/workflows/deploy-docs.yml'
