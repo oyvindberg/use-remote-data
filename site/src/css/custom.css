@@ -108,7 +108,11 @@ html,
 body {
     background: var(--paper);
     color: var(--ink);
-    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    font-feature-settings:
+        'ss01' on,
+        'ss03' on,
+        'cv01' on,
+        'cv11' on;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -124,7 +128,11 @@ h6 {
     letter-spacing: -0.022em;
     color: var(--ink);
     font-weight: 700;
-    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    font-feature-settings:
+        'ss01' on,
+        'ss03' on,
+        'cv01' on,
+        'cv11' on;
     text-wrap: balance;
 }
 
@@ -133,7 +141,12 @@ code,
 pre,
 kbd,
 samp {
-    font-feature-settings: 'liga' on, 'calt' on, 'zero' on, 'ss05' on, 'ss08' on;
+    font-feature-settings:
+        'liga' on,
+        'calt' on,
+        'zero' on,
+        'ss05' on,
+        'ss08' on;
     font-variant-numeric: tabular-nums;
 }
 

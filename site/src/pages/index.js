@@ -1,7 +1,7 @@
 import styles from './index.module.css';
 import Link from '@docusaurus/Link';
-import Layout from '@theme/Layout';
 import { useColorMode } from '@docusaurus/theme-common';
+import Layout from '@theme/Layout';
 import { Highlight } from 'prism-react-renderer';
 import React from 'react';
 
@@ -290,9 +290,9 @@ export default function Home() {
                         </h1>
 
                         <p className={`${styles.heroSubtitle} ${styles.reveal} ${styles.r2}`}>
-                            A React hook with one promise: inside <code>{'<Await>'}</code> your data is{' '}
-                            <code>T</code>, never <code>T | undefined</code>. Loading, error, success — always one
-                            state, always type-safe.
+                            A React hook with one promise: inside <code>{'<Await>'}</code> your data is <code>T</code>,
+                            never <code>T | undefined</code>. Loading, error, success — always one state, always
+                            type-safe.
                         </p>
 
                         <div className={`${styles.heroCta} ${styles.reveal} ${styles.r3}`}>
@@ -392,9 +392,7 @@ export default function Home() {
                             <div className={styles.grid}>
                                 {quickHits.map((item, i) => (
                                     <div key={item.title} className={styles.gridItem}>
-                                        <span className={styles.gridItemNumber}>
-                                            {String(i + 1).padStart(2, '0')}
-                                        </span>
+                                        <span className={styles.gridItemNumber}>{String(i + 1).padStart(2, '0')}</span>
                                         <h3>{item.title}</h3>
                                         <p>{item.text}</p>
                                     </div>

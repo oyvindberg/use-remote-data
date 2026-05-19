@@ -110,18 +110,18 @@ You'll want to provide your own rendering. There are two ways:
 
 Both react-query and SWR fetch data well. The difference is what happens after.
 
-|                                  | react-query / SWR                     | use-remote-data                                                      |
-| -------------------------------- | ------------------------------------- | -------------------------------------------------------------------- |
-| Data type                        | `T \| undefined`                      | `T` (inside `<Await>`)                                               |
-| "Did I forget to check loading?" | Possible                              | Structurally impossible                                              |
-| Stale data during refetch        | Yes (`isFetching` / `isValidating`)   | Yes (`isStale` flag)                                                 |
-| Retry on error                   | Automatic + manual `refetch()`        | `retry()` callback in Failed state                                   |
-| Combining requests               | `useQueries` (typed arrays)           | `RemoteDataStore.all()` (typed tuples)                               |
-| Global cache                     | Yes, deduplication across components  | Opt-in via [`SharedStoreProvider`](shared-stores); local by default  |
-| Runtime dependencies             | One (`@tanstack/query-core` / `swr`)  | Zero                                                                 |
-| Providers / context              | `QueryClientProvider` / `SWRConfig`   | None                                                                 |
-| Performance                      | Per-query cache + observer overhead   | [Faster at every sharing level](performance)                         |
-| React Compiler                   | Supported                             | Supported, with zero per-render allocations                          |
+|                                  | react-query / SWR                    | use-remote-data                                                     |
+| -------------------------------- | ------------------------------------ | ------------------------------------------------------------------- |
+| Data type                        | `T \| undefined`                     | `T` (inside `<Await>`)                                              |
+| "Did I forget to check loading?" | Possible                             | Structurally impossible                                             |
+| Stale data during refetch        | Yes (`isFetching` / `isValidating`)  | Yes (`isStale` flag)                                                |
+| Retry on error                   | Automatic + manual `refetch()`       | `retry()` callback in Failed state                                  |
+| Combining requests               | `useQueries` (typed arrays)          | `RemoteDataStore.all()` (typed tuples)                              |
+| Global cache                     | Yes, deduplication across components | Opt-in via [`SharedStoreProvider`](shared-stores); local by default |
+| Runtime dependencies             | One (`@tanstack/query-core` / `swr`) | Zero                                                                |
+| Providers / context              | `QueryClientProvider` / `SWRConfig`  | None                                                                |
+| Performance                      | Per-query cache + observer overhead  | [Faster at every sharing level](performance)                        |
+| React Compiler                   | Supported                            | Supported, with zero per-render allocations                         |
 
 react-query and SWR are great libraries with large ecosystems. If you need a browser-extension devtools panel or automatic cross-component deduplication by default, they're solid choices.
 

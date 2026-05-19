@@ -32,7 +32,11 @@
     color: var(--ink);
     max-width: 16ch;
     text-wrap: balance;
-    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    font-feature-settings:
+        'ss01' on,
+        'ss03' on,
+        'cv01' on,
+        'cv11' on;
 }
 
 .heroLine {
@@ -78,7 +82,10 @@ html[data-theme='dark'] .heroHeadline mark {
     border-radius: 0;
     font-size: 0.86em;
     letter-spacing: -0.01em;
-    font-feature-settings: 'liga' on, 'calt' on, 'zero' on;
+    font-feature-settings:
+        'liga' on,
+        'calt' on,
+        'zero' on;
 }
 
 html[data-theme='dark'] .heroSubtitle code {
@@ -108,8 +115,13 @@ html[data-theme='dark'] .heroSubtitle code {
     font-size: 0.96rem;
     letter-spacing: -0.012em;
     text-decoration: none;
-    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
-    font-feature-settings: 'ss01' on, 'cv11' on;
+    transition:
+        background 120ms ease,
+        color 120ms ease,
+        border-color 120ms ease;
+    font-feature-settings:
+        'ss01' on,
+        'cv11' on;
 }
 
 html[data-theme='dark'] .ctaButton {
@@ -167,7 +179,10 @@ html[data-theme='dark'] .ctaButtonGhost:hover {
     gap: 0.6rem;
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'liga' on, 'calt' on, 'zero' on;
+    font-feature-settings:
+        'liga' on,
+        'calt' on,
+        'zero' on;
 }
 
 .installCmd::before {
@@ -214,7 +229,9 @@ html[data-theme='dark'] .ctaButtonGhost:hover {
     margin-bottom: 1.25rem;
     color: var(--ink-soft);
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'zero' on, 'ss05' on;
+    font-feature-settings:
+        'zero' on,
+        'ss05' on;
 }
 
 .labelBefore::before {
@@ -271,7 +288,9 @@ html[data-theme='dark'] .ctaButtonGhost:hover {
     margin: 0 0 1.1rem;
     display: block;
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'zero' on, 'ss05' on;
+    font-feature-settings:
+        'zero' on,
+        'ss05' on;
 }
 
 .sectionTitle {
@@ -283,7 +302,11 @@ html[data-theme='dark'] .ctaButtonGhost:hover {
     margin: 0 0 1.25rem;
     color: var(--ink);
     text-wrap: balance;
-    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    font-feature-settings:
+        'ss01' on,
+        'ss03' on,
+        'cv01' on,
+        'cv11' on;
 }
 
 .sectionText {
@@ -328,7 +351,9 @@ html[data-theme='dark'] .codeBlock {
     background: transparent !important;
     border-radius: 0 !important;
     font-family: var(--ifm-font-family-monospace);
-    font-feature-settings: 'liga' on, 'calt' on;
+    font-feature-settings:
+        'liga' on,
+        'calt' on;
     color: inherit;
 }
 
@@ -355,7 +380,9 @@ html[data-theme='dark'] .codeBlock {
     margin: 0 0 1.1rem;
     display: block;
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'zero' on, 'ss05' on;
+    font-feature-settings:
+        'zero' on,
+        'ss05' on;
 }
 
 .gridTitle {
@@ -368,7 +395,11 @@ html[data-theme='dark'] .codeBlock {
     max-width: 22ch;
     line-height: 1.05;
     text-wrap: balance;
-    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    font-feature-settings:
+        'ss01' on,
+        'ss03' on,
+        'cv01' on,
+        'cv11' on;
 }
 
 .grid {
@@ -402,7 +433,9 @@ html[data-theme='dark'] .codeBlock {
     margin-bottom: 0.2rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'zero' on, 'ss05' on;
+    font-feature-settings:
+        'zero' on,
+        'ss05' on;
 }
 
 .gridItem h3 {

@@ -143,13 +143,13 @@ const userOrNull = sharedUser.orNull;
 
 ## When to use `useRemoteData` vs `useSharedRemoteData`
 
-|                      | `useRemoteData`                        | `useSharedRemoteData`                        |
-| -------------------- | -------------------------------------- | -------------------------------------------- |
-| Store lifetime       | Component that called the hook         | While any subscriber is mounted (+ `gcTime`) |
-| Deduplication        | None; each call creates its own store  | By name; same name = same store              |
-| Requires provider    | No                                     | Yes (`<SharedStoreProvider>`)                |
-| Prop-drilling needed | Yes, for sharing                       | No; same name = same store                   |
-| Best for             | Data owned by one component tree       | Data shared across unrelated components      |
+|                      | `useRemoteData`                       | `useSharedRemoteData`                        |
+| -------------------- | ------------------------------------- | -------------------------------------------- |
+| Store lifetime       | Component that called the hook        | While any subscriber is mounted (+ `gcTime`) |
+| Deduplication        | None; each call creates its own store | By name; same name = same store              |
+| Requires provider    | No                                    | Yes (`<SharedStoreProvider>`)                |
+| Prop-drilling needed | Yes, for sharing                      | No; same name = same store                   |
+| Best for             | Data owned by one component tree      | Data shared across unrelated components      |
 
 **Start with `useRemoteData`** and pass stores as props. It's simpler, has no provider, no cache to configure, and is [faster at every sharing level](performance). Reach for `useSharedRemoteData` when prop-passing truly isn't practical (deeply nested trees, unrelated component subtrees), or as a migration bridge from react-query.
 
