@@ -22,7 +22,7 @@ When `id` changes, the library:
 2. **Discards** any response that arrives from the aborted request
 3. **Starts** a fresh request with a new signal
 
-If you don't use the signal, the HTTP request still completes in the background — but the response is discarded.
+If you don't use the signal, the HTTP request still completes in the background, but the response is discarded.
 Forwarding the signal is optional but recommended: it saves bandwidth and frees server resources.
 
 ## When does cancellation happen?
@@ -62,20 +62,20 @@ const saveStore = useRemoteUpdate((params, signal) =>
 );
 ```
 
-## Try it — type fast
+## Try it: type fast
 
 This example simulates a search API with an 800ms delay.
-Type quickly and watch the abort counter increase — only the final result renders.
+Type quickly and watch the abort counter increase. Only the final result renders.
 
 <Snippet snippet="cancellation" />
 
 ## Backward compatible
 
 If your fetch function doesn't accept a signal, everything still works.
-The library discards stale responses internally via request versioning —
+The library discards stale responses internally via request versioning;
 the signal just lets you cancel the actual HTTP request too.
 
 ```tsx
-// This still works — signal is ignored, stale responses are still discarded
+// This still works: signal is ignored, stale responses are still discarded
 useRemoteData(() => fetchUser(id), { dependencies: [id] });
 ```

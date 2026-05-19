@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .ink { stroke: #0a0a0a; }
+    .accent { fill: #ea580c; }
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: #fafafa; }
+      .accent { fill: #fb923c; }
+    }
+  </style>
+  <path class="ink" d="M 22 12 L 16 18 L 16 28 L 8 32 L 16 36 L 16 46 L 22 52"
+        fill="none" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="4"/>
+  <path class="accent" d="M 24 22 H 40 V 28 H 35 V 42 H 29 V 28 H 24 Z"/>
+  <path class="ink" d="M 42 12 L 48 18 L 48 28 L 56 32 L 48 36 L 48 46 L 42 52"
+        fill="none" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="4"/>
+</svg>

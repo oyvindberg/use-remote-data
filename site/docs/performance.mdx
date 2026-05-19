@@ -6,19 +6,19 @@
 
 1,000 components, each fetching a number with 5ms simulated latency, rendering "..." while loading, then the resolved value. Measured in Chrome using `performance.now()`, median of 5 iterations. Three metrics:
 
-- **Mount** — render all components from scratch
-- **Re-render** — parent state change forces all children to re-render (data already loaded)
-- **Full lifecycle** — mount, fetch, resolve, render data (the metric that matters most)
+- **Mount:** render all components from scratch
+- **Re-render:** parent state change forces all children to re-render (data already loaded)
+- **Full lifecycle:** mount, fetch, resolve, render data (the metric that matters most)
 
 Each library uses its recommended pattern:
 
-- **use-remote-data** — `useRemoteDataMap` in a parent component, `<Await>` for each item. The parent owns the state and renders the items directly. When multiple items share the same key, only one fetch fires — deduplication comes free from the data structure, not from a cache layer.
-- **react-query** — `useQuery` per component. Deduplication happens via the QueryClient cache.
-- **raw React** — `useState` + `useEffect` per component. No deduplication.
+- **use-remote-data:** `useRemoteDataMap` in a parent component, `<Await>` for each item. The parent owns the state and renders the items directly. When multiple items share the same key, only one fetch fires; deduplication is a property of the data structure, not a cache layer.
+- **react-query:** `useQuery` per component. Deduplication happens via the QueryClient cache.
+- **raw React:** `useState` + `useEffect` per component. No deduplication.
 
 ## Results
 
-### Full lifecycle (ms) — 1,000 components
+### Full lifecycle, 1,000 components (ms)
 
 | Resources | Each fetched by | raw React | **use-remote-data** | react-query |
 | --------: | --------------: | --------: | ------------------: | ----------: |
@@ -30,7 +30,7 @@ Each library uses its recommended pattern:
 
 `use-remote-data` is faster than react-query at every sharing level. It's also faster than raw React as soon as any data is shared (2+ components per resource), because `useRemoteDataMap` deduplicates fetches while raw React fires one fetch per component regardless.
 
-### Mount and re-render (ms) — 1,000 unique resources
+### Mount and re-render, 1,000 unique resources (ms)
 
 | Scenario            | Mount | Re-render |
 | ------------------- | ----: | --------: |
@@ -38,7 +38,7 @@ Each library uses its recommended pattern:
 | **use-remote-data** |    20 |         7 |
 | **react-query**     |    45 |        16 |
 
-Mount and re-render overhead is minimal for `use-remote-data` — within noise of raw React. react-query adds ~2x overhead on mount due to QueryObserver creation and cache subscription.
+Mount and re-render overhead for `use-remote-data` is indistinguishable from raw React. react-query adds ~2x overhead on mount, mostly QueryObserver creation and cache subscription.
 
 ## How sharing works
 
@@ -50,7 +50,7 @@ function Dashboard() {
 
     return (
         <div>
-            {/* All three share one store — one fetch, one state */}
+            {/* All three share one store: one fetch, one state */}
             <NavBar userStore={userStore} />
             <Sidebar userStore={userStore} />
             <MainContent userStore={userStore} />
@@ -81,19 +81,19 @@ No provider, no query keys, no cache configuration. Just React components passin
 
 ## Why it's fast
 
-`use-remote-data` stores state in React's own `useState` with class instances allocated once via `useRef`. The per-render cost is a single `sync()` call (three field assignments). Store objects are cached — same reference across renders, no allocations.
+`use-remote-data` stores state in React's own `useState` with class instances allocated once via `useRef`. The per-render cost is a single `sync()` call (three field assignments). Store objects are cached, so they keep the same reference across renders with no allocations.
 
-react-query is built on a `QueryClient` cache with `QueryObserver` instances that subscribe via `useSyncExternalStore`. Every query creates an observer, hashes its key, subscribes to cache notifications, and runs through retry/focus/reconnect middleware. These features buy you devtools and automatic refetching — but they have a per-query cost that adds up.
+react-query is built on a `QueryClient` cache with `QueryObserver` instances that subscribe via `useSyncExternalStore`. Every query creates an observer, hashes its key, subscribes to cache notifications, and runs through retry/focus/reconnect middleware. These features buy you devtools and automatic refetching, but they have a per-query cost that adds up.
 
 ## The one tradeoff
 
-With 1,000 unique resources (no sharing), `use-remote-data` (102ms) is ~2x slower than raw React (53ms). This is because `useRemoteDataMap` holds all state in one `useState` — when any key resolves, the parent re-renders all children. Raw React has per-component state, so only the resolving component re-renders.
+With 1,000 unique resources (no sharing), `use-remote-data` (102ms) is ~2x slower than raw React (53ms). The reason: `useRemoteDataMap` holds all state in one `useState`, so when any key resolves the parent re-renders all children. Raw React has per-component state, so only the resolving component re-renders.
 
 This tradeoff disappears as soon as any sharing exists: at just 2 components per resource, `use-remote-data` is already faster than raw React (167ms vs 191ms) because deduplication saves more time than cascading re-renders cost.
 
 ## Reproducing
 
-The benchmark app is in `bench/`. It runs in a real browser — no jsdom.
+The benchmark app is in `bench/`. It runs in a real browser, not jsdom.
 
 ```bash
 cd bench

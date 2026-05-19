@@ -2,13 +2,13 @@
 
 ## The advantage of values
 
-Most data-fetching libraries require mocking to test. You mock the HTTP layer, or wrap your component in a provider, or stub a global cache — and your test is more about the library's internals than your component's behavior.
+Most data-fetching libraries require mocking to test. You mock the HTTP layer, or wrap your component in a provider, or stub a global cache, and your test is more about the library's internals than your component's behavior.
 
 `use-remote-data` doesn't have this problem. A component that takes a `RemoteDataStore<T>` doesn't know or care where the data came from. It's just a value, passed as a parameter. You construct the value, pass it in, and assert what renders.
 
 No mocking. No providers. No test utilities. Just data.
 
-## `RemoteDataStore.always()` — a store in any state
+## `RemoteDataStore.always()`: a store in any state
 
 The key function for testing is `RemoteDataStore.always()`. It creates a store that's permanently in whatever state you give it:
 
@@ -25,7 +25,7 @@ const loading = RemoteDataStore.always(RemoteData.Pending);
 const idle = RemoteDataStore.always(RemoteData.Initial);
 ```
 
-That's it. These are real `RemoteDataStore` instances — your components can't tell the difference between these and a store created by `useRemoteData`. They render the same way, with the same types.
+That's it. These are real `RemoteDataStore` instances; your components can't tell the difference between these and a store created by `useRemoteData`. They render the same way, with the same types.
 
 ## Testing a component
 
@@ -94,7 +94,7 @@ test('dashboard renders when all data is loaded', () => {
 
 test('dashboard shows error when one request fails', () => {
     const userStore = RemoteDataStore.always(RemoteData.success({ name: 'Alice' }));
-    // Failure.unexpected() wraps a crash — see "Failures and Retries" for details
+    // Failure.unexpected() wraps a crash; see "Failures and Retries" for details
     const postsStore = RemoteDataStore.always(
         RemoteData.Failed([Failure.unexpected(new Error('timeout'))], async () => {})
     );
@@ -106,7 +106,7 @@ test('dashboard shows error when one request fails', () => {
 });
 ```
 
-The combined store computes its state from the constituent stores immediately — no async coordination.
+The combined store computes its state from the constituent stores immediately, with no async coordination.
 
 ## Testing stale states
 
@@ -164,7 +164,7 @@ No mock servers. No interceptors. No delay hacks to catch the loading state. Jus
 The design choice that makes testing easy is the same one that makes the library work:
 **stores are values, and values are passed as parameters.**
 
-Your component doesn't call `useRemoteData` itself — it receives a `RemoteDataStore<T>` from its parent.
+Your component doesn't call `useRemoteData` itself; it receives a `RemoteDataStore<T>` from its parent.
 This means the component has no idea whether the store came from a hook, from `RemoteDataStore.always()`, from a test, or from server-rendered data.
 
 This isn't a testing trick. It's the architecture. The same property that makes SSR simple (pass `initial` data), Storybook simple (pass a static store), and component sharing simple (pass a store as a prop) is what makes testing simple.

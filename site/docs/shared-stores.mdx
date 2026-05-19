@@ -2,9 +2,9 @@ import { Snippet } from '../src/components/Snippet';
 
 # Shared Stores
 
-By default, stores live with the component that creates them. This is the right default — no stale cache, no global state to manage, simple data lifetime. When multiple components need the same data, the recommended approach is to [lift the store up and pass it down](sharing-data-with-children).
+By default, stores live with the component that creates them. This is the right default: no stale cache, no global state to manage, simple data lifetime. When multiple components need the same data, the recommended approach is to [lift the store up and pass it down](sharing-data-with-children).
 
-**`useSharedRemoteData`** is for cases where prop-passing isn't practical — typically when deeply nested or unrelated components need the same data without a common parent in reach. It uses name-based deduplication: two components that call `useSharedRemoteData("currentUser", fetchUser)` share the same store. One fetch, shared state, no prop-drilling.
+**`useSharedRemoteData`** is for cases where prop-passing isn't practical, typically when deeply nested or unrelated components need the same data without a common parent in reach. It uses name-based deduplication: two components that call `useSharedRemoteData("currentUser", fetchUser)` share the same store. One fetch, shared state, no prop-drilling.
 
 This is also useful as a **migration path from react-query**, where global deduplication via query keys is the default pattern. `useSharedRemoteData` offers the same ergonomics. See [Migrating from react-query](migrating-from-react-query) for a step-by-step guide.
 
@@ -41,7 +41,7 @@ function SettingsPanel() {
 }
 ```
 
-The first component to mount with a given name starts the fetch. Subsequent components with the same name immediately receive the current state — no duplicate request.
+The first component to mount with a given name starts the fetch. Subsequent components with the same name immediately receive the current state, with no duplicate request.
 
 ### Try it
 
@@ -51,13 +51,13 @@ The first component to mount with a given name starts the fetch. Subsequent comp
 
 - The **name** is the cache key. Same name = same store, same data.
 - The **first registrant's fetcher wins**. If two components register `"currentUser"` with different fetcher functions, the first one is used and a dev-mode warning is logged.
-- When the **last subscriber unmounts**, the entry is cleaned up — in-flight requests aborted, refresh timers cancelled, state dropped.
+- When the **last subscriber unmounts**, the entry is cleaned up: in-flight requests aborted, refresh timers cancelled, state dropped.
 
 :::tip Define fetchers outside components
 Since the first registrant's fetcher wins, avoid defining fetchers inline (which creates a new reference each render). Instead, define them outside the component or wrap them in `useCallback`:
 
 ```tsx
-// Good — stable reference
+// Good: stable reference
 const fetchUser = (signal: AbortSignal) => fetch('/api/me', { signal }).then((r) => r.json());
 
 function NavBar() {
@@ -68,7 +68,7 @@ function NavBar() {
 
 :::
 
-## `gcTime` — grace period before cleanup
+## `gcTime`: grace period before cleanup
 
 By default, when the last subscriber unmounts, the entry is immediately deleted. This can cause unnecessary re-fetches during route transitions where a component unmounts and remounts quickly.
 
@@ -96,7 +96,7 @@ const store = useSharedRemoteData('prices', fetchPrices, {
 
 One timer per entry, not per subscriber. When the refresh fires, all subscribers see the new data.
 
-## `refresh()` — manual re-fetch
+## `refresh()`: manual re-fetch
 
 Calling `store.refresh()` from any subscriber re-fetches for all of them:
 
@@ -109,7 +109,7 @@ function RefreshButton() {
 
 ## SSR with `initialData`
 
-Pass server-rendered data to the provider. Stores with matching names start in `Success` — no loading spinner, no hydration mismatch:
+Pass server-rendered data to the provider. Stores with matching names start in `Success`, so there's no loading spinner and no hydration mismatch:
 
 ```tsx
 // Server component fetches data
@@ -143,15 +143,15 @@ const userOrNull = sharedUser.orNull;
 
 ## When to use `useRemoteData` vs `useSharedRemoteData`
 
-|                      | `useRemoteData`                        | `useSharedRemoteData`                        |
-| -------------------- | -------------------------------------- | -------------------------------------------- |
-| Store lifetime       | Component that called the hook         | While any subscriber is mounted (+ `gcTime`) |
-| Deduplication        | None — each call creates its own store | By name — same name = same store             |
-| Requires provider    | No                                     | Yes (`<SharedStoreProvider>`)                |
-| Prop-drilling needed | Yes, for sharing                       | No — same name = same store                  |
-| Best for             | Data owned by one component tree       | Data shared across unrelated components      |
+|                      | `useRemoteData`                       | `useSharedRemoteData`                        |
+| -------------------- | ------------------------------------- | -------------------------------------------- |
+| Store lifetime       | Component that called the hook        | While any subscriber is mounted (+ `gcTime`) |
+| Deduplication        | None; each call creates its own store | By name; same name = same store              |
+| Requires provider    | No                                    | Yes (`<SharedStoreProvider>`)                |
+| Prop-drilling needed | Yes, for sharing                      | No; same name = same store                   |
+| Best for             | Data owned by one component tree      | Data shared across unrelated components      |
 
-**Start with `useRemoteData`** and pass stores as props — it's simpler, has no provider, no cache to configure, and is [faster at every sharing level](performance). Reach for `useSharedRemoteData` when prop-passing truly isn't practical (deeply nested trees, unrelated component subtrees), or as a migration bridge from react-query.
+**Start with `useRemoteData`** and pass stores as props. It's simpler, has no provider, no cache to configure, and is [faster at every sharing level](performance). Reach for `useSharedRemoteData` when prop-passing truly isn't practical (deeply nested trees, unrelated component subtrees), or as a migration bridge from react-query.
 
 ## Options
 

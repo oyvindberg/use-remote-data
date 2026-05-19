@@ -18,7 +18,7 @@ to decide whether to let the user see old data or a loading indicator.
 
 <Snippet snippet="invalidation" />
 
-### Only Sometimes?
+### Only sometimes?
 
 You can enable or disable refreshing dynamically by swapping the `refresh` strategy in or out. For instance:
 
@@ -26,14 +26,14 @@ You can enable or disable refreshing dynamically by swapping the `refresh` strat
 
 ## Poll until valid data
 
-Something that comes up sometimes is APIs which require you to poll.
+Some APIs require polling until they return final data.
 `use-remote-data` supports this through `RefreshStrategy.pollUntil`
 
 <Snippet snippet="polling" />
 
 ## Refresh on Dependency Change
 
-`useRemoteData` and `useRemoteDataMap` let you provide a `dependencies` array (similar to React’s `useEffect`):
+`useRemoteData` and `useRemoteDataMap` let you provide a `dependencies` array (similar to React's `useEffect`):
 
 ```tsx
 useRemoteData(() => fetchData(), {
@@ -42,7 +42,7 @@ useRemoteData(() => fetchData(), {
 ```
 
 When the dependency array changes, the store refreshes automatically, and `triggerUpdate()` will re-fetch if needed.
-Each element is compared using `Object.is` — the same semantics as React's `useEffect` dependencies.
+Each element is compared using `Object.is`, the same semantics as React's `useEffect` dependencies.
 
 :::caution Pass primitives, not objects
 Since `Object.is` compares by reference, passing an object or array that gets re-created every render

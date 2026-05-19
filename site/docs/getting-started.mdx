@@ -25,20 +25,20 @@ return <UserCard user={data} />;   // data is User | null here. Oops.
 ```
 
 Three `useState` calls. A `useEffect`. Manual flag management.
-And at the end, TypeScript still thinks `data` might be `null` — because it can't see
+And at the end, TypeScript still thinks `data` might be `null`. It can't see
 that you checked `loading` and `error` first.
 
 Libraries like `react-query` improve on this, but the core shape is the same: `data` is always `T | undefined`,
-and you rely on convention — not types — to check before accessing it.
+and you rely on convention (not types) to check before accessing it.
 
 **`use-remote-data` takes a different approach.** Instead of giving you optional data and boolean flags,
 it gives you a single state that is _always_ one of: not yet loaded, loading, failed (with retry), or success.
 You literally cannot access the data without first proving it exists.
 
-This isn't just ergonomics. A forgotten null check is a bug that compiles. The difference between `T | undefined` and `T`
+A forgotten null check is a bug that compiles. The difference between `T | undefined` and `T`
 is the difference between a bug you ship and a bug the compiler catches.
 
-The idea is simple: your store is always in _one_ state — loading, failed, or success — and TypeScript
+The idea is simple: your store is always in _one_ state (loading, failed, or success), and TypeScript
 won't let you access the data unless you're in the success state.
 If you use [zod](https://zod.dev/) for validation, [ts-pattern](https://github.com/gvergnaud/ts-pattern)
 for pattern matching, or [neverthrow](https://github.com/supermacro/neverthrow) for typed errors,
@@ -61,7 +61,7 @@ yarn add use-remote-data
 ## Basic Usage
 
 The primary entry point is the **`useRemoteData`** hook.
-Give it a function that returns a `Promise`, and you get back a **store** — an object that holds the current state of one async request (loading, failed, or success) and re-renders your component when that state changes:
+Give it a function that returns a `Promise` and you get back a **store**: an object that holds the current state of one async request (loading, failed, or success) and re-renders your component when that state changes.
 
 <Snippet snippet="basic_usage" />
 
@@ -79,21 +79,21 @@ function UserProfile({ id }: { id: string }) {
 
 That's it. The store handles fetching, caching, error states, and retries.
 
-The `dependencies` array works like React's `useEffect` deps — when any value changes, the store re-fetches.
+The `dependencies` array works like React's `useEffect` deps: when any value changes, the store re-fetches.
 Use it when your fetch depends on props or state that can change. Each element is compared with `Object.is`,
 so pass primitives (strings, numbers) rather than objects or arrays that get re-created every render.
 
-## `<Await>` — render only when data is ready
+## `<Await>`: render only when data is ready
 
 The `<Await>` component takes a store and a render callback.
-Your callback **only runs when data is available**, and it receives the value typed as `T` — not `T | undefined`.
+Your callback **only runs when data is available**, and it receives the value typed as `T`, not `T | undefined`.
 
 This is the key idea: you cannot accidentally render without data.
 TypeScript enforces it. The component structure enforces it.
 Loading and error states are handled for you by default.
 
 The `isStale` boolean (second argument) tells you if the data is stale and a background refresh is in progress.
-This lets you grey out stale data instead of showing a spinner — much better UX.
+This lets you grey out stale data instead of throwing the user back to a spinner.
 
 ### Customize the loading and error UI
 
@@ -101,7 +101,7 @@ Out of the box, `<Await>` renders a minimal loading spinner and `JSON.stringify`
 You'll want to provide your own rendering. There are two ways:
 
 1. **Pass `loading` and `error` render props** to `<Await>` directly.
-2. **Create your own `<Await>` wrapper** — copy the component into your codebase and customize it.
+2. **Create your own `<Await>` wrapper**. Copy the component into your codebase and customize it.
    It's small (about 15 lines). The only important thing is to keep the `useEffect(store.triggerUpdate)` call.
 
 ---
@@ -110,20 +110,20 @@ You'll want to provide your own rendering. There are two ways:
 
 Both react-query and SWR fetch data well. The difference is what happens after.
 
-|                                  | react-query / SWR                     | use-remote-data                                                      |
-| -------------------------------- | ------------------------------------- | -------------------------------------------------------------------- |
-| Data type                        | `T \| undefined`                      | `T` (inside `<Await>`)                                               |
-| "Did I forget to check loading?" | Possible                              | Structurally impossible                                              |
-| Stale data during refetch        | Yes (`isFetching` / `isValidating`)   | Yes (`isStale` flag)                                                 |
-| Retry on error                   | Automatic + manual `refetch()`        | `retry()` callback in Failed state                                   |
-| Combining requests               | `useQueries` (typed arrays)           | `RemoteDataStore.all()` (typed tuples)                               |
-| Global cache                     | Yes — deduplication across components | Opt-in via [`SharedStoreProvider`](shared-stores) — local by default |
-| Runtime dependencies             | One (`@tanstack/query-core` / `swr`)  | Zero                                                                 |
-| Providers / context              | `QueryClientProvider` / `SWRConfig`   | None                                                                 |
-| Performance                      | Per-query cache + observer overhead   | [Faster at every sharing level](performance)                         |
-| React Compiler                   | Supported                             | Supported — zero per-render allocations                              |
+|                                  | react-query / SWR                    | use-remote-data                                                     |
+| -------------------------------- | ------------------------------------ | ------------------------------------------------------------------- |
+| Data type                        | `T \| undefined`                     | `T` (inside `<Await>`)                                              |
+| "Did I forget to check loading?" | Possible                             | Structurally impossible                                             |
+| Stale data during refetch        | Yes (`isFetching` / `isValidating`)  | Yes (`isStale` flag)                                                |
+| Retry on error                   | Automatic + manual `refetch()`       | `retry()` callback in Failed state                                  |
+| Combining requests               | `useQueries` (typed arrays)          | `RemoteDataStore.all()` (typed tuples)                              |
+| Global cache                     | Yes, deduplication across components | Opt-in via [`SharedStoreProvider`](shared-stores); local by default |
+| Runtime dependencies             | One (`@tanstack/query-core` / `swr`) | Zero                                                                |
+| Providers / context              | `QueryClientProvider` / `SWRConfig`  | None                                                                |
+| Performance                      | Per-query cache + observer overhead  | [Faster at every sharing level](performance)                        |
+| React Compiler                   | Supported                            | Supported, with zero per-render allocations                         |
 
-react-query and SWR are great libraries with large ecosystems. If you need a browser extension devtools, or automatic deduplication across components by default, they're solid choices.
+react-query and SWR are great libraries with large ecosystems. If you need a browser-extension devtools panel or automatic cross-component deduplication by default, they're solid choices.
 
 `use-remote-data` is for when you want **airtight types** and a **simpler mental model**.
 No global cache to configure. No context providers. No optional data.
@@ -131,15 +131,15 @@ Just a store, a component, and data that's always in an honest state.
 
 ### React Compiler and concurrent rendering
 
-`use-remote-data` is compatible with the React Compiler and concurrent rendering features like `startTransition` and Suspense boundaries. All 51 components pass `react-compiler-healthcheck` with zero errors.
+`use-remote-data` is compatible with the React Compiler and concurrent rendering features like `startTransition` and Suspense boundaries. All 54 components pass `react-compiler-healthcheck` with zero errors.
 
-- All hooks follow the [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks) — no conditional or nested hook calls
-- No ref writes during render — state is synced via `useEffect` / `useLayoutEffect`
+- All hooks follow the [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks): no conditional or nested hook calls
+- No ref writes during render; state is synced via `useEffect` / `useLayoutEffect`
 - Refresh timers are managed via refs, surviving parent re-renders without resetting
-- Zero per-render allocations — class instances are cached in refs, no closures recreated each render
+- Zero per-render allocations: class instances are cached in refs, no closures recreated each render
 
 ### What about React 19's `use()` hook?
 
 React 19 introduced the `use()` hook for consuming promises during render. It integrates with Suspense boundaries for loading states and error boundaries for failures.
 
-`use-remote-data` takes a different approach: instead of Suspense and error boundaries (which propagate up the tree), it handles loading and error states locally with `<Await>`. This gives you explicit control — you decide exactly what renders for each state, in the same component where you fetch. The two approaches can coexist: use `use()` for simple server-driven data, and `use-remote-data` when you want typed state machines, retry logic, refreshing, and composable stores.
+`use-remote-data` takes a different approach: instead of Suspense and error boundaries (which propagate up the tree), it handles loading and error states locally with `<Await>`. This gives you explicit control: you decide exactly what renders for each state, in the same component where you fetch. The two approaches can coexist: use `use()` for simple server-driven data, and `use-remote-data` when you want typed state machines, retry logic, refreshing, and composable stores.

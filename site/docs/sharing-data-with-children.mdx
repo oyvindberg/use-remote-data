@@ -4,7 +4,7 @@ import { Snippet } from '../src/components/Snippet';
 
 A common pattern: fetch data in a parent and share it across child components or routes.
 
-Because stores are **lazy** and **caching**, this just works. Pass the same store to multiple children —
+Because stores are **lazy** and **caching**, this just works. Pass the same store to multiple children:
 the request fires once, and every `<Await>` that renders it gets the same cached result.
 
 <Snippet snippet="use_twice" />
@@ -30,7 +30,7 @@ function OrderList({ orderIds }: { orderIds: number[] }) {
 }
 ```
 
-If multiple children call `orders.get(5)`, they all receive the same cached store — one fetch, shared state.
+If multiple children call `orders.get(5)`, they all receive the same cached store: one fetch, shared state.
 This is automatic deduplication without a global cache, query keys, or providers. Just React's normal data flow.
 
 See the [Performance](performance) page for benchmarks showing this pattern is faster than react-query
@@ -40,5 +40,5 @@ at every sharing level.
 
 Ask yourself: does the child need to show its own loading state?
 
-- **Yes** — pass `RemoteDataStore<T>`. The child renders `<Await>` and handles loading/error itself.
-- **No** — the parent already handles loading via `<Await>`, so just pass the unwrapped `T` value.
+- **Yes:** pass `RemoteDataStore<T>`. The child renders `<Await>` and handles loading/error itself.
+- **No:** the parent already handles loading via `<Await>`, so just pass the unwrapped `T` value.

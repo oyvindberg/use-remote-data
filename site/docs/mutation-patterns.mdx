@@ -16,7 +16,7 @@ const saveStore = useRemoteUpdate((params: { name: string }) => api.createUser(p
     },
 });
 
-// In your JSX — just wire run() to the button:
+// In your JSX, wire run() to the button:
 <button onClick={() => saveStore.run({ name })} disabled={saveStore.current.type === 'pending'}>
     Save
 </button>;
@@ -26,7 +26,7 @@ No `useState`, no conditional mounting, no side effects in render callbacks.
 
 ## Show the result
 
-Sometimes the mutation returns data you want to display — like a dry-run preview or a confirmation.
+Sometimes the mutation returns data you want to display, like a dry-run preview or a confirmation.
 
 ```tsx
 const previewStore = useRemoteUpdate(
@@ -44,7 +44,7 @@ const previewStore = useRemoteUpdate(
 </AwaitUpdate>
 ```
 
-Re-running while showing the previous result gives you the `StalePending` state automatically —
+Re-running while showing the previous result gives you the `StalePending` state automatically:
 old data stays visible while the new request is in flight.
 
 ## Interplay with read stores

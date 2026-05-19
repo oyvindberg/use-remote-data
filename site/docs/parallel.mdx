@@ -1,7 +1,7 @@
 # Parallel vs. Sequential Fetching
 
 When multiple `<Await>` components render at the same time, their stores fire requests **in parallel** automatically.
-No configuration needed — if two stores both need data, both requests go out at once.
+No configuration needed: if two stores both need data, both requests go out at once.
 
 Need sequential fetching? Nest your `<Await>` components:
 
@@ -13,5 +13,5 @@ Need sequential fetching? Nest your `<Await>` components:
 
 The inner `<Await>` won't render (or fetch) until the outer one has data.
 
-For the common case of "fetch both, wait for both," use `RemoteDataStore.all()` instead — it's
+For the common case of "fetch both, wait for both," use `RemoteDataStore.all()` instead. It's
 parallel, type-safe, and gives you a single `<Await>` with a tuple of results. See [Combining Stores](combining-stores).

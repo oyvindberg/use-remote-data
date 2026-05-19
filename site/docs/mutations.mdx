@@ -2,24 +2,23 @@ import { Snippet } from '../src/components/Snippet';
 
 # Mutations
 
-Most applications don't just read data — they also **write** it.
-`use-remote-data` now has first-class support for mutations through **`useRemoteUpdate`**,
-giving you the same principled, type-safe experience for writes that `useRemoteData` provides for reads.
+Most applications don't just read data; they also **write** it.
+`useRemoteUpdate` gives you the same typed state machine for writes that `useRemoteData` provides for reads.
 
 ## The basics
 
 The **`useRemoteUpdate`** hook takes a function that performs a write operation and returns a `RemoteUpdateStore`.
-Unlike `useRemoteData`, **nothing happens until you call `run()`** — the mutation is entirely imperative.
+Unlike `useRemoteData`, **nothing happens until you call `run()`**. The mutation is entirely imperative.
 
 <Snippet snippet="mutation_basic" />
 
 The store starts in an `Initial` state. When `run()` is called, it transitions to `Pending`, then to `Success` (success)
-or `Failed` (failure). The entire `RemoteData` state machine you already know applies here too!
+or `Failed` (failure). The same `RemoteData` state machine you already know applies here.
 
 ## Parameters
 
 The function you pass to `useRemoteUpdate` can accept parameters.
-Pass them to `run()` at call-time — no `dependencies` array needed.
+Pass them to `run()` at call-time. No `dependencies` array needed.
 
 <Snippet snippet="mutation_params" />
 
@@ -29,7 +28,7 @@ form values are passed when the user clicks submit, not captured in a closure th
 ## Automatic refresh
 
 After a successful mutation, you usually need to refresh some read stores.
-The `refreshes` option does this for you — just pass the stores that should refresh:
+The `refreshes` option does this for you. Pass the stores that should refresh:
 
 <Snippet snippet="mutation_invalidation" />
 
@@ -39,7 +38,7 @@ Any `Await` rendering those stores will re-fetch.
 ## Success and error callbacks
 
 For fire-and-forget patterns like dialogs, you can use `onSuccess` to perform side effects
-like closing a dialog — without putting imperative code in your render functions:
+(like closing a dialog) without putting imperative code in your render functions:
 
 ```tsx
 const store = useRemoteUpdate((params) => saveItem(params), {
@@ -54,7 +53,7 @@ The callback runs once, after the refresh completes.
 ## Resetting
 
 Call `reset()` to return the store to its `Initial` state.
-This is perfect for dialogs — reset when closing so the next open starts fresh:
+Useful for dialogs: reset when closing so the next open starts fresh.
 
 ```tsx
 const handleClose = () => {
@@ -69,7 +68,7 @@ or after success to clear the result.
 ## Rendering with `AwaitUpdate`
 
 For cases where you want to render the mutation result, use `AwaitUpdate`.
-It works like `Await` but **never auto-triggers** — fetching only starts when `run()` is called.
+It works like `Await` but **never auto-triggers**. Fetching only starts when `run()` is called.
 
 The children receive the data, the `run` function (for re-runs), and `reset`:
 
@@ -79,5 +78,5 @@ The optional `idle` prop controls what renders before the mutation has ever been
 
 ## Retries
 
-If a mutation fails, the default error view automatically shows a retry button — just like read stores.
+If a mutation fails, the default error view automatically shows a retry button, just like read stores.
 Retry re-runs with the **same parameters** that were originally passed.

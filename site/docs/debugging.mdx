@@ -1,11 +1,11 @@
 # Debugging
 
-## `storeName` — label your stores
+## `storeName`: label your stores
 
 Every hook accepts an optional `storeName` string. It does two things:
 
-1. **Error UI** — the default error component includes the name, so you can tell _which_ request failed.
-2. **Debug logs** — when `debug` is enabled, every log line is prefixed with the store name.
+1. **Error UI:** the default error component includes the name, so you can tell _which_ request failed.
+2. **Debug logs:** when `debug` is enabled, every log line is prefixed with the store name.
 
 ```tsx
 const userStore = useRemoteData(() => fetchUser(id), {
@@ -57,7 +57,7 @@ The `storeName` is passed to your error render prop via `ErrorProps`:
 </Await>
 ```
 
-## `debug` — trace state transitions
+## `debug`: trace state transitions
 
 Pass `debug: console.warn` (or any function with the same signature) to see every state change in your console:
 
@@ -113,11 +113,11 @@ console.log(store.current);
 // { type: 'success', value: { name: 'Alice' }, updatedAt: 2024-01-15T... }
 ```
 
-This is a plain object — you can `JSON.stringify` it, pass it to a logger, or inspect it in React DevTools.
+This is a plain object: you can `JSON.stringify` it, pass it to a logger, or inspect it in React DevTools.
 The `type` field tells you exactly which state the store is in: `'initial'`, `'pending'`, `'failed'`, `'success'`,
 `'stale-immediate'`, `'stale-initial'`, or `'stale-pending'`.
 
-## `<RemoteDataDevtools />` — visual panel
+## `<RemoteDataDevtools />`: visual panel
 
 Drop the devtools component anywhere in your app to see all active stores at a glance:
 
@@ -134,7 +134,7 @@ function App() {
 }
 ```
 
-The panel scans the React fiber tree and finds every `RemoteDataStore` passed as a prop to any component — no registration, no wrapper hooks, no provider. It shows:
+The panel scans the React fiber tree and finds every `RemoteDataStore` passed as a prop to any component. No registration, no wrapper hooks, no provider. It shows:
 
 - Store name and current state (with color-coded indicators)
 - Data preview (truncated JSON for success, error message for failures)

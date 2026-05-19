@@ -1,12 +1,12 @@
 # Migrating from react-query
 
-This guide maps react-query concepts to `use-remote-data` equivalents. The migration can be incremental — both libraries can coexist in the same app while you move queries over one at a time.
+This guide maps react-query concepts to `use-remote-data` equivalents. The migration can be incremental: both libraries can coexist in the same app while you move queries over one at a time.
 
 ## The key difference
 
-react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isError`, `isFetching`). You check the flags before accessing data, but TypeScript can't enforce this — a forgotten check is a bug that compiles.
+react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isError`, `isFetching`). You check the flags before accessing data, but TypeScript can't enforce this; a forgotten check is a bug that compiles.
 
-`use-remote-data` gives you a `RemoteDataStore<T>` that is always in exactly one state. Inside `<Await>`, your data is `T` — not `T | undefined`. The type system enforces that you can't access data that doesn't exist.
+`use-remote-data` gives you a `RemoteDataStore<T>` that is always in exactly one state. Inside `<Await>`, your data is `T`, not `T | undefined`. The type system enforces that you can't access data that doesn't exist.
 
 ## Concept mapping
 
@@ -16,14 +16,14 @@ react-query gives you `data: T | undefined` and boolean flags (`isLoading`, `isE
 | `useQuery({ queryKey, queryFn })` | `useSharedRemoteData(name, queryFn)`              | For global deduplication. Or `useRemoteData(queryFn)` for component-scoped data.                          |
 | `queryKey: ['users', id]`         | `name: 'users'` + `dependencies: [id]`            | Shared stores use a string name for deduplication. Dependency changes trigger re-fetch.                   |
 | `data: T \| undefined`            | `<Await store={store}>{(data: T) => ...}</Await>` | Data is `T` inside `<Await>`, never `undefined`.                                                          |
-| `isLoading`                       | `store.current.type === 'pending'`                | Or just use `<Await>` — it handles loading for you.                                                       |
-| `isFetching` / `isValidating`     | `isStale` (second arg in `<Await>`)               | `{(data, isStale) => ...}` — stale data stays visible during background refresh.                          |
+| `isLoading`                       | `store.current.type === 'pending'`                | Or just use `<Await>`; it handles loading for you.                                                        |
+| `isFetching` / `isValidating`     | `isStale` (second arg in `<Await>`)               | `{(data, isStale) => ...}`; stale data stays visible during background refresh.                           |
 | `error`                           | `Failed` state with `retry` callback              | Errors are data, not exceptions. `<Await>` renders them automatically.                                    |
 | `refetch()`                       | `store.refresh()`                                 | Manual re-fetch.                                                                                          |
 | `gcTime` / `cacheTime`            | `gcTime` option on `useSharedRemoteData`          | Grace period before cleanup after last subscriber unmounts.                                               |
 | `staleTime`                       | `RefreshStrategy.afterMillis(ms)`                 | How long data stays fresh before a background re-fetch.                                                   |
-| `refetchInterval`                 | `RefreshStrategy.afterMillis(ms)`                 | Same mechanism — automatically re-fetches on schedule.                                                    |
-| `enabled: false`                  | Don't render the `<Await>`                        | Stores are lazy — they only fetch when rendered.                                                          |
+| `refetchInterval`                 | `RefreshStrategy.afterMillis(ms)`                 | Same mechanism, automatically re-fetches on schedule.                                                     |
+| `enabled: false`                  | Don't render the `<Await>`                        | Stores are lazy; they only fetch when rendered.                                                           |
 | `select: (data) => data.name`     | `store.map((data) => data.name)`                  | Transform the success value.                                                                              |
 | `placeholderData`                 | `initial: RemoteData.success(placeholder)`        | Seed the store with placeholder data.                                                                     |
 | `useMutation`                     | `useRemoteUpdate`                                 | First-class mutations with `run()`, `reset()`, typed state machine.                                       |
@@ -74,7 +74,7 @@ function UserProfile({ id }) {
     if (error) return <p>Error: {error.message}</p>;
 
     return <h1>{user.name}</h1>;
-    // user is User | undefined — TypeScript doesn't know
+    // user is User | undefined; TypeScript doesn't know
     // you checked isLoading and error first
 }
 ```
@@ -103,7 +103,7 @@ function UserProfile({ id }) {
             )}
         >
             {(user) => <h1>{user.name}</h1>}
-            {/* user is User — always */}
+            {/* user is User. Always */}
         </Await>
     );
 }
@@ -143,12 +143,12 @@ Once all queries are migrated, remove `QueryClientProvider` and uninstall `@tans
 - **Type safety**: Data is `T` inside `<Await>`, not `T | undefined`. A forgotten null check is a compile error, not a runtime bug.
 - **Zero dependencies**: No `@tanstack/query-core`. Just React.
 - **Simpler model**: No query client, no cache configuration, no dehydration/hydration for SSR. Stores are values.
-- **Testability**: `RemoteDataStore.always(RemoteData.success(data))` — no mock servers, no providers, no async coordination.
+- **Testability**: `RemoteDataStore.always(RemoteData.success(data))`. No mock servers, no providers, no async coordination.
 - **Surgical retry**: When you combine stores and one fails, `retry()` only re-fetches the broken one.
 
 ## What you give up
 
-- **Devtools**: react-query's devtools is a browser extension with richer filtering and timeline views. `use-remote-data`'s `<RemoteDataDevtools />` is an in-app panel — simpler but no install required.
+- **Devtools**: react-query's devtools is a browser extension with richer filtering and timeline views. `use-remote-data`'s `<RemoteDataDevtools />` is a smaller in-app panel that needs no extension install.
 - **Automatic deduplication by default**: `useRemoteData` is component-scoped by default. You opt into deduplication by [passing stores as props](sharing-data-with-children) or with `useSharedRemoteData`.
 - **Optimistic updates**: Not built-in. You can implement them by updating local state before the mutation completes.
 
@@ -195,7 +195,7 @@ function PostFeed() {
 }
 ```
 
-Each page is an independent store entry — already-loaded pages stay rendered while the next page loads. See the [Infinite Scroll](infinite-scroll) page for a runnable example.
+Each page is an independent store entry, so already-loaded pages stay rendered while the next page loads. See the [Infinite Scroll](infinite-scroll) page for a runnable example.
 
 ## Coexistence
 
@@ -206,4 +206,4 @@ Both libraries can coexist. A common migration pattern:
 3. When you touch a file for other reasons, migrate its queries
 4. Eventually remove react-query
 
-The two libraries don't share state, so a query in react-query and a shared store in `use-remote-data` with the same data will fetch independently. This is fine during migration — just don't have both active for the same data in the same component.
+The two libraries don't share state, so a query in react-query and a shared store in `use-remote-data` with the same data will fetch independently. This is fine during migration. Avoid having both active for the same data in the same component.

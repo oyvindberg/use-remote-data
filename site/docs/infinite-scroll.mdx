@@ -9,22 +9,22 @@ const [cursors, setCursors] = useState([0]);
 const pages = useRemoteDataMap<number, Page>((cursor, signal) => fetchPage(cursor, signal));
 ```
 
-Each cursor maps to an independent store. Already-loaded pages stay rendered while the next page loads. If page 3 fails, pages 1 and 2 keep their data — the error and retry button only appear for page 3.
+Each cursor maps to an independent store. Already-loaded pages stay rendered while the next page loads. If page 3 fails, pages 1 and 2 keep their data; the error and retry button only appear for page 3.
 
 ## Try it
 
-This snippet simulates 25 items across 5 pages, with random failures on ~every 4th fetch. Click "Load more" to fetch the next page. When a page fails, click "Retry this page" — only the failed page re-fetches.
+This snippet simulates 25 items across 5 pages, with random failures on roughly every 4th fetch. Click "Load more" to fetch the next page. When a page fails, click "Retry this page"; only the failed page re-fetches.
 
 <Snippet snippet="infinite_scroll" />
 
 ## How it works
 
-1. `useState([0])` tracks which cursors to render — starts with the first page
-2. `useRemoteDataMap` manages one store per cursor — fetches are deduped by key
+1. `useState([0])` tracks which cursors to render; starts with the first page
+2. `useRemoteDataMap` manages one store per cursor; fetches are deduped by key
 3. Each `<Await>` independently handles loading, error, and success for its page
 4. "Load more" appends the next cursor to the list, which triggers a new `<Await>` to mount and start fetching
 5. A failed page shows its own error + retry without affecting the rest
 
 ## Compared to react-query
 
-react-query has a dedicated `useInfiniteQuery` hook with built-in page management and cursor tracking. The `useRemoteDataMap` approach is simpler — no special hook, no `getNextPageParam` config — but you manage the cursor list yourself with `useState`.
+react-query has a dedicated `useInfiniteQuery` hook with built-in page management and cursor tracking. The `useRemoteDataMap` approach is simpler (no special hook, no `getNextPageParam` config), but you manage the cursor list yourself with `useState`.
