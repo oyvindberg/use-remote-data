@@ -1,9 +1,6 @@
 # use-remote-data
 
-Async data for React, without the guesswork.
-
-Your data is always in exactly one state (loading, failed, or succeeded), and you
-**cannot access the value without proving it exists**. No `T | undefined`. No boolean flags. No guessing.
+A React hook for async data. Loading, error, success: always one state, always type-safe.
 
 ```tsx
 const store = useRemoteData(() => fetchUser(id));
@@ -11,20 +8,14 @@ const store = useRemoteData(() => fetchUser(id));
 <Await store={store}>{(user) => <span>{user.name}</span>}</Await>;
 ```
 
-Inside the callback, `user` is `User`. Not `User | undefined`. TypeScript enforces it.
+Inside the callback, `user` is `User`, not `User | undefined`. You cannot read the value without proving it exists.
 
-On top of this, you get automatic refresh, retry, composing multiple requests, mutations, lazy loading, and typed errors, all with zero dependencies beyond React.
+Refresh, retry, mutations, lazy loading, typed errors, composing requests; all in one tiny library with zero dependencies beyond React.
 
 **[Read the docs](https://oyvindberg.github.io/use-remote-data/)**
 
 ### Prior art
 
-Based on the Remote Data pattern described in:
+Based on the Remote Data pattern: https://medium.com/@gcanti/slaying-a-ui-antipattern-with-flow-5eed0cfb627b
 
-- https://medium.com/@gcanti/slaying-a-ui-antipattern-with-flow-5eed0cfb627b
-
-Related libraries:
-
-- https://github.com/devexperts/remote-data-ts
-- https://github.com/mcollis/remote-data
-- https://github.com/skkallayath/react-remote-data-hooks
+Related: [remote-data-ts](https://github.com/devexperts/remote-data-ts), [remote-data](https://github.com/mcollis/remote-data), [react-remote-data-hooks](https://github.com/skkallayath/react-remote-data-hooks)

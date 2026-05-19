@@ -9,15 +9,16 @@ module.exports = {
     url: 'https://oyvindberg.github.io',
     baseUrl: '/use-remote-data/',
     onBrokenLinks: 'throw',
-    favicon: 'img/favicon.ico',
+    favicon: 'img/favicon.svg',
     organizationName: 'oyvindberg',
     projectName: 'use-remote-data',
     themeConfig: {
         navbar: {
             title: 'use-remote-data',
             logo: {
-                alt: 'My Site Logo',
+                alt: 'use-remote-data',
                 src: 'img/logo.svg',
+                srcDark: 'img/logo-dark.svg',
             },
             items: [
                 {

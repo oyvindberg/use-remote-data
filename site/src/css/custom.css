@@ -1,42 +1,239 @@
-:root {
-    --ifm-color-primary: #0d9488;
-    --ifm-color-primary-dark: #0f766e;
-    --ifm-color-primary-darker: #115e59;
-    --ifm-color-primary-darkest: #134e4a;
-    --ifm-color-primary-light: #14b8a6;
-    --ifm-color-primary-lighter: #2dd4bf;
-    --ifm-color-primary-lightest: #5eead4;
-    --ifm-code-font-size: 95%;
+/* ─────────────────────────────────────────────────────────────
+   Typography: Geist Sans (display + body), Geist Mono (code).
+   ───────────────────────────────────────────────────────────── */
 
-    --landing-text-primary: #111827;
-    --landing-text-secondary: #4b5563;
-    --landing-alt-bg: #f0fdfa;
-    --landing-before-color: #ef4444;
-    --landing-after-color: #0d9488;
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap');
+
+/* ─────────────────────────────────────────────────────────────
+   Palette: Monochrome. Black, white, hairline grey.
+   Single yellow accent reserved for focus/hover.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+    --ifm-color-primary: #000000;
+    --ifm-color-primary-dark: #000000;
+    --ifm-color-primary-darker: #000000;
+    --ifm-color-primary-darkest: #000000;
+    --ifm-color-primary-light: #1a1a1a;
+    --ifm-color-primary-lighter: #262626;
+    --ifm-color-primary-lightest: #404040;
+
+    --ink: #0a0a0a;
+    --ink-soft: #525252;
+    --ink-faint: #a3a3a3;
+    --paper: #ffffff;
+    --paper-soft: #fafafa;
+    --paper-cool: #f5f5f5;
+    --rule: #0a0a0a;
+    --rule-soft: #e5e5e5;
+    --rule-mid: #d4d4d4;
+    --accent: #ea580c;
+    --accent-soft: #ffedd5;
+
+    --landing-text-primary: var(--ink);
+    --landing-text-secondary: var(--ink-soft);
+    --landing-alt-bg: var(--paper-soft);
+    --landing-after-color: var(--ink);
+
+    --ifm-font-family-base: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --ifm-font-family-monospace: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --font-display: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+    --ifm-heading-font-family: var(--font-display);
+    --ifm-heading-font-weight: 700;
+    --ifm-h1-font-size: 2.5rem;
+    --ifm-code-font-size: 92%;
+    --ifm-code-border-radius: 0;
+
+    --ifm-background-color: var(--paper);
+    --ifm-color-content: var(--ink);
+    --ifm-color-content-secondary: var(--ink-soft);
+
+    --ifm-link-color: var(--accent);
+    --ifm-link-hover-color: var(--ink);
+    --ifm-link-decoration: none;
+    --ifm-link-hover-decoration: underline;
+
+    --ifm-navbar-background-color: var(--paper);
+    --ifm-navbar-shadow: none;
+    --ifm-footer-background-color: var(--ink);
+    --ifm-footer-color: var(--paper);
+    --ifm-footer-link-color: var(--paper-cool);
+    --ifm-footer-link-hover-color: var(--accent);
+    --ifm-footer-title-color: var(--paper);
+    --ifm-toc-border-color: var(--rule-soft);
 }
 
 html[data-theme='dark'] {
-    --ifm-color-primary: #2dd4bf;
-    --ifm-color-primary-dark: #14b8a6;
-    --ifm-color-primary-darker: #0d9488;
-    --ifm-color-primary-darkest: #0f766e;
-    --ifm-color-primary-light: #5eead4;
-    --ifm-color-primary-lighter: #99f6e4;
-    --ifm-color-primary-lightest: #ccfbf1;
+    --ifm-color-primary: #ffffff;
+    --ifm-color-primary-dark: #f5f5f5;
+    --ifm-color-primary-darker: #e5e5e5;
+    --ifm-color-primary-darkest: #d4d4d4;
+    --ifm-color-primary-light: #ffffff;
+    --ifm-color-primary-lighter: #ffffff;
+    --ifm-color-primary-lightest: #ffffff;
 
-    --landing-text-primary: #f9fafb;
-    --landing-text-secondary: #9ca3af;
-    --landing-alt-bg: #111113;
-    --landing-after-color: #2dd4bf;
+    --ink: #fafafa;
+    --ink-soft: #a3a3a3;
+    --ink-faint: #525252;
+    --paper: #000000;
+    --paper-soft: #0a0a0a;
+    --paper-cool: #111111;
+    --rule: #fafafa;
+    --rule-soft: #1f1f1f;
+    --rule-mid: #2a2a2a;
+    --accent: #fb923c;
+    --accent-soft: #2a1607;
+
+    --landing-text-primary: var(--ink);
+    --landing-text-secondary: var(--ink-soft);
+    --landing-alt-bg: var(--paper-soft);
+    --landing-after-color: var(--ink);
+
+    --ifm-background-color: var(--paper);
+    --ifm-color-content: var(--ink);
+    --ifm-color-content-secondary: var(--ink-soft);
+    --ifm-navbar-background-color: var(--paper);
+    --ifm-footer-background-color: #000000;
+
+    --ifm-link-color: var(--accent);
+    --ifm-link-hover-color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Site-wide
+   ───────────────────────────────────────────────────────────── */
+
+html,
+body {
+    background: var(--paper);
+    color: var(--ink);
+    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.022em;
+    color: var(--ink);
+    font-weight: 700;
+    font-feature-settings: 'ss01' on, 'ss03' on, 'cv01' on, 'cv11' on;
+    text-wrap: balance;
+}
+
+/* Tabular numerals on monospace labels and numerals in code */
+code,
+pre,
+kbd,
+samp {
+    font-feature-settings: 'liga' on, 'calt' on, 'zero' on, 'ss05' on, 'ss08' on;
+    font-variant-numeric: tabular-nums;
+}
+
+p,
+li {
+    text-wrap: pretty;
+}
+
+code {
+    font-family: var(--ifm-font-family-monospace);
+    background: var(--paper-cool);
+    color: var(--ink);
+    border: 1px solid var(--rule-soft);
+    padding: 0.05em 0.4em;
+    border-radius: 0;
+    font-size: 0.88em;
+    font-weight: 500;
+}
+
+pre code {
+    background: transparent;
+    color: inherit;
+    border: 0;
+    padding: 0;
+}
+
+pre {
+    border-radius: 0 !important;
+}
+
+/* Buttons */
+.button {
+    border-radius: 0;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    border: 1px solid currentColor;
+}
+
+/* Navbar */
+.navbar {
+    border-bottom: 1px solid var(--rule-soft);
+    background: var(--paper);
+    box-shadow: none;
+}
+
+.navbar__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+
+.navbar__link {
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+/* Selection */
+::selection {
+    background: var(--accent);
+    color: var(--ink);
+}
+
+/* Focus rings */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--rule-soft);
+    border: 3px solid var(--paper);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-faint);
 }
 
 .docusaurus-highlight-code-line {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.06);
     display: block;
     margin: 0 calc(-1 * var(--ifm-pre-padding));
     padding: 0 var(--ifm-pre-padding);
 }
 
 html[data-theme='dark'] .docusaurus-highlight-code-line {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.06);
 }
